@@ -1,10 +1,35 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
+*.egg-info
+
+# Environment variables
 .env
+
+# macOS
 .DS_Store
+
+# Jupyter
 .ipynb_checkpoints/
+
+# dbt
 target/
 dbt_packages/
 logs/
 profiles.yml
+
+# Databricks Bundles
+.databricks/
+build/
+dist/
+
+# Local experimentation
+scratch/**
+!scratch/README.md
+
+# Exploratory work
+**/explorations/**
+!**/explorations/README.md
+
+.vscode/__builtins__.pyi

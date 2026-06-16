@@ -1,0 +1,24 @@
+# Databricks bundle definition for LH Nautical - Grupo 5.
+bundle:
+  name: lh_nautical_grupo_5
+  uuid: 6cbf77ec-43aa-4f6b-8cde-df1732439764
+# UUID gerado automaticamente pelo Databricks Bundle.
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: The catalog to use
+  schema:
+    description: The schema to use
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-c4e046bc-37b5.cloud.databricks.com
+    variables:
+      catalog: workspace
+      schema: dev

@@ -32,4 +32,12 @@ scratch/**
 **/explorations/**
 !**/explorations/README.md
 
+# Local database credentials
+src/ingestion/config.py
+
+# Local VS Code settings
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+
 .vscode/__builtins__.pyi

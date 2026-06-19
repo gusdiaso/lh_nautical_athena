@@ -1,0 +1,180 @@
+resources:
+  jobs:
+    extract_raw_24_tasks:
+      name: extract_raw_24_tasks
+      description: "Job que executa as 24 tasks, uma por tabela da camada raw"
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "2"
+            dependencies: []
+      tasks:
+        - task_key: extract_order_items
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - order_items
+        - task_key: extract_payments
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - payments
+        - task_key: extract_fiscal_invoices
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - fiscal_invoices
+        - task_key: extract_purchase_orders
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - purchase_orders
+        - task_key: extract_purchase_order_items
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - purchase_order_items
+        - task_key: extract_customers
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - customers
+        - task_key: extract_goods_receipts
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - goods_receipts
+        - task_key: extract_suppliers
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - suppliers
+        - task_key: extract_goods_receipt_items
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - goods_receipt_items
+        - task_key: extract_locations
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - locations
+        - task_key: extract_returns
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - returns
+        - task_key: extract_employees
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - employees
+        - task_key: extract_addresses
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - addresses
+        - task_key: extract_return_items
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - return_items
+        - task_key: extract_categories
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - categories
+        - task_key: extract_brands
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - brands
+        - task_key: extract_products
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - products
+        - task_key: extract_product_variants
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - product_variants
+        - task_key: extract_attributes
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - attributes
+        - task_key: extract_variant_attribute_values
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - variant_attribute_values
+        - task_key: extract_product_suppliers
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - product_suppliers
+        - task_key: extract_stock_levels
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - stock_levels
+        - task_key: extract_stock_movements
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - stock_movements
+        - task_key: extract_orders
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/ch2_extract_raw.py
+            parameters:
+              - --table
+              - orders

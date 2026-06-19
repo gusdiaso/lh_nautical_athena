@@ -20,5 +20,5 @@ targets:
     workspace:
       host: https://dbc-c4e046bc-37b5.cloud.databricks.com
     variables:
-      catalog: workspace
-      schema: dev
+      catalog: dev_lh_nautical
+      schema: raw

@@ -81,8 +81,7 @@ for tabela in tabelas:
     try:
         print(f"🔄 Iniciando extração da tabela: dbo.{tabela}")
 
-        df = spark.read \
-            .format("jdbc") \
+        df = spark.read.format("jdbc") \
             .option("url", jdbc_url) \
             .option("dbtable", f"dbo.{tabela}") \
             .option("user", "student") \

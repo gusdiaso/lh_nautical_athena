@@ -18,8 +18,8 @@ targets:
 
 resources:
   jobs:
-    extract_to_bronze:
-      name: extract_to_bronze
+    extract_lh_nautical:
+      name: extract_lh_nautical
       description: 'Job que executa as 24 tasks, uma para cada tabela diretamente para o formato Delta.'
       max_concurrent_runs: 1
       environments:
@@ -31,7 +31,7 @@ resources:
         - task_key: extract_order_items
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - order_items
@@ -43,7 +43,7 @@ resources:
         - task_key: extract_payments
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - payments
@@ -55,7 +55,7 @@ resources:
         - task_key: extract_fiscal_invoices
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - fiscal_invoices
@@ -67,7 +67,7 @@ resources:
         - task_key: extract_purchase_orders
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - purchase_orders
@@ -79,7 +79,7 @@ resources:
         - task_key: extract_purchase_order_items
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - purchase_order_items
@@ -91,7 +91,7 @@ resources:
         - task_key: extract_customers
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - customers
@@ -103,7 +103,7 @@ resources:
         - task_key: extract_goods_receipts
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - goods_receipts
@@ -115,7 +115,7 @@ resources:
         - task_key: extract_suppliers
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - suppliers
@@ -127,7 +127,7 @@ resources:
         - task_key: extract_goods_receipt_items
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - goods_receipt_items
@@ -139,7 +139,7 @@ resources:
         - task_key: extract_locations
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - locations
@@ -151,7 +151,7 @@ resources:
         - task_key: extract_returns
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - returns
@@ -163,7 +163,7 @@ resources:
         - task_key: extract_employees
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - employees
@@ -175,7 +175,7 @@ resources:
         - task_key: extract_addresses
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - addresses
@@ -187,7 +187,7 @@ resources:
         - task_key: extract_return_items
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - return_items
@@ -199,7 +199,7 @@ resources:
         - task_key: extract_categories
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - categories
@@ -211,7 +211,7 @@ resources:
         - task_key: extract_brands
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - brands
@@ -223,7 +223,7 @@ resources:
         - task_key: extract_products
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - products
@@ -235,7 +235,7 @@ resources:
         - task_key: extract_product_variants
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - product_variants
@@ -247,7 +247,7 @@ resources:
         - task_key: extract_attributes
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - attributes
@@ -259,7 +259,7 @@ resources:
         - task_key: extract_variant_attribute_values
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - variant_attribute_values
@@ -271,7 +271,7 @@ resources:
         - task_key: extract_product_suppliers
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - product_suppliers
@@ -283,7 +283,7 @@ resources:
         - task_key: extract_stock_levels
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - stock_levels
@@ -295,7 +295,7 @@ resources:
         - task_key: extract_stock_movements
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - stock_movements
@@ -307,7 +307,7 @@ resources:
         - task_key: extract_orders
           environment_key: default
           spark_python_task:
-            python_file: ../../src/ingestion/extract_to_bronze.py
+            python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
               - orders

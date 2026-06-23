@@ -1,0 +1,451 @@
+variables:
+  catalog:
+    description: 'Catalog do Unity Catalog'
+  schema:
+    description: 'Schema do Unity Catalog'
+    default: bronze
+
+targets:
+  dev:
+    variables:
+      catalog: dev_lh_nautical
+      schema: bronze
+
+  prod:
+    variables:
+      catalog: prod_lh_nautical
+      schema: bronze
+
+resources:
+  jobs:
+    extract_order_items:
+      name: extract_order_items
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_order_items
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - order_items
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_payments:
+      name: extract_payments
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_payments
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - payments
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_fiscal_invoices:
+      name: extract_fiscal_invoices
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_fiscal_invoices
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - fiscal_invoices
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_purchase_orders:
+      name: extract_purchase_orders
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_purchase_orders
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - purchase_orders
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_purchase_order_items:
+      name: extract_purchase_order_items
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_purchase_order_items
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - purchase_order_items
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_customers:
+      name: extract_customers
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_customers
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - customers
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_goods_receipts:
+      name: extract_goods_receipts
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_goods_receipts
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - goods_receipts
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_suppliers:
+      name: extract_suppliers
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_suppliers
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - suppliers
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_goods_receipt_items:
+      name: extract_goods_receipt_items
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_goods_receipt_items
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - goods_receipt_items
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_locations:
+      name: extract_locations
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_locations
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - locations
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_returns:
+      name: extract_returns
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_returns
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - returns
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_employees:
+      name: extract_employees
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_employees
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - employees
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_addresses:
+      name: extract_addresses
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_addresses
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - addresses
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_return_items:
+      name: extract_return_items
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_return_items
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - return_items
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_categories:
+      name: extract_categories
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_categories
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - categories
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_brands:
+      name: extract_brands
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_brands
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - brands
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_products:
+      name: extract_products
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_products
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - products
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_product_variants:
+      name: extract_product_variants
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_product_variants
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - product_variants
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_attributes:
+      name: extract_attributes
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_attributes
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - attributes
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_variant_attribute_values:
+      name: extract_variant_attribute_values
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_variant_attribute_values
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - variant_attribute_values
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_product_suppliers:
+      name: extract_product_suppliers
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_product_suppliers
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - product_suppliers
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_stock_levels:
+      name: extract_stock_levels
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_stock_levels
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - stock_levels
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_stock_movements:
+      name: extract_stock_movements
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_stock_movements
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - stock_movements
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+
+    extract_orders:
+      name: extract_orders
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+      tasks:
+        - task_key: extract_orders
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/ingestion/extract_to_bronze.py
+            parameters:
+              - --table
+              - orders
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}

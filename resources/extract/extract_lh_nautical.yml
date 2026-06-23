@@ -18,11 +18,15 @@ targets:
 
 resources:
   jobs:
-    extract_order_items:
-      name: extract_order_items
+    extract_to_bronze:
+      name: extract_to_bronze
+      description: 'Job que executa as 24 tasks, uma para cada tabela diretamente para o formato Delta.'
       max_concurrent_runs: 1
       environments:
         - environment_key: default
+          spec:
+            environment_version: '2'
+            dependencies: []
       tasks:
         - task_key: extract_order_items
           environment_key: default
@@ -36,12 +40,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_payments:
-      name: extract_payments
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_payments
           environment_key: default
           spark_python_task:
@@ -54,12 +52,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_fiscal_invoices:
-      name: extract_fiscal_invoices
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_fiscal_invoices
           environment_key: default
           spark_python_task:
@@ -72,12 +64,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_purchase_orders:
-      name: extract_purchase_orders
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_purchase_orders
           environment_key: default
           spark_python_task:
@@ -90,12 +76,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_purchase_order_items:
-      name: extract_purchase_order_items
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_purchase_order_items
           environment_key: default
           spark_python_task:
@@ -108,12 +88,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_customers:
-      name: extract_customers
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_customers
           environment_key: default
           spark_python_task:
@@ -126,12 +100,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_goods_receipts:
-      name: extract_goods_receipts
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_goods_receipts
           environment_key: default
           spark_python_task:
@@ -144,12 +112,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_suppliers:
-      name: extract_suppliers
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_suppliers
           environment_key: default
           spark_python_task:
@@ -162,12 +124,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_goods_receipt_items:
-      name: extract_goods_receipt_items
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_goods_receipt_items
           environment_key: default
           spark_python_task:
@@ -180,12 +136,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_locations:
-      name: extract_locations
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_locations
           environment_key: default
           spark_python_task:
@@ -198,12 +148,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_returns:
-      name: extract_returns
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_returns
           environment_key: default
           spark_python_task:
@@ -216,12 +160,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_employees:
-      name: extract_employees
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_employees
           environment_key: default
           spark_python_task:
@@ -234,12 +172,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_addresses:
-      name: extract_addresses
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_addresses
           environment_key: default
           spark_python_task:
@@ -252,12 +184,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_return_items:
-      name: extract_return_items
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_return_items
           environment_key: default
           spark_python_task:
@@ -270,12 +196,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_categories:
-      name: extract_categories
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_categories
           environment_key: default
           spark_python_task:
@@ -288,12 +208,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_brands:
-      name: extract_brands
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_brands
           environment_key: default
           spark_python_task:
@@ -306,12 +220,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_products:
-      name: extract_products
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_products
           environment_key: default
           spark_python_task:
@@ -324,12 +232,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_product_variants:
-      name: extract_product_variants
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_product_variants
           environment_key: default
           spark_python_task:
@@ -342,12 +244,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_attributes:
-      name: extract_attributes
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_attributes
           environment_key: default
           spark_python_task:
@@ -360,12 +256,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_variant_attribute_values:
-      name: extract_variant_attribute_values
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_variant_attribute_values
           environment_key: default
           spark_python_task:
@@ -378,12 +268,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_product_suppliers:
-      name: extract_product_suppliers
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_product_suppliers
           environment_key: default
           spark_python_task:
@@ -396,12 +280,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_stock_levels:
-      name: extract_stock_levels
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_stock_levels
           environment_key: default
           spark_python_task:
@@ -414,12 +292,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_stock_movements:
-      name: extract_stock_movements
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_stock_movements
           environment_key: default
           spark_python_task:
@@ -432,12 +304,6 @@ resources:
               - --schema
               - ${var.schema}
 
-    extract_orders:
-      name: extract_orders
-      max_concurrent_runs: 1
-      environments:
-        - environment_key: default
-      tasks:
         - task_key: extract_orders
           environment_key: default
           spark_python_task:

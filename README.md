@@ -140,8 +140,8 @@ lh_nautical/
 │   ├── dbt/                            ← dbt ecosystem
 │   └── analytics_ai/                   ← ML and Generative AI
 │
-├── tests/                              → Test scripts
-└── .gitignore
+└── tests/                              → Test scripts
+
 ```
 
 ### Essential commands

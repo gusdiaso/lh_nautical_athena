@@ -1,11 +1,14 @@
+# Configuração do bundle Databricks Asset Bundle (DAB)
 bundle:
   name: lh_nautical
   uuid: 6cbf77ec-43aa-4f6b-8cde-df1732439764
 
+# Inclui todos os recursos YAML do projeto
 include:
   - resources/*.yml
   - resources/*/*.yml
 
+# Permissões padrão do bundle
 permissions:
   - user_name: ${workspace.current_user.userName}
     level: CAN_MANAGE
@@ -14,9 +17,11 @@ permissions:
   - group_name: lh_nautical_prod
     level: CAN_VIEW
 
+# Workspace Databricks de destino
 workspace:
   host: https://dbc-c4e046bc-37b5.cloud.databricks.com
 
+# Targets de implantação
 targets:
   dev:
     default: true

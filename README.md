@@ -23,12 +23,12 @@
 
 ## Prerequisites
 
-| Tool | Min. version | Purpose |
-|---|---|---|
-| [Python](https://www.python.org/downloads/) | 3.10+ | Local execution / helper scripts |
-| [Git](https://git-scm.com/downloads) | — | Version control |
-| [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/tutorial.html) | v1.x | Bundle deploy, job execution |
-| [Databricks workspace](https://docs.databricks.com/) | — | Environment where jobs run |
+| Tool                                                                         | Min. version | Purpose                          |
+| ---------------------------------------------------------------------------- | ------------ | -------------------------------- |
+| [Python](https://www.python.org/downloads/)                                  | 3.10+        | Local execution / helper scripts |
+| [Git](https://git-scm.com/downloads)                                         | —            | Version control                  |
+| [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/tutorial.html) | v1.x         | Bundle deploy, job execution     |
+| [Databricks workspace](https://docs.databricks.com/)                         | —            | Environment where jobs run       |
 
 ---
 
@@ -168,10 +168,10 @@ databricks bundle destroy --target dev
 
 ### Available targets
 
-| Target | Unity Catalog | Mode | Usage |
-|---|---|---|---|
-| `dev` | `dev_lh_nautical` | Development | Testing, iterations |
-| `prod` | `prod_lh_nautical` | Production | Official data |
+| Target | Unity Catalog      | Mode        | Usage               |
+| ------ | ------------------ | ----------- | ------------------- |
+| `dev`  | `dev_lh_nautical`  | Development | Testing, iterations |
+| `prod` | `prod_lh_nautical` | Production  | Official data       |
 
 ```bash
 # Deploy to production (after testing in dev)
@@ -248,26 +248,26 @@ pytest tests/ -v
 ### Architecture overview
 
 ```
-SQL Server (ERP)
-       │
-       ▼ ─── JDBC (full/incremental)
-┌─────────────────────┐
-│   Bronze (ingestion) │  ← Spark Python (src/ingestion/)
-└─────────┬───────────┘
-          │
-          ▼ ─── dbt
-┌─────────────────────┐
-│   Silver            │  ← Cleaning & standardization
-└─────────┬───────────┘
-          │
-          ▼ ─── dbt
-┌─────────────────────┐
-│   Gold              │  ← Business analytics models
-└─────────┬───────────┘
-          │
-          ├── → Dashboards (visualizations)
-          ├── → Machine Learning (predictive models)
-          └── → Gen AI (intelligent assistants)
+      SQL Server (ERP)
+            │
+            ▼ ─── JDBC (full/incremental)
+┌─────────────────────────┐
+│    Bronze (ingestion)   │  ← Spark Python (src/ingestion/)
+└───────────┬─────────────┘
+            │
+            ▼ ─── dbt
+┌─────────────────────────┐
+│         Silver          │  ← Cleaning & standardization
+└───────────┬─────────────┘
+            │
+            ▼ ─── dbt
+┌─────────────────────────┐
+│          Gold           │  ← Business analytics models
+└───────────┬─────────────┘
+            │
+            ├── → Dashboards (visualizations)
+            ├── → Machine Learning (predictive models)
+            └── → Gen AI (intelligent assistants)
 ```
 
 ---
@@ -303,14 +303,14 @@ run_as:
 
 ## Project roadmap
 
-| Phase | Deliverable | Status |
-|---|---|---|
-| **Bronze** (ingestion) | Extract all 24 tables from SQL Server to Unity Catalog | ⏳ Current |
-| **Silver** (dbt) | Data cleaning, standardization, deduplication, correct typing | ⏳ Next |
-| **Gold** (dbt) | Analytics models ready for consumption (business metrics, aggregations) | ⏳ Future |
-| **Dashboards** | Visualizations and dashboards (Databricks SQL or BI tool) | ⏳ Future |
-| **Machine Learning** | Predictive models (e.g., demand forecasting, churn, etc.) | ⏳ Future |
-| **Gen AI** | Intelligent assistants, natural language analysis, recommendations | ⏳ Future |
+| Phase                  | Deliverable                                                             | Status     |
+| ---------------------- | ----------------------------------------------------------------------- | ---------- |
+| **Bronze** (ingestion) | Extract all 24 tables from SQL Server to Unity Catalog                  | ⏳ Current |
+| **Silver** (dbt)       | Data cleaning, standardization, deduplication, correct typing           | ⏳ Next    |
+| **Gold** (dbt)         | Analytics models ready for consumption (business metrics, aggregations) | ⏳ Future  |
+| **Dashboards**         | Visualizations and dashboards (Databricks SQL or BI tool)               | ⏳ Future  |
+| **Machine Learning**   | Predictive models (e.g., demand forecasting, churn, etc.)               | ⏳ Future  |
+| **Gen AI**             | Intelligent assistants, natural language analysis, recommendations      | ⏳ Future  |
 
 ---
 

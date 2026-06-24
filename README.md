@@ -252,17 +252,17 @@ pytest tests/ -v
             │
             ▼ ─── JDBC (full/incremental)
 ┌─────────────────────────┐
-│    Bronze (ingestion)  │ │  ← Spark Python (src/ingestion/)
+│    Bronze (ingestion) │ │  ← Spark Python (src/ingestion/)
 └───────────┬─────────────┘
             │
             ▼ ─── dbt
 ┌─────────────────────────┐
-│         Silver         │ │  ← Cleaning & standardization
+│         Silver        │ │  ← Cleaning & standardization
 └───────────┬─────────────┘
             │
             ▼ ─── dbt
 ┌─────────────────────────┐
-│          Gold          │ │  ← Business analytics models
+│          Gold         │ │  ← Business analytics models
 └───────────┬─────────────┘
             │
             ├── → Dashboards (visualizations)

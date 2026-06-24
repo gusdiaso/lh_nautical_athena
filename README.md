@@ -126,21 +126,21 @@ This project uses **Databricks Asset Bundles** to declare jobs, permissions, and
 
 ```
 lh_nautical/
-├── databricks.yml                      ← Main bundle config
-├── .gitignore                          ← Git-ignored files
-├── README.en.md                        ← This documentation
+├── databricks.yml                   ← Main bundle config
+├── .gitignore                       ← Git-ignored files
+├── README.md                        ← This documentation
 │
 ├── resources/
 │   └── extract/
-│       └── extract_lh_nautical.yml     ← Extraction job definition
+│       └── extract_lh_nautical.yml  ← Extraction job definition
 │
-├── src/                                ← Source code (Python, notebooks, dbt)
-│   ├── ingestion/                      ← Data extraction scripts
+├── src/                             ← Source code (Python, notebooks, dbt)
+│   ├── ingestion/                   ← Data extraction scripts
 │   │   └── extract_lh_nautical.py
-│   ├── dbt/                            ← dbt ecosystem
-│   └── analytics_ai/                   ← ML and Generative AI
+│   ├── dbt/                         ← dbt ecosystem
+│   └── analytics_ai/                ← ML and Generative AI
 │
-└── tests/                              → Test scripts
+└── tests/                           ← Test scripts
 
 ```
 

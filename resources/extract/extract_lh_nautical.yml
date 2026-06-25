@@ -6,7 +6,7 @@ variables:
     description: 'Schema de destino no Unity Catalog'
     default: bronze
 
-# Targets de implantação: define valores concretos para cada ambiente
+# Valores por ambiente
 targets:
   dev:
     variables:
@@ -18,29 +18,27 @@ targets:
       catalog: prod_lh_nautical
       schema: bronze
 
-# Extrai dados brutos do ERP e carrega na camada Bronze do Lakehouse
+# Job de extração para a camada Bronze
 resources:
   jobs:
     extract_lh_nautical:
-      # Nome, descrição e limite de execuções concorrentes
       name: extract_lh_nautical
-      description: 'Job que executa as 24 tasks, uma para cada tabela diretamente para o formato Delta.'
+      description: 'Job que executa uma task para cada tabela e grava os dados no formato Delta.'
       max_concurrent_runs: 1
 
-      # Ambiente de execução: versão e dependências
       environments:
         - environment_key: default
           spec:
             environment_version: '2'
             dependencies: []
 
-      # Tasks de extração — uma por tabela, todas usam o mesmo script Python
+      # Uma task por tabela
       tasks:
-        - task_key: extract_order_items # Extrai dados da tabela order_items
+        - task_key: extract_order_items
           environment_key: default
-          spark_python_task: # Executa script Python no Spark
-            python_file: ../../src/ingestion/extract_lh_nautical.py # Caminho do script de extração
-            parameters: # Parâmetros: tabela alvo, catálogo e schema
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
               - --table
               - order_items
               - --catalog

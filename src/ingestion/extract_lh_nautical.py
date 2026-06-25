@@ -1,12 +1,13 @@
+"""Extrai as tabelas do SQL Server lh_nautical para a camada Bronze no Databricks."""
+
+import argparse
 import os
 import traceback
-import argparse
 
 from databricks.connect import DatabricksSession
-from pyspark.sql import functions as F
 from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
 
-# 24 tabelas do SQL Server que serão extraídas para a camada Bronze
 TABLES = [
     "order_items",
     "payments",
@@ -34,30 +35,35 @@ TABLES = [
     "orders",
 ]
 
-# Conexão JDBC com o SQL Server de origem (ERP lh_nautical)
 JDBC_URL = "jdbc:sqlserver://18.209.218.63:4563;databaseName=lh_nautical;encrypt=true;trustServerCertificate=true;"
+SECRET_SCOPE = "lh_nautical"
+SECRET_KEY = "secret_lh_nautical_bd"
+SOURCE_SCHEMA = "dbo"
 
 
 def parse_args():
-    """Lê argumentos da CLI passados pelo .yml do job: --table(opcional), --catalog e --schema."""
-    parser = argparse.ArgumentParser(description="Extract tables into Bronze")
-    parser.add_argument("--table", help="Process only one table from the source list")
+    """Lê os argumentos de linha de comando usados pelo job do Databricks."""
+    parser = argparse.ArgumentParser(description="Extrai tabelas para Bronze.")
     parser.add_argument(
-        "--catalog", default=os.getenv("DATABRICKS_CATALOG", "dev_lh_nautical")
+        "--table",
+        help="Processa apenas uma tabela da lista de origem.",
     )
     parser.add_argument(
-        "--schema", default=os.getenv("DATABRICKS_BRONZE_SCHEMA", "bronze")
+        "--catalog",
+        default=os.getenv("DATABRICKS_CATALOG", "dev_lh_nautical"),
+    )
+    parser.add_argument(
+        "--schema",
+        default=os.getenv("DATABRICKS_BRONZE_SCHEMA", "bronze"),
     )
     return parser.parse_args()
 
 
 def build_spark_session():
-    """Retorna uma SparkSession — dentro do Databricks Runtime ou via DatabricksSession externo."""
-    # Dentro do Databricks Runtime, usa a sessão Spark existente
+    """Retorna uma sessão Spark do Databricks Runtime ou de uma conexão externa."""
     if os.getenv("DATABRICKS_RUNTIME_VERSION"):
         return SparkSession.builder.getOrCreate()
 
-    # Fora do Databricks (ex: dev local), conecta via DatabricksSession
     profile = os.getenv("DATABRICKS_PROFILE", "lh_nautical_developers")
     cluster_id = os.getenv("DATABRICKS_CLUSTER_ID")
     use_serverless = os.getenv("DATABRICKS_USE_SERVERLESS", "true").lower() in {
@@ -82,14 +88,14 @@ def build_spark_session():
 
 
 def get_dbutils():
-    """Retorna o objeto dbutils do Databricks para acesso a secrets e utilitários."""
+    """Retorna dbutils do Databricks para acesso a segredos e utilitários."""
     from databricks.sdk.runtime import dbutils as runtime_dbutils
 
     return runtime_dbutils
 
 
 def select_tables(table_name):
-    """Retorna lista com a tabela específica ou todas as 24 se --table não foi passado."""
+    """Retorna uma única tabela ou a lista completa de tabelas de origem."""
     if table_name:
         if table_name not in TABLES:
             raise ValueError(f"Tabela inválida: {table_name}")
@@ -97,70 +103,106 @@ def select_tables(table_name):
     return TABLES
 
 
-def extract_table(spark, tabela, jdbc_url, senha, catalog, bronze_schema):
-    """Lê uma tabela do SQL Server via JDBC e salva como Delta na camada Bronze."""
-    # Leitura full da tabela no SQL Server via JDBC
+def extract_table(
+    spark_session,
+    source_table_name,
+    jdbc_url,
+    jdbc_password,
+    target_catalog,
+    target_schema,
+):
+    """Lê uma tabela do SQL Server via JDBC e grava como tabela Delta."""
     df = (
-        spark.read.format("jdbc")
+        spark_session.read.format("jdbc")
         .option("url", jdbc_url)
-        .option("dbtable", f"dbo.{tabela}")
+        .option("dbtable", f"{SOURCE_SCHEMA}.{source_table_name}")
         .option("user", "student")
-        .option("password", senha)
+        .option("password", jdbc_password)
         .option("driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver")
         .load()
     )
 
-    # Adiciona metadados de ingestão e salva como tabela Delta na Bronze
     (
         df.withColumn("_ingested_at", F.current_timestamp())
-        .withColumn("_source_path", F.lit(f"sqlserver://dbo.{tabela}"))
+        .withColumn(
+            "_source_path",
+            F.lit(f"sqlserver://{SOURCE_SCHEMA}.{source_table_name}"),
+        )
         .write.format("delta")
         .mode("overwrite")
         .option("overwriteSchema", "true")
-        .saveAsTable(f"{catalog}.{bronze_schema}.{tabela}")
+        .saveAsTable(f"{target_catalog}.{target_schema}.{source_table_name}")
     )
 
-    print(f"✅ Tabela {tabela} salva com sucesso na camada Bronze!")
+    print(f"✅ Tabela {source_table_name} salva com sucesso na camada Bronze!")
+
+
+def create_target_schema(spark_session, target_catalog, target_schema):
+    """Cria o schema de destino caso ele ainda não exista."""
+    spark_session.sql(f"CREATE SCHEMA IF NOT EXISTS {target_catalog}.{target_schema}")
+
+
+def load_jdbc_password(dbutils):
+    """Carrega a senha do SQL Server a partir dos segredos do Databricks."""
+    return dbutils.secrets.get(scope=SECRET_SCOPE, key=SECRET_KEY)
+
+
+def run_table_extraction(
+    spark_session,
+    table_names,
+    jdbc_password,
+    target_catalog,
+    target_schema,
+):
+    """Processa cada tabela sequencialmente e coleta os detalhes das falhas."""
+    failed_tables = []
+
+    for table_name in table_names:
+        try:
+            extract_table(
+                spark_session,
+                table_name,
+                JDBC_URL,
+                jdbc_password,
+                target_catalog,
+                target_schema,
+            )
+        except Exception as exc:
+            print(f"❌ ERRO ao processar a tabela {table_name}:")
+            print(traceback.format_exc())
+            failed_tables.append({"tabela": table_name, "erro": str(exc)})
+
+    return failed_tables
 
 
 def main():
-    """Orquestra a extração: inicializa Spark, descobre tabelas e executa extract_table para cada uma."""
+    """Orquestra o fluxo de extração para todas as tabelas selecionadas."""
     args = parse_args()
-    catalog = args.catalog
-    bronze_schema = args.schema
+    target_catalog = args.catalog
+    target_schema = args.schema
 
-    # Inicializa sessão Spark e obtém secrets do Databricks
-    spark = build_spark_session()
+    spark_session = build_spark_session()
     dbutils = get_dbutils()
-    senha = dbutils.secrets.get(scope="lh_nautical", key="secret_lh_nautical_bd")
+    jdbc_password = load_jdbc_password(dbutils)
 
-    # Garante que o schema de destino existe no Unity Catalog
-    spark.sql(f"CREATE SCHEMA IF NOT EXISTS {catalog}.{bronze_schema}")
+    create_target_schema(spark_session, target_catalog, target_schema)
+    selected_tables = select_tables(args.table)
+    failed_tables = run_table_extraction(
+        spark_session,
+        selected_tables,
+        jdbc_password,
+        target_catalog,
+        target_schema,
+    )
 
-    tabelas = select_tables(args.table)
-    tabelas_sucesso = []
-    tabelas_erro = []
-
-    # Processa cada tabela sequencialmente, registrando sucessos e erros
-    for tabela in tabelas:
-        try:
-            extract_table(spark, tabela, JDBC_URL, senha, catalog, bronze_schema)
-            tabelas_sucesso.append(tabela)
-        except Exception as e:
-            print(f"❌ ERRO ao processar a tabela {tabela}:")
-            print(traceback.format_exc())
-            tabelas_erro.append({"tabela": tabela, "erro": str(e)})
-
-    # Resumo final: falha parcial não interrompe as demais tabelas
-    if tabelas_erro:
-        print(f"⚠️ Alerta: {len(tabelas_erro)} tabelas falharam!")
-        for item in tabelas_erro:
+    if failed_tables:
+        print(f"⚠️ Alerta: {len(failed_tables)} tabelas falharam!")
+        for item in failed_tables:
             print(f"   -> Falha na tabela: {item['tabela']}")
 
-    # Só levanta exceção no final, após todas as tentativas
-    if tabelas_erro:
+    if failed_tables:
         raise RuntimeError(
-            f"O pipeline concluiu com erros em {len(tabelas_erro)} tabelas."
+            f"O pipeline concluiu com erros em {len(failed_tables)} tabelas."
         )
 
 

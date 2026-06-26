@@ -1,9 +1,9 @@
-# Configuração do bundle Databricks Asset Bundle (DAB)
+# Configuração do Databricks Asset Bundle
 bundle:
   name: lh_nautical
   uuid: 6cbf77ec-43aa-4f6b-8cde-df1732439764
 
-# Inclui todos os recursos YAML do projeto
+# Inclui os recursos YAML do projeto
 include:
   - resources/*.yml
   - resources/*/*.yml
@@ -21,7 +21,7 @@ permissions:
 workspace:
   host: https://dbc-c4e046bc-37b5.cloud.databricks.com
 
-# Targets de implantação
+# Ambientes de implantação
 targets:
   dev:
     default: true
@@ -37,5 +37,3 @@ targets:
         level: CAN_VIEW
     git:
       branch: main
-    # run_as:
-    #   CRIAR UMA ENTIDADE DE SERVIÇO!!

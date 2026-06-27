@@ -17,7 +17,6 @@ scratch/**
 !scratch/README.md
 **/explorations/**
 !**/explorations/README.md
-src/ingestion/config.py
 .vscode/settings.json
 .vscode/launch.json
 .vscode/tasks.json

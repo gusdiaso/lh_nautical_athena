@@ -17,6 +17,7 @@
 - [6. Project structure](#6-project-structure)
 - [7. Best practices](#7-best-practices)
 - [Project roadmap](#project-roadmap)
+- [Documentation](#documentation)
 - [References](#references)
 
 ---
@@ -126,22 +127,31 @@ This project uses **Databricks Asset Bundles** to declare jobs, permissions, and
 
 ```
 lh_nautical/
-├── databricks.yml                   ← Main bundle config
-├── .gitignore                       ← Git-ignored files
-├── README.md                        ← This documentation
+├── databricks.yml                     ← Main bundle config
+├── .gitignore                         ← Git-ignored files
+├── README.md                          ← This documentation
 │
 ├── resources/
 │   └── extract/
-│       └── extract_lh_nautical.yml  ← Extraction job definition
+│       ├── extract_lh_nautical.yml    ← Job: SQL Server → Bronze
+│       └── extract_exchange_rates.yml ← Job: API BCB → Bronze
 │
-├── src/                             ← Source code (Python, notebooks, dbt)
-│   ├── ingestion/                   ← Data extraction scripts
-│   │   └── extract_lh_nautical.py
-│   ├── dbt/                         ← dbt ecosystem
-│   └── analytics_ai/                ← ML and Generative AI
+├── src/
+│   ├── ingestion/
+│   │   ├── config.py                  ← Constants (JDBC URL, tables, schemas)
+│   │   ├── utils.py                   ← Shared functions (Spark, Delta)
+│   │   ├── extract_lh_nautical.py     ← Extraction: SQL Server → Bronze
+│   │   └── extract_exchange_rates.py  ← Extraction: API BCB → Bronze
+│   ├── dbt/                           ← dbt ecosystem
+│   └── analytics_ai/                  ← ML and Generative AI
 │
-└── tests/                           ← Test scripts
-
+├── docs/
+│   ├── dab_configuration.md           ← DAB config & governance
+│   ├── dictionary.md                  ← Data dictionary
+│   ├── extract_lh_nautical.md         ← Docs: SQL Server extraction
+│   └── extract_exchange_rates.md      ← Docs: API BCB extraction
+│
+└── tests/                             ← Test scripts
 ```
 
 ### Essential commands
@@ -248,26 +258,29 @@ pytest tests/ -v
 ### Architecture overview
 
 ```
-      SQL Server (ERP)
-            │
-            ▼ ─── JDBC (full/incremental)
-┌─────────────────────────┐
-│    Bronze (ingestion) │ │  ← Spark Python (src/ingestion/)
-└───────────┬─────────────┘
-            │
-            ▼ ─── dbt
-┌─────────────────────────┐
-│         Silver        │ │  ← Cleaning & standardization
-└───────────┬─────────────┘
-            │
-            ▼ ─── dbt
-┌─────────────────────────┐
-│          Gold         │ │  ← Business analytics models
-└───────────┬─────────────┘
-            │
-            ├── → Dashboards (visualizations)
-            ├── → Machine Learning (predictive models)
-            └── → Gen AI (intelligent assistants)
+      SQL Server (ERP)              API PTAX (BCB)
+            │                              │
+            ▼ ─── JDBC (full)              ▼ ─── HTTP (incremental)
+┌─────────────────────────┐    ┌─────────────────────────┐
+│    Bronze (ingestion)   │    │    Bronze (ingestion)   │
+│  extract_lh_nautical.py │    │ extract_exchange_rates.py│
+└───────────┬─────────────┘    └───────────┬─────────────┘
+            │                              │
+            └──────────────┬───────────────┘
+                           │
+                           ▼ ─── dbt
+                  ┌─────────────────┐
+                  │     Silver      │ ← Cleaning & standardization
+                  └────────┬────────┘
+                           │
+                           ▼ ─── dbt
+                  ┌─────────────────┐
+                  │      Gold       │ ← Business analytics models
+                  └────────┬────────┘
+                           │
+                           ├── → Dashboards (visualizations)
+                           ├── → Machine Learning (predictive models)
+                           └── → Gen AI (intelligent assistants)
 ```
 
 ---
@@ -311,6 +324,17 @@ run_as:
 | **Dashboards**         | Visualizations and dashboards (Databricks SQL or BI tool)               | ⏳ Future  |
 | **Machine Learning**   | Predictive models (e.g., demand forecasting, churn, etc.)               | ⏳ Future  |
 | **Gen AI**             | Intelligent assistants, natural language analysis, recommendations      | ⏳ Future  |
+
+---
+
+## Documentation
+
+| Document | Description |
+| -------- | ----------- |
+| `docs/dab_configuration.md` | DAB config, YAML structure, governance & permissions |
+| `docs/dictionary.md` | Data dictionary (tables, columns, relationships) |
+| `docs/extract_lh_nautical.md` | SQL Server → Bronze extraction docs |
+| `docs/extract_exchange_rates.md` | API BCB → Bronze extraction docs |
 
 ---
 

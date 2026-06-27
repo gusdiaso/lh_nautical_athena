@@ -5,24 +5,39 @@ import pandas as pd
 
 from datetime import datetime, date, timedelta
 from delta.tables import DeltaTable
-from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import DoubleType
 
+from utils import build_spark_session, save_full, create_schema, table_exists
+
+from config import (
+    DEFAULT_CATALOG,
+    DEFAULT_SCHEMA,
+)
 
 CURRENCIES = ["USD", "EUR"]
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Extract BCB PTAX exchange rates into Bronze")
+    """Le os argumentos de linha de comando."""
+    import os
 
-    parser.add_argument("--catalog", default="dev_lh_nautical")
-    parser.add_argument("--schema", default="bronze")
+    parser = argparse.ArgumentParser(
+        description="Extract BCB PTAX exchange rates into Bronze"
+    )
+    parser.add_argument(
+        "--catalog",
+        default=os.getenv("DATABRICKS_CATALOG", DEFAULT_CATALOG),
+    )
+    parser.add_argument(
+        "--schema",
+        default=os.getenv("DATABRICKS_BRONZE_SCHEMA", DEFAULT_SCHEMA),
+    )
     parser.add_argument("--start-date", default="2019-07-01")
 
-    # Estratégia de carga do pipeline:
-    # - incremental: recomendado para execuções diárias.
-    # - full: utilizado para carga inicial ou reprocessamento histórico.
+    # Estrategia de carga do pipeline:
+    # - incremental: recomendado para execucoes diarias.
+    # - full: utilizado para carga inicial ou reprocessamento historico.
     parser.add_argument(
         "--load-mode",
         choices=["full", "incremental"],
@@ -30,10 +45,6 @@ def parse_args():
     )
 
     return parser.parse_args()
-
-
-def build_spark_session():
-    return SparkSession.builder.getOrCreate()
 
 
 def fetch_ptax_day(currency_code: str, target_date: str) -> pd.DataFrame:
@@ -48,7 +59,9 @@ def fetch_ptax_day(currency_code: str, target_date: str) -> pd.DataFrame:
     response = requests.get(url, timeout=60)
 
     if response.status_code != 200:
-        print(f"⚠️ Erro ao buscar {currency_code} para {target_date}: {response.status_code}")
+        print(
+            f"⚠️ Erro ao buscar {currency_code} para {target_date}: {response.status_code}"
+        )
         return pd.DataFrame()
 
     df = pd.DataFrame(response.json().get("value", []))
@@ -59,7 +72,9 @@ def fetch_ptax_day(currency_code: str, target_date: str) -> pd.DataFrame:
     return df
 
 
-def collect_ptax_daily(currency_code: str, start_date: datetime, end_date: datetime) -> pd.DataFrame:
+def collect_ptax_daily(
+    currency_code: str, start_date: datetime, end_date: datetime
+) -> pd.DataFrame:
     dfs = []
     current_date = start_date
 
@@ -79,8 +94,10 @@ def collect_ptax_daily(currency_code: str, start_date: datetime, end_date: datet
     return pd.DataFrame()
 
 
-def get_currency_start_date(spark, table_full_name: str, currency_code: str, default_start_date: datetime):
-    if not spark.catalog.tableExists(table_full_name):
+def get_currency_start_date(
+    spark, table_full_name: str, currency_code: str, default_start_date: datetime
+):
+    if not table_exists(spark, table_full_name):
         return default_start_date
 
     last_date = (
@@ -97,14 +114,8 @@ def get_currency_start_date(spark, table_full_name: str, currency_code: str, def
 
 
 def merge_exchange_rates(spark, df_updates, table_full_name: str):
-    if not spark.catalog.tableExists(table_full_name):
-        (
-            df_updates.write
-            .format("delta")
-            .mode("overwrite")
-            .option("overwriteSchema", "true")
-            .saveAsTable(table_full_name)
-        )
+    if not table_exists(spark, table_full_name):
+        save_full(spark, df_updates, table_full_name)
         return
 
     delta_table = DeltaTable.forName(spark, table_full_name)
@@ -116,7 +127,7 @@ def merge_exchange_rates(spark, df_updates, table_full_name: str):
             """
             target.exchange_date = source.exchange_date
             AND target.currency_code = source.currency_code
-            """
+            """,
         )
         .whenMatchedUpdateAll()
         .whenNotMatchedInsertAll()
@@ -136,7 +147,7 @@ def main():
     end_date = datetime.combine(date.today(), datetime.min.time())
 
     spark = build_spark_session()
-    spark.sql(f"CREATE SCHEMA IF NOT EXISTS {catalog}.{bronze_schema}")
+    create_schema(spark, catalog, bronze_schema)
 
     dfs = []
 
@@ -155,7 +166,9 @@ def main():
             print(f"✅ {currency_code} já está atualizado.")
             continue
 
-        print(f"Buscando PTAX {currency_code} de {start_date.date()} até {end_date.date()}")
+        print(
+            f"Buscando PTAX {currency_code} de {start_date.date()} até {end_date.date()}"
+        )
         df_currency = collect_ptax_daily(currency_code, start_date, end_date)
 
         if not df_currency.empty:
@@ -169,8 +182,7 @@ def main():
     df_exchange_raw = spark.createDataFrame(df_exchange_pd)
 
     df_exchange_bronze = (
-        df_exchange_raw
-        .select(
+        df_exchange_raw.select(
             F.to_date(F.col("dataHoraCotacao")).alias("exchange_date"),
             F.col("currency_code"),
             F.col("cotacaoCompra").cast(DoubleType()).alias("exchange_rate_buy"),
@@ -187,13 +199,7 @@ def main():
     )
 
     if args.load_mode == "full":
-        (
-            df_exchange_bronze.write
-            .format("delta")
-            .mode("overwrite")
-            .option("overwriteSchema", "true")
-            .saveAsTable(table_full_name)
-        )
+        save_full(spark, df_exchange_bronze, table_full_name)
     else:
         merge_exchange_rates(spark, df_exchange_bronze, table_full_name)
 

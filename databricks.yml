@@ -8,6 +8,11 @@ include:
   - resources/*.yml
   - resources/*/*.yml
 
+# Sincroniza os arquivos Python para o workspace
+sync:
+  include:
+    - src/*/*.py
+
 # Permissões padrão do bundle
 permissions:
   - user_name: ${workspace.current_user.userName}

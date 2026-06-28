@@ -1,6 +1,6 @@
-"""Configuracoes do pipeline de extracao lh_nautical."""
+"""Configurações do pipeline de extração lh_nautical."""
 
-# ── Conexao com o SQL Server ─────────────────────────────
+# ── Conexão com o SQL Server ─────────────────────────────────────────
 JDBC_URL = (
     "jdbc:sqlserver://18.209.218.63:4563"
     ";databaseName=lh_nautical"
@@ -13,13 +13,13 @@ SECRET_SCOPE = "lh_nautical"
 SECRET_KEY = "secret_lh_nautical_bd"
 SOURCE_SCHEMA = "dbo"
 
-# ── Tabela de destino ────────────────────────────────────
+# ── Tabelas de destino ───────────────────────────────────────────────
 DEFAULT_CATALOG = "dev_lh_nautical"
 DEFAULT_SCHEMA = "bronze"
 
-# ── Lista de tabelas para extrair ────────────────────────
+# ── Tabelas para extrair ─────────────────────────────────────────────
 TABLES = [
-    # Referencia
+    # Referência
     "categories",
     "brands",
     "locations",
@@ -45,7 +45,7 @@ TABLES = [
     "order_items",
     "payments",
     "fiscal_invoices",
-    # Devolucoes
+    # Devoluções
     "returns",
     "return_items",
     # Estoque
@@ -53,5 +53,5 @@ TABLES = [
     "stock_movements",
 ]
 
-# ── Lista de moedas para extrair ────────────────────────
+# ── Moedas para extrair ──────────────────────────────────────────────
 CURRENCIES = ["USD", "EUR"]

@@ -1,12 +1,12 @@
 # ╔══════════════════════════════════════════════════════════════╗
-# ║  ARQUIVO GERADO AUTOMATICAMENTE - NAO EDITAR MANUALMENTE     ║
+# ║  ARQUIVO GERADO AUTOMATICAMENTE - NÃO EDITAR MANUALMENTE     ║
 # ║  Execute: python generate_dab.py para regenerar              ║
 # ╚══════════════════════════════════════════════════════════════╝
 
-# Variaveis reutilizaveis do job
+# Variáveis reutilizáveis do job
 variables:
   catalog:
-    description: 'Catalogo no Unity Catalog'
+    description: 'Catálogo no Unity Catalog'
   schema:
     description: 'Schema de destino no Unity Catalog'
     default: bronze
@@ -23,7 +23,7 @@ targets:
       catalog: prod_lh_nautical
       schema: bronze
 
-# Job de extracao para a camada Bronze
+# Job de extração para a camada Bronze
 resources:
   jobs:
     extract_lh_nautical:

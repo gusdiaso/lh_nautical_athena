@@ -23,17 +23,18 @@
 
 ```
 lh_nautical/
-├── databricks.yml                    # Configuracao principal do bundle
+├── databricks.yml                         # Configuracao principal do bundle
 ├── resources/
 │   └── extract/
-│       ├── extract_lh_nautical.yml   # Job: SQL Server → Bronze
-│       └── extract_exchange_rates.yml # Job: API BCB → Bronze
+│       ├── extract_lh_nautical.yml        # Job: SQL Server → Bronze
+│       ├── extract_exchange_rates.yml     # Job: API BCB → Bronze
+│       └── generate_dab_lh_nautical.py    # Gerador automatico do YAML
 └── src/
     └── ingestion/
-        ├── config.py                 # Constantes
-        ├── utils.py                  # Funcoes compartilhadas
-        ├── extract_lh_nautical.py    # Codigo: SQL Server
-        └── extract_exchange_rates.py # Codigo: API BCB
+        ├── config.py                      # Constantes
+        ├── utils.py                       # Funcoes compartilhadas
+        ├── extract_lh_nautical.py         # Codigo: SQL Server
+        └── extract_exchange_rates.py      # Codigo: API BCB
 ```
 
 ---
@@ -62,8 +63,6 @@ permissions:
     level: CAN_MANAGE
   - group_name: lh_nautical_dev
     level: CAN_VIEW
-  - group_name: lh_nautical_prod
-    level: CAN_VIEW
 
 # Workspace de destino
 workspace:
@@ -85,6 +84,8 @@ targets:
         level: CAN_VIEW
     git:
       branch: main
+    run_as:
+      service_principal_name: '1d6b3e3c-c04d-41e0-9883-ae8d467adcaf'
 ```
 
 ---
@@ -166,14 +167,17 @@ targets:
         level: CAN_VIEW
     git:
       branch: main
+    run_as:
+      service_principal_name: '1d6b3e3c-c04d-41e0-9883-ae8d467adcaf'
 ```
 
-| Campo       | `dev`             | `prod`              |
-| ----------- | ----------------- | ------------------- |
-| `mode`      | `development`     | `production`        |
-| `default`   | `true`            | -                   |
-| `branch`    | Qualquer          | `main`              |
-| `permissao` | `CAN_MANAGE`      | `CAN_VIEW`          |
+| Campo              | `dev`             | `prod`              |
+| ------------------ | ----------------- | ------------------- |
+| `mode`             | `development`     | `production`        |
+| `default`          | `true`            | -                   |
+| `branch`           | Qualquer          | `main`              |
+| `permissao`        | `CAN_MANAGE`      | `CAN_VIEW`          |
+| `run_as`           | -                 | Service Principal   |
 
 ---
 
@@ -310,6 +314,7 @@ resources:
             dependencies:
               - requests
               - pandas
+              - tenacity
       
       # 1 unica task
       tasks:
@@ -333,7 +338,7 @@ resources:
 | Campo           | `extract_lh_nautical` | `extract_exchange_rates` |
 | --------------- | --------------------- | ------------------------ |
 | Tasks           | 24 (1 por tabela)     | 1                        |
-| Dependencies    | `[]` (nenhuma)        | `['requests', 'pandas']` |
+| Dependencies    | `['tenacity']`        | `['requests', 'pandas', 'tenacity']` |
 | Parametros      | `--table`             | `--start-date`, `--load-mode` |
 
 ---

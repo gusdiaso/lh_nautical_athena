@@ -174,42 +174,52 @@ pip install -r requirements.txt
 
 ## Estrutura do Codigo
 
-### Funcoes Principais
+### Funcoes Principais (extract_lh_nautical.py)
+
+| Funcao                  | O que faz                            |
+| ----------------------- | ------------------------------------ |
+| `parse_args()`          | Le argumentos da linha de comando    |
+| `select_tables(name)`   | Filtra tabela ou retorna todas       |
+| `read_source_data(...)` | Le dados do SQL Server via JDBC      |
+| `extract_table(...)`    | Extrai 1 tabela completa (com retry) |
+| `run_extraction(...)`   | Processa todas as tabelas            |
+| `main()`                | Entry point do script                |
+
+### Funcoes Compartilhadas (utils.py)
 
 | Funcao                  | O que faz                         |
 | ----------------------- | --------------------------------- |
-| `parse_args()`          | Le argumentos da linha de comando |
 | `build_spark_session()` | Cria sessao Spark                 |
 | `get_dbutils()`         | Acessa segredos do Databricks     |
-| `select_tables(name)`   | Filtra tabela ou retorna todas    |
-| `read_source_data(...)` | Le dados do SQL Server via JDBC   |
 | `save_full(...)`        | Salva DataFrame como tabela Delta |
-| `extract_table(...)`    | Extrai 1 tabela completa          |
-| `run_extraction(...)`   | Processa todas as tabelas         |
-| `main()`                | Entry point do script             |
+| `create_schema(...)`    | Cria schema se nao existir        |
 
 ### Fluxo de Execucao
 
 ```
 main()
   │
-  ├── build_spark_session()     → cria sessao Spark
-  ├── get_dbutils()             → acessa segredos
+  ├── parse_args()              → le argumentos CLI
+  ├── build_spark_session()     → cria sessao Spark (utils.py)
+  ├── get_dbutils()             → acessa segredos (utils.py)
+  ├── create_schema()           → cria schema Bronze (utils.py)
   ├── select_tables()           → seleciona tabelas
   │
   └── run_extraction()          → para cada tabela:
         │
-        └── extract_table()
+        └── extract_table()     → com retry (tenacity)
               ├── read_source_data()   → le do SQL Server
               ├── withColumn()         → adiciona metadados
-              └── save_full()          → salva no Bronze
+              └── save_full()          → salva no Bronze (utils.py)
 ```
 
 ## Troubleshooting
 
-| Problema             | Causa                     | Solucao                           |
-| -------------------- | ------------------------- | --------------------------------- |
-| `Connection refused` | SQL Server indisponivel   | Verificar IP/porta no `config.py` |
-| `Schema not found`   | Schema Bronze nao existe  | Script cria automaticamente       |
-| `Table not found`    | Tabela ainda nao extraida | Rodar o pipeline completo         |
-| `Permission denied`  | Credenciais invalidas     | Verificar Databricks Secrets      |
+| Problema             | Causa                    | Solucao                           |
+| -------------------- | ------------------------ | --------------------------------- |
+| `Connection refused` | SQL Server indisponivel  | Verificar IP/porta no `config.py` |
+| `Connection timeout` | Firewall ou rede         | Verificar regras de rede          |
+| `Schema not found`   | Schema Bronze nao existe | Script cria automaticamente       |
+| `Table not found`    | Tabela nao existe no SQL | Verificar lista TABLES em config  |
+| `Permission denied`  | Credenciais invalidas    | Verificar Databricks Secrets      |
+| `Retry failed`       | 3 tentativas sem sucesso | Verificar conectividade/rede      |

@@ -12,3 +12,6 @@ pandas>=2.0,<3.0
 
 # Reliability
 tenacity>=8.2,<10.0
+
+# Testing
+pytest>=7.0,<9.0

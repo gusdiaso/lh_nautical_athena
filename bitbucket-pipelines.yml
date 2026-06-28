@@ -1,0 +1,23 @@
+image: python:3.9
+
+definitions:
+  caches:
+    pip: ~/.pip-cache
+  steps:
+    - step: &deploy-prod
+        name: Deploy e Executa Jobs (Prod)
+        caches:
+          - pip
+        script:
+          - pip install --upgrade pip
+          - pip install -r requirements.txt
+          - pip install databricks-cli
+          - databricks bundle validate
+          - databricks bundle deploy --target prod
+          - databricks bundle run extract_lh_nautical --target prod
+          - databricks bundle run extract_exchange_rates --target prod
+
+pipelines:
+  branches:
+    main:
+      - step: *deploy-prod

@@ -7,15 +7,15 @@ from datetime import datetime, date, timedelta
 from delta.tables import DeltaTable
 from pyspark.sql import functions as F
 from pyspark.sql.types import DoubleType
-
-from utils import build_spark_session, save_full, create_schema, table_exists
-
-from config import (
-    DEFAULT_CATALOG,
-    DEFAULT_SCHEMA,
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
 )
 
-CURRENCIES = ["USD", "EUR"]
+from utils import build_spark_session, save_full, create_schema, table_exists
+from config import DEFAULT_CATALOG, DEFAULT_SCHEMA, CURRENCIES
 
 
 def parse_args():
@@ -47,6 +47,16 @@ def parse_args():
     return parser.parse_args()
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type(
+        (requests.exceptions.RequestException, requests.exceptions.Timeout)
+    ),
+    before_sleep=lambda rs: print(
+        f"⏳ Tentativa {rs.attempt_number}/3 falhou, retrying..."
+    ),
+)
 def fetch_ptax_day(currency_code: str, target_date: str) -> pd.DataFrame:
     url = (
         "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/"

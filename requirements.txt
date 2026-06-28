@@ -1,0 +1,14 @@
+# Core - Data Processing
+pyspark>=3.4,<4.0
+delta-spark>=3.0,<4.0
+
+# Connections
+databricks-connect>=15.0,<16.0
+databricks-sdk>=0.20,<1.0
+
+# HTTP & Data
+requests>=2.31,<3.0
+pandas>=2.0,<3.0
+
+# Reliability
+tenacity>=8.2,<10.0

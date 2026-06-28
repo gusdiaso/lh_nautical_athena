@@ -27,18 +27,21 @@ src/ingestion/
 └── extract_exchange_rates.py  # Extracao API BCB → Bronze
 
 resources/extract/
-└── extract_lh_nautical.yml    # Configuracao do job (DAB)
+├── extract_lh_nautical.yml    # Configuracao do job (DAB) - GERADO
+├── extract_exchange_rates.yml # Configuracao do job exchange rates
+└── generate_dab_lh_nautical.py           # Script gerador do YAML
 
 docs/
 └── extract_lh_nautical.md     # Esta documentacao
 ```
 
-| Arquivo                     | Funcao                                     |
-| --------------------------- | ------------------------------------------ |
-| `config.py`                 | URL JDBC, lista de tabelas, schemas        |
-| `utils.py`                  | Funcoes compartilhadas (Spark, Delta Lake) |
-| `extract_lh_nautical.py`    | Logica de extracao do SQL Server           |
-| `extract_lh_nautical.yml`   | Configuracao do job no Databricks          |
+| Arquivo                       | Funcao                                     |
+| ----------------------------- | ------------------------------------------ |
+| `config.py`                   | URL JDBC, lista de tabelas, schemas        |
+| `utils.py`                    | Funcoes compartilhadas (Spark, Delta Lake) |
+| `extract_lh_nautical.py`      | Logica de extracao do SQL Server           |
+| `extract_lh_nautical.yml`     | Configuracao do job no Databricks (gerado) |
+| `generate_dab_lh_nautical.py` | Script gerador do YAML                     |
 
 > **Nota:** A configuracao completa do job (DAB) esta em `docs/dab_configuration.md`.
 
@@ -71,6 +74,46 @@ databricks bundle run extract_lh_nautical --target dev
 databricks bundle run extract_lh_nautical --target dev -- --table customers
 ```
 
+## Gerar YAML Automaticamente
+
+### Por que foi feito?
+
+O arquivo `extract_lh_nautical.yml` original tinha **24 tasks quase idênticas** - cada uma usando o mesmo script, diferindo apenas pelo nome da tabela. Isso viola o princípio **DRY** (Don't Repeat Yourself) e dificulta a manutenção.
+
+**Problema:** Para adicionar uma tabela, era necessário copiar e colar 12 linhas de YAML e alterar 2 valores. Com 24 tabelas, isso significava ~300 linhas repetitivas.
+
+**Solução:** Um script Python (`generate_dab_lh_nautical.py`) gera o YAML automaticamente a partir da lista de tabelas definida em `config.py`.
+
+### Como usar
+
+```bash
+# 1. Adicione a tabela em src/ingestion/config.py
+TABLES = [
+    ...
+    "nova_tabela",  # ← adicione aqui
+]
+
+# 2. Regenere o YAML
+python resources/extract/generate_dab_lh_nautical.py
+
+# 3. Valide o bundle
+databricks bundle validate
+```
+
+### Fluxo
+
+```
+config.py (TABLES)
+       │
+       ▼
+generate_dab_lh_nautical.py
+       │
+       ▼
+extract_lh_nautical.yml
+```
+
+> **Importante:** Nunca edite o YAML manualmente. Altere apenas `config.py` e execute `generate_dab_lh_nautical.py`.
+
 ## Lista de Tabelas
 
 | Categoria    | Tabelas                                                                    |
@@ -83,6 +126,44 @@ databricks bundle run extract_lh_nautical --target dev -- --table customers
 | Vendas       | orders, order_items, payments, fiscal_invoices                             |
 | Devolucoes   | returns, return_items                                                      |
 | Estoque      | stock_levels, stock_movements                                              |
+
+## Retry Automatico
+
+O pipeline utiliza a biblioteca `tenacity` para retry automatico em caso de falhas de conexao com o SQL Server.
+
+| Parametro      | Valor                    | Descricao                         |
+| -------------- | ------------------------ | --------------------------------- |
+| `stop`         | 3 tentativas             | Para apos 3 falhas consecutivas   |
+| `wait`         | Exponencial (2s, 4s, 8s) | Espera crescente entre tentativas |
+| `retry`        | `Exception`              | Retry em qualquer excecao         |
+| `before_sleep` | Log no console           | Exibe mensagem de tentativa       |
+
+**Fluxo de retry:**
+
+```
+Tentativa 1 → Falha → Espera 2s
+Tentativa 2 → Falha → Espera 4s
+Tentativa 3 → Falha → Levanta excecao
+```
+
+---
+
+## Dependencias
+
+Para executar localmente, instale as dependencias:
+
+```bash
+pip install -r requirements.txt
+```
+
+| Dependencia          | Versao      | Uso                           |
+| -------------------- | ----------- | ----------------------------- |
+| `pyspark`            | >=3.4,<4.0  | Sessao Spark                  |
+| `delta-spark`        | >=3.0,<4.0  | Formato Delta Lake            |
+| `databricks-connect` | >=15.0      | Conexao externa ao Databricks |
+| `tenacity`           | >=8.2,<10.0 | Retry automatico              |
+
+---
 
 ## Metadados Adicionados
 

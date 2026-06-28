@@ -38,6 +38,7 @@ resources:
             dependencies:
               - requests
               - pandas
+              - tenacity
 
       tasks:
         - task_key: extract_bcb_exchange_rates

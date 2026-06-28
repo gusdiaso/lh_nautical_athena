@@ -1,7 +1,6 @@
-"""Gera o YAML do DAB (Databricks Asset Bundle) para extracao."""
+"""Gera o YAML do DAB (Databricks Asset Bundle) para extração."""
 
 import sys
-import os
 from pathlib import Path
 
 # Adiciona src/ingestion ao path para importar config
@@ -25,14 +24,14 @@ TASK_TEMPLATE = """\
 # Template completo do YAML
 YAML_TEMPLATE = """\
 # ╔══════════════════════════════════════════════════════════════╗
-# ║  ARQUIVO GERADO AUTOMATICAMENTE - NAO EDITAR MANUALMENTE     ║
+# ║  ARQUIVO GERADO AUTOMATICAMENTE - NÃO EDITAR MANUALMENTE     ║
 # ║  Execute: python generate_dab.py para regenerar              ║
 # ╚══════════════════════════════════════════════════════════════╝
 
-# Variaveis reutilizaveis do job
+# Variáveis reutilizáveis do job
 variables:
   catalog:
-    description: 'Catalogo no Unity Catalog'
+    description: 'Catálogo no Unity Catalog'
   schema:
     description: 'Schema de destino no Unity Catalog'
     default: bronze
@@ -49,7 +48,7 @@ targets:
       catalog: prod_lh_nautical
       schema: bronze
 
-# Job de extracao para a camada Bronze
+# Job de extração para a camada Bronze
 resources:
   jobs:
     extract_lh_nautical:
@@ -75,7 +74,7 @@ resources:
 """
 
 
-def generate_yaml():
+def generate_yaml() -> None:
     """Gera o YAML do DAB a partir da lista de tabelas em config.py."""
     # Gera as tasks a partir da lista de tabelas
     tasks = "\n".join(TASK_TEMPLATE.format(table=table) for table in TABLES)
@@ -83,7 +82,7 @@ def generate_yaml():
     # Monta o YAML completo
     yaml_content = YAML_TEMPLATE.format(tasks=tasks)
 
-    # Caminho de saida
+    # Caminho de saída
     output_path = Path(__file__).parent / "extract_lh_nautical.yml"
     output_path.write_text(yaml_content, encoding="utf-8")
 

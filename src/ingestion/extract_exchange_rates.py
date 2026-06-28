@@ -1,11 +1,13 @@
+"""Extrai cotações PTAX do BCB para a camada Bronze."""
+
 import argparse
 import time
-import requests
-import pandas as pd
-
 from datetime import datetime, date, timedelta
+
+import pandas as pd
+import requests
 from delta.tables import DeltaTable
-from pyspark.sql import functions as F
+from pyspark.sql import DataFrame, SparkSession, functions as F
 from pyspark.sql.types import DoubleType
 from tenacity import (
     retry,
@@ -14,16 +16,20 @@ from tenacity import (
     retry_if_exception_type,
 )
 
-from utils import build_spark_session, save_full, create_schema, table_exists
 from config import DEFAULT_CATALOG, DEFAULT_SCHEMA, CURRENCIES
+from utils import build_spark_session, save_full, create_schema, table_exists
 
 
-def parse_args():
-    """Le os argumentos de linha de comando."""
+def parse_args() -> argparse.Namespace:
+    """Lê os argumentos de linha de comando.
+
+    Returns:
+        Namespace com os argumentos parseados.
+    """
     import os
 
     parser = argparse.ArgumentParser(
-        description="Extract BCB PTAX exchange rates into Bronze"
+        description="Extrai cotações PTAX do BCB para Bronze"
     )
     parser.add_argument(
         "--catalog",
@@ -35,9 +41,9 @@ def parse_args():
     )
     parser.add_argument("--start-date", default="2019-07-01")
 
-    # Estrategia de carga do pipeline:
-    # - incremental: recomendado para execucoes diarias.
-    # - full: utilizado para carga inicial ou reprocessamento historico.
+    # Estratégia de carga do pipeline:
+    # - incremental: recomendado para execuções diárias.
+    # - full: utilizado para carga inicial ou reprocessamento histórico.
     parser.add_argument(
         "--load-mode",
         choices=["full", "incremental"],
@@ -54,10 +60,19 @@ def parse_args():
         (requests.exceptions.RequestException, requests.exceptions.Timeout)
     ),
     before_sleep=lambda rs: print(
-        f"⏳ Tentativa {rs.attempt_number}/3 falhou, retrying..."
+        f"Tentativa {rs.attempt_number}/3 falhou, retrying..."
     ),
 )
 def fetch_ptax_day(currency_code: str, target_date: str) -> pd.DataFrame:
+    """Busca cotações PTAX para uma moeda e data específicas.
+
+    Args:
+        currency_code: Código da moeda (ex: 'USD', 'EUR').
+        target_date: Data no formato 'MM-DD-YYYY'.
+
+    Returns:
+        DataFrame com dados de cotação, ou DataFrame vazio em caso de erro.
+    """
     url = (
         "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/"
         f"CotacaoMoedaDia(moeda=@moeda,dataCotacao=@dataCotacao)"
@@ -70,7 +85,7 @@ def fetch_ptax_day(currency_code: str, target_date: str) -> pd.DataFrame:
 
     if response.status_code != 200:
         print(
-            f"⚠️ Erro ao buscar {currency_code} para {target_date}: {response.status_code}"
+            f"Erro ao buscar {currency_code} para {target_date}: {response.status_code}"
         )
         return pd.DataFrame()
 
@@ -85,6 +100,16 @@ def fetch_ptax_day(currency_code: str, target_date: str) -> pd.DataFrame:
 def collect_ptax_daily(
     currency_code: str, start_date: datetime, end_date: datetime
 ) -> pd.DataFrame:
+    """Coleta cotações PTAX diárias para uma moeda em um período.
+
+    Args:
+        currency_code: Código da moeda (ex: 'USD', 'EUR').
+        start_date: Data inicial para coleta.
+        end_date: Data final para coleta.
+
+    Returns:
+        DataFrame combinado com todas as cotações diárias.
+    """
     dfs = []
     current_date = start_date
 
@@ -105,8 +130,22 @@ def collect_ptax_daily(
 
 
 def get_currency_start_date(
-    spark, table_full_name: str, currency_code: str, default_start_date: datetime
-):
+    spark: SparkSession,
+    table_full_name: str,
+    currency_code: str,
+    default_start_date: datetime,
+) -> datetime:
+    """Obtém a data inicial para uma moeda baseada nos dados existentes.
+
+    Args:
+        spark: SparkSession ativa.
+        table_full_name: Nome completo da tabela.
+        currency_code: Código da moeda a verificar.
+        default_start_date: Data inicial padrão se não houver dados.
+
+    Returns:
+        Data inicial para carga incremental.
+    """
     if not table_exists(spark, table_full_name):
         return default_start_date
 
@@ -123,7 +162,16 @@ def get_currency_start_date(
     return datetime.combine(last_date + timedelta(days=1), datetime.min.time())
 
 
-def merge_exchange_rates(spark, df_updates, table_full_name: str):
+def merge_exchange_rates(
+    spark: SparkSession, df_updates: DataFrame, table_full_name: str
+) -> None:
+    """Realiza merge das atualizações de cotações na tabela Delta.
+
+    Args:
+        spark: SparkSession ativa.
+        df_updates: DataFrame com cotações novas ou atualizadas.
+        table_full_name: Nome completo da tabela.
+    """
     if not table_exists(spark, table_full_name):
         save_full(spark, df_updates, table_full_name)
         return
@@ -145,7 +193,8 @@ def merge_exchange_rates(spark, df_updates, table_full_name: str):
     )
 
 
-def main():
+def main() -> None:
+    """Ponto de entrada principal para o pipeline de extração de cotações."""
     args = parse_args()
 
     catalog = args.catalog
@@ -173,7 +222,7 @@ def main():
             start_date = default_start_date
 
         if start_date > end_date:
-            print(f"✅ {currency_code} já está atualizado.")
+            print(f"{currency_code} já está atualizado.")
             continue
 
         print(
@@ -185,7 +234,7 @@ def main():
             dfs.append(df_currency)
 
     if not dfs:
-        print("✅ Nenhuma nova cotação para ingerir.")
+        print("Nenhuma nova cotação para ingerir.")
         return
 
     df_exchange_pd = pd.concat(dfs, ignore_index=True)
@@ -213,7 +262,7 @@ def main():
     else:
         merge_exchange_rates(spark, df_exchange_bronze, table_full_name)
 
-    print(f"✅ Tabela {table_full_name} atualizada com sucesso!")
+    print(f"Tabela {table_full_name} atualizada com sucesso!")
 
 
 if __name__ == "__main__":

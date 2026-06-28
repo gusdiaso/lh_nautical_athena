@@ -58,6 +58,8 @@ pipelines:
 
             # 3. Execução do deploy (as variáveis de ambiente são injetadas nativamente)
             - databricks bundle deploy -t prod
+            - databricks bundle run extract_lh_nautical --target prod
+            - databricks bundle run extract_exchange_rates --target prod
 ```
 
 4.2. databricks.yml (O Bundle)
@@ -71,11 +73,14 @@ Define a infraestrutura como código (IaC). O bloco `run_as` é crítico, pois g
 targets:
   prod:
     mode: production
-    workspace:
-      host: https://dbc-c4e046bc-37b5.cloud.databricks.com
+    permissions:
+      - group_name: lh_nautical_prod
+        level: CAN_VIEW
+    git:
+      branch: main
     # Define a Service Principal como proprietária dos recursos
     run_as:
-      service_principal_name: '<COLOQUE-O-APPLICATION-ID-AQUI>'
+      service_principal_name: '1d6b3e3c-c04d-41e0-9883-ae8d467adcaf'
 ```
 
 ## 5. Permissões de Dados (Unity Catalog)

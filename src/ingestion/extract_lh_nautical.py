@@ -2,14 +2,15 @@
 
 import argparse
 import traceback
+from typing import List, Dict, Any
 
+from pyspark.sql import SparkSession, functions as F
 from tenacity import (
     retry,
     stop_after_attempt,
     wait_exponential,
     retry_if_exception_type,
 )
-from pyspark.sql import functions as F
 
 from config import (
     JDBC_URL,
@@ -28,8 +29,12 @@ from utils import (
 )
 
 
-def parse_args():
-    """Le os argumentos de linha de comando."""
+def parse_args() -> argparse.Namespace:
+    """Lê os argumentos de linha de comando.
+
+    Returns:
+        Namespace com os argumentos parseados.
+    """
     import os
 
     parser = argparse.ArgumentParser(description="Extrai tabelas para Bronze (full).")
@@ -45,20 +50,39 @@ def parse_args():
     return parser.parse_args()
 
 
-def select_tables(table_name):
-    """Retorna uma unica tabela ou a lista completa."""
+def select_tables(table_name: str) -> List[str]:
+    """Retorna uma única tabela ou a lista completa.
+
+    Args:
+        table_name: Nome de uma tabela específica, ou None para todas.
+
+    Returns:
+        Lista de nomes de tabelas a serem processadas.
+
+    Raises:
+        ValueError: Se table_name não estiver na lista TABLES.
+    """
     if table_name:
         if table_name not in TABLES:
-            raise ValueError(f"Tabela invalida: {table_name}")
+            raise ValueError(f"Tabela inválida: {table_name}")
         return [table_name]
     return TABLES
 
 
-# ── Leitura ──────────────────────────────────────────────
+# ── Leitura ──────────────────────────────────────────────────────────
 
 
-def read_source_data(spark, jdbc_password, table_name):
-    """Le todos os dados de uma tabela do SQL Server via JDBC."""
+def read_source_data(spark: SparkSession, jdbc_password: str, table_name: str):
+    """Lê todos os dados de uma tabela do SQL Server via JDBC.
+
+    Args:
+        spark: SparkSession ativa.
+        jdbc_password: Senha JDBC para autenticação.
+        table_name: Nome da tabela de origem.
+
+    Returns:
+        DataFrame com os dados da tabela.
+    """
     return (
         spark.read.format("jdbc")
         .option("url", JDBC_URL)
@@ -70,7 +94,7 @@ def read_source_data(spark, jdbc_password, table_name):
     )
 
 
-# ── Orquestracao ─────────────────────────────────────────
+# ── Orquestração ───────────────────────────────────────────────────
 
 
 @retry(
@@ -78,11 +102,25 @@ def read_source_data(spark, jdbc_password, table_name):
     wait=wait_exponential(multiplier=1, min=2, max=10),
     retry=retry_if_exception_type(Exception),
     before_sleep=lambda rs: print(
-        f"⏳ Tentativa {rs.attempt_number}/3 falhou, retrying in {rs.next_action.sleep}s..."
+        f"Tentativa {rs.attempt_number}/3 falhou, retrying in {rs.next_action.sleep}s..."
     ),
 )
-def extract_table(spark, table_name, jdbc_password, catalog, schema):
-    """Extrai uma tabela do SQL Server para Bronze."""
+def extract_table(
+    spark: SparkSession,
+    table_name: str,
+    jdbc_password: str,
+    catalog: str,
+    schema: str,
+) -> None:
+    """Extrai uma tabela do SQL Server para Bronze.
+
+    Args:
+        spark: SparkSession ativa.
+        table_name: Nome da tabela a ser extraída.
+        jdbc_password: Senha JDBC para autenticação.
+        catalog: Nome do catálogo de destino.
+        schema: Nome do schema de destino.
+    """
     target = f"{catalog}.{schema}.{table_name}"
 
     df = read_source_data(spark, jdbc_password, table_name)
@@ -94,29 +132,46 @@ def extract_table(spark, table_name, jdbc_password, catalog, schema):
 
     save_full(spark, df, target)
 
-    print(f"✅ Tabela {table_name} salva com sucesso!")
+    print(f"Tabela {table_name} salva com sucesso!")
 
 
-def run_extraction(spark, table_names, jdbc_password, catalog, schema):
-    """Processa cada tabela e coleta erros."""
+def run_extraction(
+    spark: SparkSession,
+    table_names: List[str],
+    jdbc_password: str,
+    catalog: str,
+    schema: str,
+) -> List[Dict[str, Any]]:
+    """Processa cada tabela e coleta erros.
+
+    Args:
+        spark: SparkSession ativa.
+        table_names: Lista de nomes de tabelas a extrair.
+        jdbc_password: Senha JDBC para autenticação.
+        catalog: Nome do catálogo de destino.
+        schema: Nome do schema de destino.
+
+    Returns:
+        Lista de dicionários com tabelas que falharam e seus erros.
+    """
     failed = []
 
     for table_name in table_names:
         try:
             extract_table(spark, table_name, jdbc_password, catalog, schema)
         except Exception as exc:
-            print(f"❌ ERRO ao processar {table_name}:")
+            print(f"ERRO ao processar {table_name}:")
             print(traceback.format_exc())
             failed.append({"tabela": table_name, "erro": str(exc)})
 
     return failed
 
 
-# ── Entry point ──────────────────────────────────────────
+# ── Entry point ──────────────────────────────────────────────────────
 
 
-def main():
-    """Orquestra o fluxo de extracao."""
+def main() -> None:
+    """Orquestra o fluxo de extração."""
     args = parse_args()
 
     spark = build_spark_session()
@@ -131,7 +186,7 @@ def main():
     )
 
     if failed:
-        raise RuntimeError(f"Pipeline concluido com erros em {len(failed)} tabelas.")
+        raise RuntimeError(f"Pipeline concluído com erros em {len(failed)} tabelas.")
 
 
 if __name__ == "__main__":

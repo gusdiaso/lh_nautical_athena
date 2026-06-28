@@ -79,6 +79,44 @@ databricks bundle run extract_exchange_rates --target dev -- --load-mode full
 | `USD`  | Dolar Americano  |
 | `EUR`  | Euro             |
 
+## Retry Automatico
+
+O pipeline utiliza a biblioteca `tenacity` para retry automatico em caso de falhas de conexao com a API do Banco Central.
+
+| Parametro            | Valor                                    | Descricao                           |
+| -------------------- | ---------------------------------------- | ----------------------------------- |
+| `stop`               | 3 tentativas                             | Para apos 3 falhas consecutivas    |
+| `wait`               | Exponencial (2s, 4s, 8s)                 | Espera crescente entre tentativas  |
+| `retry`              | `RequestException`, `Timeout`            | Retry em erros de conexao/timeout  |
+| `before_sleep`       | Log no console                           | Exibe mensagem de tentativa        |
+
+**Fluxo de retry:**
+```
+Tentativa 1 → Timeout/Falha → Espera 2s
+Tentativa 2 → Timeout/Falha → Espera 4s
+Tentativa 3 → Timeout/Falha → Retorna DataFrame vazio
+```
+
+> **Nota:** Diferente do SQL Server, aqui o retry para em DataFrame vazio (nao levanta excecao) pois a API pode nao ter dados para a data consultada.
+
+---
+
+## Dependencias
+
+Para executar localmente, instale as dependencias:
+
+```bash
+pip install -r requirements.txt
+```
+
+| Dependencia     | Versao      | Uso                           |
+| --------------- | ----------- | ----------------------------- |
+| `requests`      | >=2.31,<3.0 | Requisicoes HTTP              |
+| `pandas`        | >=2.0,<3.0  | Manipulacao de dados          |
+| `tenacity`      | >=8.2,<10.0 | Retry automatico              |
+
+---
+
 ## Metadados Adicionados
 
 | Coluna          | Descricao                                    |

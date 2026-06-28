@@ -1,83 +1,83 @@
 # lh_nautical
 
-**LH Nautical** data project — a complete pipeline for ingestion, transformation, visualization, machine learning, and generative AI on the Databricks ecosystem, following the **Medallion Architecture** (Bronze → Silver → Gold).
+Projeto de dados **LH Nautical** — pipeline completo para ingestão, transformação, visualização, machine learning e IA generativa no ecossistema Databricks, seguindo a **Arquitetura Medallion** (Bronze → Silver → Gold).
 
-> **Current phase:** Ingesting data from SQL Server (ERP) into the **Bronze** layer.  
-> **Next phases:** Transformations (dbt), dashboards, ML models, and Gen AI.
+> **Fase atual:** Ingestão de dados do SQL Server (ERP) para a camada **Bronze**.
+> **Próximas fases:** Transformações (dbt), dashboards, modelos ML e Gen AI.
 
 ---
 
-## Navigation
+## Navegação
 
-- [1. Git — clone the repository](#1-git--clone-the-repository)
-- [2. Databricks CLI — installation & setup](#2-databricks-cli--installation--setup)
+- [1. Git — clonar o repositório](#1-git--clonar-o-repositório)
+- [2. Databricks CLI — instalação e configuração](#2-databricks-cli--instalação-e-configuração)
 - [3. Databricks Asset Bundle (DAB) — deploy](#3-databricks-asset-bundle-dab--deploy)
-- [4. SQL Server connection](#4-sql-server-connection)
-- [5. Local environment (optional — testing)](#5-local-environment-optional--testing)
-- [6. Project structure](#6-project-structure)
-- [7. Best practices](#7-best-practices)
-- [Project roadmap](#project-roadmap)
-- [Documentation](#documentation)
-- [References](#references)
+- [4. Conexão com o SQL Server](#4-conexão-com-o-sql-server)
+- [5. Ambiente local (opcional — testes)](#5-ambiente-local-opcional--testes)
+- [6. Estrutura do projeto](#6-estrutura-do-projeto)
+- [7. Boas práticas](#7-boas-práticas)
+- [Roadmap do projeto](#roadmap-do-projeto)
+- [Documentação](#documentação)
+- [Referências](#referências)
 
 ---
 
-## Prerequisites
+## Pré-requisitos
 
-| Tool                                                                         | Min. version | Purpose                          |
-| ---------------------------------------------------------------------------- | ------------ | -------------------------------- |
-| [Python](https://www.python.org/downloads/)                                  | 3.10+        | Local execution / helper scripts |
-| [Git](https://git-scm.com/downloads)                                         | —            | Version control                  |
-| [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/tutorial.html) | v1.x         | Bundle deploy, job execution     |
-| [Databricks workspace](https://docs.databricks.com/)                         | —            | Environment where jobs run       |
+| Ferramenta                                                                   | Versão mín. | Finalidade                        |
+| ---------------------------------------------------------------------------- | ----------- | --------------------------------- |
+| [Python](https://www.python.org/downloads/)                                  | 3.10+       | Execução local / scripts auxiliares |
+| [Git](https://git-scm.com/downloads)                                         | —           | Controle de versão                |
+| [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/tutorial.html) | v1.x        | Deploy de bundles, execução de jobs |
+| [Databricks workspace](https://docs.databricks.com/)                         | —           | Ambiente onde os jobs rodam       |
 
 ---
 
-## 1. Git — clone the repository
+## 1. Git — clonar o repositório
 
 ```bash
-# Clone the project
-git clone <repository-url>
+# Clonar o projeto
+git clone <url-do-repositorio>
 cd lh_nautical
 
-# Check the remote
+# Verificar o remote
 git remote -v
 
-# Create a branch to work on (never work on main)
-git checkout -b feat/my-feature
+# Criar uma branch para trabalhar (nunca trabalhe na main)
+git checkout -b feat/minha-feature
 
-# Check file status
+# Verificar status dos arquivos
 git status
 ```
 
-### Commit best practices
+### Boas práticas de commit
 
 ```bash
-# Add specific files (avoid git add .)
+# Adicionar arquivos específicos (evite git add .)
 git add src/ingestion/extract_lh_nautical.py
 git add databricks.yml
 
-# Commit with a descriptive message
-git commit -m "feat: add parameterization to extraction script"
+# Commit com mensagem descritiva
+git commit -m "feat: adiciona parametrização no script de extração"
 
-# Message convention:
-#   feat:      new feature
-#   fix:       bug fix
-#   chore:     maintenance task
-#   docs:      documentation
-#   refactor:  internal change without behavior change
+# Convenção de mensagens:
+#   feat:      nova funcionalidade
+#   fix:       correção de bug
+#   chore:     tarefa de manutenção
+#   docs:      documentação
+#   refactor:  mudança interna sem alterar comportamento
 
-# Push to remote
-git push origin feat/my-feature
+# Push para o remote
+git push origin feat/minha-feature
 ```
 
-> ⚠️ The `.databricks/` directory is in `.gitignore` — it is generated locally by the CLI and should **never** be versioned.
+> ⚠️ O diretório `.databricks/` está no `.gitignore` — é gerado localmente pela CLI e **nunca** deve ser versionado.
 
 ---
 
-## 2. Databricks CLI — installation & setup
+## 2. Databricks CLI — instalação e configuração
 
-### Install
+### Instalar
 
 ```bash
 # Windows (PowerShell)
@@ -89,180 +89,183 @@ brew install databricks/tap/databricks
 # Linux (curl)
 curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
 
-# Verify installation
+# Verificar instalação
 databricks --version
 ```
 
-### Authentication
+### Autenticação
 
-You need to authenticate the CLI to your Databricks workspace.
+Você precisa autenticar a CLI no seu workspace Databricks.
 
 ```bash
-# Interactive login (opens browser)
-databricks auth login --host https://<workspace-url>
+# Login interativo (abre o navegador)
+databricks auth login --host https://<url-do-workspace>
 
-# Verify authentication
-databricks auth token --host https://<workspace-url>
+# Verificar autenticação
+databricks auth token --host https://<url-do-workspace>
 ```
 
-> 💡 The workspace URL looks like `https://dbc-xxxxx-xxxx.cloud.databricks.com`.
+> 💡 A URL do workspace tem o formato `https://dbc-xxxxx-xxxx.cloud.databricks.com`.
 
-### Configure a profile (optional but recommended)
+### Configurar um profile (opcional, mas recomendado)
 
 ```bash
-# List existing profiles
+# Listar profiles existentes
 databricks auth profiles
 
-# Create a project-specific profile
-databricks auth login --host https://<workspace-url> --profile lh_nautical_dev
+# Criar um profile específico para o projeto
+databricks auth login --host https://<url-do-workspace> --profile lh_nautical_dev
 ```
 
 ---
 
 ## 3. Databricks Asset Bundle (DAB) — deploy
 
-This project uses **Databricks Asset Bundles** to declare jobs, permissions, and resources as code (YAML + Terraform).
+Este projeto utiliza **Databricks Asset Bundles** para declarar jobs, permissões e recursos como código (YAML + Terraform).
 
-### Bundle structure
+### Estrutura do bundle
 
 ```
 lh_nautical/
-├── databricks.yml                     ← Main bundle config
-├── .gitignore                         ← Git-ignored files
-├── README.md                          ← This documentation
+├── databricks.yml                     ← Config principal do bundle
+├── .gitignore                         ← Arquivos ignorados pelo Git
+├── README.md                          ← Esta documentação
+├── bitbucket-pipelines.yml            ← Pipeline CI/CD (Bitbucket)
 │
 ├── resources/
 │   └── extract/
-│       ├── extract_lh_nautical.yml    ← Job: SQL Server → Bronze
-│       └── extract_exchange_rates.yml ← Job: API BCB → Bronze
+│       ├── extract_lh_nautical.yml    ← Job: SQL Server → Bronze (gerado)
+│       ├── extract_exchange_rates.yml ← Job: API BCB → Bronze
+│       └── generate_dab_lh_nautical.py ← Script gerador do YAML
 │
 ├── src/
 │   ├── ingestion/
-│   │   ├── config.py                  ← Constants (JDBC URL, tables, schemas)
-│   │   ├── utils.py                   ← Shared functions (Spark, Delta)
-│   │   ├── extract_lh_nautical.py     ← Extraction: SQL Server → Bronze
-│   │   └── extract_exchange_rates.py  ← Extraction: API BCB → Bronze
-│   ├── dbt/                           ← dbt ecosystem
-│   └── analytics_ai/                  ← ML and Generative AI
+│   │   ├── config.py                  ← Constantes (JDBC URL, tabelas, schemas)
+│   │   ├── utils.py                   ← Funções compartilhadas (Spark, Delta)
+│   │   ├── extract_lh_nautical.py     ← Extração: SQL Server → Bronze
+│   │   └── extract_exchange_rates.py  ← Extração: API BCB → Bronze
+│   ├── dbt/                           ← Ecossistema dbt
+│   └── analytics_ai/                  ← ML e IA Generativa
 │
 ├── docs/
-│   ├── dab_configuration.md           ← DAB config & governance
-│   ├── dictionary.md                  ← Data dictionary
-│   ├── extract_lh_nautical.md         ← Docs: SQL Server extraction
-│   └── extract_exchange_rates.md      ← Docs: API BCB extraction
+│   ├── dab_configuration.md           ← Config do DAB e governança
+│   ├── dictionary.md                  ← Dicionário de dados
+│   ├── extract_lh_nautical.md         ← Docs: extração SQL Server
+│   ├── extract_exchange_rates.md      ← Docs: extração API BCB
+│   └── sp_prod_deploy.md              ← Docs: CI/CD e Service Principal
 │
-└── tests/                             ← Test scripts
+└── tests/                             ← Scripts de teste
 ```
 
-### Essential commands
+### Comandos essenciais
 
 ```bash
-# Validate the bundle config (without deploying)
+# Validar a config do bundle (sem deploy)
 databricks bundle validate
 
-# Generate the deployment plan (shows what will be created/changed)
+# Gerar o plano de deploy (mostra o que será criado/alterado)
 databricks bundle plan --target dev
 
-# Deploy to dev environment
+# Deploy no ambiente de dev
 databricks bundle deploy --target dev
 
-# Run the job immediately (after deploy)
+# Rodar o job imediatamente (após deploy)
 databricks bundle run extract_lh_nautical --target dev
 
-# Check job status in terminal
+# Verificar status do job no terminal
 databricks bundle run extract_lh_nautical --target dev --refresh-all
 
-# Destroy created resources (careful!)
+# Destruir recursos criados (cuidado!)
 databricks bundle destroy --target dev
 ```
 
-### Available targets
+### Targets disponíveis
 
-| Target | Unity Catalog      | Mode        | Usage               |
-| ------ | ------------------ | ----------- | ------------------- |
-| `dev`  | `dev_lh_nautical`  | Development | Testing, iterations |
-| `prod` | `prod_lh_nautical` | Production  | Official data       |
+| Target | Unity Catalog      | Modo        | Uso                  |
+| ------ | ------------------ | ----------- | -------------------- |
+| `dev`  | `dev_lh_nautical`  | Development | Testes, iterações    |
+| `prod` | `prod_lh_nautical` | Production  | Dados oficiais       |
 
 ```bash
-# Deploy to production (after testing in dev)
+# Deploy em produção (após testar no dev)
 databricks bundle deploy --target prod
 
-# Run the job in production
+# Rodar o job em produção
 databricks bundle run extract_lh_nautical --target prod
 ```
 
-> ⚠️ For production deploy, it is recommended to use a **Service Principal** instead of a personal user. See the best practices section.
+> ⚠️ Para deploy em produção, é recomendável usar uma **Service Principal** em vez de um usuário pessoal. Veja a seção de boas práticas.
 
 ---
 
-## 4. SQL Server connection
+## 4. Conexão com o SQL Server
 
-The extraction script connects to SQL Server via JDBC. Credentials are managed by **Databricks Secrets**, not by local files.
+O script de extração conecta ao SQL Server via JDBC. As credenciais são gerenciadas pelo **Databricks Secrets**, não por arquivos locais.
 
 ```bash
-# Create/update a secret scope in Databricks (done once)
+# Criar/atualizar um scope de segredos no Databricks (feito uma vez)
 databricks secrets create-scope --scope lh_nautical
 
-# Add the database password as a secret
+# Adicionar a senha do banco como segredo
 databricks secrets put --scope lh_nautical --key secret_lh_nautical_bd
-# (the CLI will ask for the value — type the password)
+# (a CLI vai pedir o valor — digite a senha)
 
-# List existing secrets
+# Listar segredos existentes
 databricks secrets list --scope lh_nautical
 ```
 
-In the code (`src/ingestion/extract_lh_nautical.py`), the password is read like this:
+No código (`src/ingestion/extract_lh_nautical.py`), a senha é lida assim:
 
 ```python
 password = dbutils.secrets.get("lh_nautical", "secret_lh_nautical_bd")
 ```
 
-> 🔒 **Never** put passwords, tokens, or full URLs in versioned code. **Always** use Databricks Secrets or environment variables.
+> 🔒 **Nunca** coloque senhas, tokens ou URLs completas em código versionado. **Sempre** use Databricks Secrets ou variáveis de ambiente.
 
 ---
 
-## 5. Local environment (optional — testing)
+## 5. Ambiente local (opcional — testes)
 
-If you want to test scripts locally with **Databricks Connect**:
+Se quiser testar scripts localmente com **Databricks Connect**:
 
 ```bash
-# Create virtual environment
+# Criar ambiente virtual
 python -m venv .venv
 
-# Activate
+# Ativar
 # Windows:
 .venv\Scripts\Activate.ps1
 # macOS/Linux:
 source .venv/bin/activate
 
-# Install dependencies (if requirements.txt exists)
+# Instalar dependências
 pip install -r requirements.txt
 
-# Set environment variables for Databricks Connect
-export DATABRICKS_HOST=https://<workspace-url>
-export DATABRICKS_TOKEN=<your-token>
+# Configurar variáveis de ambiente para o Databricks Connect
+export DATABRICKS_HOST=https://<url-do-workspace>
+export DATABRICKS_TOKEN=<seu-token>
 ```
 
-To run tests with pytest connected to Databricks:
+Para rodar testes com pytest conectado ao Databricks:
 
 ```bash
 pytest tests/ -v
 ```
 
-> 💡 The `tests/conftest.py` file already sets up the Spark session via `DatabricksSession` for testing.
+> 💡 O arquivo `tests/conftest.py` já configura a sessão Spark via `DatabricksSession` para testes.
 
 ---
 
-## 6. Project structure
+## 6. Estrutura do projeto
 
-### Architecture overview
+### Visão geral da arquitetura
 
 ```
       SQL Server (ERP)              API PTAX (BCB)
             │                              │
             ▼ ─── JDBC (full)              ▼ ─── HTTP (incremental)
 ┌─────────────────────────┐    ┌─────────────────────────┐
-│    Bronze (ingestion)   │    │    Bronze (ingestion)   │
+│    Bronze (ingestão)    │    │    Bronze (ingestão)    │
 │  extract_lh_nautical.py │    │ extract_exchange_rates.py│
 └───────────┬─────────────┘    └───────────┬─────────────┘
             │                              │
@@ -270,78 +273,105 @@ pytest tests/ -v
                            │
                            ▼ ─── dbt
                   ┌─────────────────┐
-                  │     Silver      │ ← Cleaning & standardization
+                  │     Silver      │ ← Limpeza e padronização
                   └────────┬────────┘
                            │
                            ▼ ─── dbt
                   ┌─────────────────┐
-                  │      Gold       │ ← Business analytics models
+                  │      Gold       │ ← Modelos analíticos de negócio
                   └────────┬────────┘
                            │
-                           ├── → Dashboards (visualizations)
-                           ├── → Machine Learning (predictive models)
-                           └── → Gen AI (intelligent assistants)
+                           ├── → Dashboards (visualizações)
+                           ├── → Machine Learning (modelos preditivos)
+                           └── → Gen AI (assistentes inteligentes)
 ```
 
 ---
 
-## 7. Best practices
+## 7. Boas práticas
 
 ### Git
 
-- **Never** commit to the `main` branch — always create feature branches.
-- Use `.gitignore` to avoid versioning generated files, secrets, `.env`, `.databricks/`.
-- Keep commits small and descriptive.
-- Always run `git pull` before starting work to avoid conflicts.
+- **Nunca** faça commit na branch `main` — sempre crie branches de funcionalidade.
+- Use `.gitignore` para evitar versionar arquivos gerados, segredos, `.env`, `.databricks/`.
+- Mantenha commits pequenos e descritivos.
+- Sempre rode `git pull` antes de começar a trabalhar para evitar conflitos.
 
-### Security
+### Segurança
 
-- **Never** version passwords, tokens, or internal URLs.
-- Use **Databricks Secrets** for database credentials.
-- In the `prod` target, configure a **Service Principal** instead of using your personal user.
+- **Nunca** versione senhas, tokens ou URLs internas.
+- Use **Databricks Secrets** para credenciais de banco de dados.
+- No target `prod`, configure uma **Service Principal** em vez de usar seu usuário pessoal.
 
 ```yaml
-# databricks.yml (prod target)
+# databricks.yml (target prod)
 run_as:
-  service_principal_name: <service-principal-id>
+  service_principal_name: <id-da-service-principal>
 ```
 
 ### Deploy
 
-- Always deploy and test in `dev` before going to `prod`.
-- Use `databricks bundle validate` to check for syntax errors.
-- Review the plan with `databricks bundle plan` before applying.
+- Sempre faça deploy e teste no `dev` antes de ir para o `prod`.
+- Use `databricks bundle validate` para verificar erros de sintaxe.
+- Revise o plano com `databricks bundle plan` antes de aplicar.
+
+### Retry automático
+
+Os scripts de extração possuem retry automático via biblioteca `tenacity`:
+
+| Componente | Tentativas | Espera | Exceções |
+|------------|------------|--------|----------|
+| SQL Server | 3 | Exponencial (2s, 4s, 8s) | Qualquer Exception |
+| API PTAX | 3 | Exponencial (2s, 4s, 8s) | RequestException, Timeout |
+
+### Agendamento
+
+Os jobs rodam automaticamente às **00:00** e **18:00** (horário de Brasília):
+
+| Job | Horários |
+|-----|----------|
+| extract_lh_nautical | 00:00 e 18:00 |
+| extract_exchange_rates | 00:00 e 18:00 |
+
+### CI/CD (Bitbucket)
+
+O pipeline `bitbucket-pipelines.yml` executa automaticamente ao fazer push na branch `main`:
+
+1. Valida o bundle
+2. Faz deploy em produção
+3. Roda os jobs de extração
 
 ---
 
-## Project roadmap
+## Roadmap do projeto
 
-| Phase                  | Deliverable                                                             | Status     |
-| ---------------------- | ----------------------------------------------------------------------- | ---------- |
-| **Bronze** (ingestion) | Extract all 24 tables from SQL Server to Unity Catalog                  | ⏳ Current |
-| **Silver** (dbt)       | Data cleaning, standardization, deduplication, correct typing           | ⏳ Next    |
-| **Gold** (dbt)         | Analytics models ready for consumption (business metrics, aggregations) | ⏳ Future  |
-| **Dashboards**         | Visualizations and dashboards (Databricks SQL or BI tool)               | ⏳ Future  |
-| **Machine Learning**   | Predictive models (e.g., demand forecasting, churn, etc.)               | ⏳ Future  |
-| **Gen AI**             | Intelligent assistants, natural language analysis, recommendations      | ⏳ Future  |
-
----
-
-## Documentation
-
-| Document | Description |
-| -------- | ----------- |
-| `docs/dab_configuration.md` | DAB config, YAML structure, governance & permissions |
-| `docs/dictionary.md` | Data dictionary (tables, columns, relationships) |
-| `docs/extract_lh_nautical.md` | SQL Server → Bronze extraction docs |
-| `docs/extract_exchange_rates.md` | API BCB → Bronze extraction docs |
+| Fase                    | Entregável                                                               | Status     |
+| ----------------------- | ------------------------------------------------------------------------ | ---------- |
+| **Bronze** (ingestão)   | Extrair 24 tabelas do SQL Server para Unity Catalog                      | ⏳ Atual   |
+| **Silver** (dbt)        | Limpeza, padronização, desduplicação e tipagem correta dos dados         | ⏳ Próximo |
+| **Gold** (dbt)          | Modelos analíticos prontos para consumo (métricas de negócio, agregações)| ⏳ Futuro  |
+| **Dashboards**          | Visualizações e dashboards (Databricks SQL ou ferramenta de BI)          | ⏳ Futuro  |
+| **Machine Learning**    | Modelos preditivos (ex: previsão de demanda, churn, etc.)                | ⏳ Futuro  |
+| **Gen AI**              | Assistentes inteligentes, análise em linguagem natural, recomendações    | ⏳ Futuro  |
 
 ---
 
-## References
+## Documentação
 
-- [Databricks Asset Bundles — Documentation](https://docs.databricks.com/en/dev-tools/bundles/index.html)
-- [Databricks CLI — Installation](https://docs.databricks.com/en/dev-tools/cli/tutorial.html)
+| Documento | Descrição |
+| --------- | --------- |
+| `docs/dab_configuration.md` | Config do DAB, estrutura YAML, governança e permissões |
+| `docs/dictionary.md` | Dicionário de dados (tabelas, colunas, relacionamentos) |
+| `docs/extract_lh_nautical.md` | Docs: extração SQL Server → Bronze |
+| `docs/extract_exchange_rates.md` | Docs: extração API BCB → Bronze |
+| `docs/sp_prod_deploy.md` | Docs: CI/CD, Service Principal e deploy em produção |
+
+---
+
+## Referências
+
+- [Databricks Asset Bundles — Documentação](https://docs.databricks.com/en/dev-tools/bundles/index.html)
+- [Databricks CLI — Instalação](https://docs.databricks.com/en/dev-tools/cli/tutorial.html)
 - [Databricks Secrets](https://docs.databricks.com/en/security/secrets/index.html)
 - [Databricks Connect](https://docs.databricks.com/en/dev-tools/databricks-connect/index.html)
 - [Conventional Commits](https://www.conventionalcommits.org/)

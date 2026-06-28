@@ -3,6 +3,12 @@
 import argparse
 import traceback
 
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
 from pyspark.sql import functions as F
 
 from config import (
@@ -67,6 +73,14 @@ def read_source_data(spark, jdbc_password, table_name):
 # ── Orquestracao ─────────────────────────────────────────
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type(Exception),
+    before_sleep=lambda rs: print(
+        f"⏳ Tentativa {rs.attempt_number}/3 falhou, retrying in {rs.next_action.sleep}s..."
+    ),
+)
 def extract_table(spark, table_name, jdbc_password, catalog, schema):
     """Extrai uma tabela do SQL Server para Bronze."""
     target = f"{catalog}.{schema}.{table_name}"

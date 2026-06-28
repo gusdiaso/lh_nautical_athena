@@ -52,3 +52,6 @@ TABLES = [
     "stock_levels",
     "stock_movements",
 ]
+
+# ── Lista de moedas para extrair ────────────────────────
+CURRENCIES = ["USD", "EUR"]

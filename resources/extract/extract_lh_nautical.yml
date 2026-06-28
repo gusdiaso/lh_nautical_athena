@@ -1,7 +1,12 @@
-# Variáveis reutilizáveis do job
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  ARQUIVO GERADO AUTOMATICAMENTE - NAO EDITAR MANUALMENTE     ║
+# ║  Execute: python generate_dab.py para regenerar              ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+# Variaveis reutilizaveis do job
 variables:
   catalog:
-    description: 'Catálogo no Unity Catalog'
+    description: 'Catalogo no Unity Catalog'
   schema:
     description: 'Schema de destino no Unity Catalog'
     default: bronze
@@ -18,7 +23,7 @@ targets:
       catalog: prod_lh_nautical
       schema: bronze
 
-# Job de extração para a camada Bronze
+# Job de extracao para a camada Bronze
 resources:
   jobs:
     extract_lh_nautical:
@@ -27,7 +32,7 @@ resources:
       max_concurrent_runs: 1
 
       schedule:
-        quartz_cron_expression: '0 0 18 * * ?'
+        quartz_cron_expression: '0 0 0,18 * * ?'
         timezone_id: 'America/Sao_Paulo'
         pause_status: UNPAUSED
 
@@ -35,178 +40,11 @@ resources:
         - environment_key: default
           spec:
             environment_version: '2'
-            dependencies: []
+            dependencies:
+              - tenacity
 
-      # Uma task por tabela
+      # Uma task por tabela (gerado automaticamente)
       tasks:
-        - task_key: extract_order_items
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - order_items
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
-        - task_key: extract_payments
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - payments
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
-        - task_key: extract_fiscal_invoices
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - fiscal_invoices
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
-        - task_key: extract_purchase_orders
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - purchase_orders
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
-        - task_key: extract_purchase_order_items
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - purchase_order_items
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
-        - task_key: extract_customers
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - customers
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
-        - task_key: extract_goods_receipts
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - goods_receipts
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
-        - task_key: extract_suppliers
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - suppliers
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
-        - task_key: extract_goods_receipt_items
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - goods_receipt_items
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
-        - task_key: extract_locations
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - locations
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
-        - task_key: extract_returns
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - returns
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
-        - task_key: extract_employees
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - employees
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
-        - task_key: extract_addresses
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - addresses
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
-        - task_key: extract_return_items
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - return_items
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
         - task_key: extract_categories
           environment_key: default
           spark_python_task:
@@ -218,7 +56,6 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
-
         - task_key: extract_brands
           environment_key: default
           spark_python_task:
@@ -230,31 +67,17 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
-
-        - task_key: extract_products
+        - task_key: extract_locations
           environment_key: default
           spark_python_task:
             python_file: ../../src/ingestion/extract_lh_nautical.py
             parameters:
               - --table
-              - products
+              - locations
               - --catalog
               - ${var.catalog}
               - --schema
               - ${var.schema}
-
-        - task_key: extract_product_variants
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - product_variants
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
         - task_key: extract_attributes
           environment_key: default
           spark_python_task:
@@ -266,7 +89,72 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
-
+        - task_key: extract_employees
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - employees
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+        - task_key: extract_customers
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - customers
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+        - task_key: extract_addresses
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - addresses
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+        - task_key: extract_suppliers
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - suppliers
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+        - task_key: extract_products
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - products
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+        - task_key: extract_product_variants
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - product_variants
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
         - task_key: extract_variant_attribute_values
           environment_key: default
           spark_python_task:
@@ -278,7 +166,6 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
-
         - task_key: extract_product_suppliers
           environment_key: default
           spark_python_task:
@@ -290,7 +177,116 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
-
+        - task_key: extract_purchase_orders
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - purchase_orders
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+        - task_key: extract_purchase_order_items
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - purchase_order_items
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+        - task_key: extract_goods_receipts
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - goods_receipts
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+        - task_key: extract_goods_receipt_items
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - goods_receipt_items
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+        - task_key: extract_orders
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - orders
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+        - task_key: extract_order_items
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - order_items
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+        - task_key: extract_payments
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - payments
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+        - task_key: extract_fiscal_invoices
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - fiscal_invoices
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+        - task_key: extract_returns
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - returns
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+        - task_key: extract_return_items
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/ingestion/extract_lh_nautical.py
+            parameters:
+              - --table
+              - return_items
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
         - task_key: extract_stock_levels
           environment_key: default
           spark_python_task:
@@ -302,7 +298,6 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
-
         - task_key: extract_stock_movements
           environment_key: default
           spark_python_task:
@@ -310,18 +305,6 @@ resources:
             parameters:
               - --table
               - stock_movements
-              - --catalog
-              - ${var.catalog}
-              - --schema
-              - ${var.schema}
-
-        - task_key: extract_orders
-          environment_key: default
-          spark_python_task:
-            python_file: ../../src/ingestion/extract_lh_nautical.py
-            parameters:
-              - --table
-              - orders
               - --catalog
               - ${var.catalog}
               - --schema

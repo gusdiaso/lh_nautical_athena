@@ -21,3 +21,4 @@ scratch/**
 .vscode/launch.json
 .vscode/tasks.json
 .vscode/__builtins__.pyi
+tests/secrets.py

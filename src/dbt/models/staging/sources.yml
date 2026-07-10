@@ -1,0 +1,32 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: "Tabelas brutas da LH Nautical carregadas no Databricks."
+    catalog: dev_lh_nautical
+    schema: bronze
+
+    tables:
+      - name: stock_movements
+        description: "Movimentações de entrada e saída de estoque."
+
+      - name: returns
+        description: "Registros de devoluções de pedidos."
+
+      - name: addresses
+        description: "Endereços cadastrados dos clientes."
+
+      - name: product_variants
+        description: "Variações e SKUs dos produtos."
+
+      - name: suppliers
+        description: "Cadastro de fornecedores."
+
+      - name: stock_levels
+        description: "Saldos de estoque por produto e localização."
+
+      - name: variant_attribute_values
+        description: "Valores dos atributos associados às variações de produtos."
+
+      - name: exchange_rates
+        description: "Cotações de moedas ingeridas para conversão cambial."

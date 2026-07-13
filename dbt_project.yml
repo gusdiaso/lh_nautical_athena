@@ -5,9 +5,9 @@ profile: 'lh_nautical'
 
 model-paths: ["src/dbt/models"]
 analysis-paths: ["analyses"]
-test-paths: ["tests"]
+test-paths: ["src/dbt/tests"]
 seed-paths: ["seeds"]
-macro-paths: ["macros"]
+macro-paths: ["src/dbt/macros"]
 snapshot-paths: ["snapshots"]
 
 clean-targets:

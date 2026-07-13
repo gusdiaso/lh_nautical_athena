@@ -1,0 +1,85 @@
+version: 2
+
+models:
+  - name: stg_stock_movements
+    columns:
+      - name: stock_movement_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: movement_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - sale_out
+                  - purchase_in
+                  - return_in
+                  - return_out
+
+  - name: stg_returns
+    columns:
+      - name: return_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - cancelled
+                  - completed
+                  - open
+
+  - name: stg_addresses
+    columns:
+      - name: address_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_product_variants
+    columns:
+      - name: product_variant_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: sku
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_suppliers
+    columns:
+      - name: supplier_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_stock_levels
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - product_variant_id
+              - location_id
+
+  - name: stg_variant_attribute_values
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - product_variant_id
+              - attribute_id
+
+  - name: stg_exchange_rates
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - exchange_date
+              - currency_code

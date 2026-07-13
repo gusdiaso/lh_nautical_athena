@@ -1,0 +1,32 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: "Tabelas brutas da LH Nautical carregadas no Databricks."
+    catalog: dev_lh_nautical
+    schema: bronze
+
+    tables:
+      - name: categories
+        description: "Cadastro de categorias de produtos."
+
+      - name: brands
+        description: "Cadastro de marcas de produtos."
+
+      - name: employees
+        description: "Cadastro de colaboradores internos."
+
+      - name: customers
+        description: "Cadastro principal de clientes."
+
+      - name: orders
+        description: "Cabeecalho dos pedidos de venda."
+
+      - name: payments
+        description: "Transacoes financeiras vinculadas aos pedidos."
+
+      - name: goods_receipts
+        description: "Documentos de recebimento logistico de mercadorias."
+
+      - name: product_suppliers
+        description: "Relacao entre variantes de produto e fornecedores."

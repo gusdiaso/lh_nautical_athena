@@ -7,30 +7,6 @@ sources:
     schema: bronze
 
     tables:
-      - name: categories
-        description: "Cadastro de categorias de produtos."
-
-      - name: brands
-        description: "Cadastro de marcas de produtos."
-
-      - name: employees
-        description: "Cadastro de colaboradores internos."
-
-      - name: customers
-        description: "Cadastro principal de clientes."
-
-      - name: orders
-        description: "Cabeecalho dos pedidos de venda."
-
-      - name: payments
-        description: "Transacoes financeiras vinculadas aos pedidos."
-
-      - name: goods_receipts
-        description: "Documentos de recebimento logistico de mercadorias."
-
-      - name: product_suppliers
-        description: "Relacao entre variantes de produto e fornecedores."
-
       - name: stock_movements
         description: "Movimentações de entrada e saída de estoque."
 

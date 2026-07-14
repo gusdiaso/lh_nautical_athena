@@ -3,7 +3,6 @@ version: 2
 sources:
   - name: bronze
     description: "Tabelas brutas da LH Nautical carregadas no Databricks."
-    catalog: dev_lh_nautical
     schema: bronze
 
     tables:

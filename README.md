@@ -4,10 +4,11 @@
 
 O **LH Nautical** é um pipeline de dados completo construído no ecossistema **Databricks**, seguindo a **Arquitetura Medallion** (Bronze → Silver → Gold). O projeto extrai dados de um ERP SQL Server (24 tabelas de domínio náutico/comercial) e cotações de moedas USD/EUR da API do Banco Central, salvando tudo como tabelas **Delta Lake** no Unity Catalog.
 
-### Solução Atual (Bronze)
+### Solução Atual (Bronze + Silver)
 
 - **Ingestão SQL Server → Bronze**: Extração via JDBC de 24 tabelas (clientes, produtos, vendas, estoque, compras, etc.) com carga completa (full overwrite)
 - **Ingestão API BCB → Bronze**: Extração incremental de cotações PTAX (USD/EUR) via HTTP com merge/upsert
+- **Transformação dbt → Silver**: Staging (views) e Intermediate (tables) com limpeza, padronização e testes
 - **Infraestrutura como Código**: Databricks Asset Bundles (DAB) para declarar jobs e permissões
 - **CI/CD**: Pipeline automatizado via Bitbucket Pipelines (deploy em produção)
 - **Retry Automático**: Tratamento de falhas de conexão com tenacity (3 tentativas, backoff exponencial)
@@ -17,7 +18,7 @@ O **LH Nautical** é um pipeline de dados completo construído no ecossistema **
 
 | Fase                 | Descrição                                                     | Status          |
 | -------------------- | ------------------------------------------------------------- | --------------- |
-| **Silver**           | Transformações com dbt: limpeza, padronização, desduplicação  | Em planejamento |
+| **Silver**           | Transformações com dbt: limpeza, padronização, desduplicação  | Em andamento    |
 | **Gold**             | Modelos analíticos prontos para consumo (métricas de negócio) | Em planejamento |
 | **Dashboards**       | Visualizações e relatórios                                    | Futuro          |
 | **Machine Learning** | Modelos preditivos (previsão de demanda, churn)               | Futuro          |
@@ -39,13 +40,28 @@ O **LH Nautical** é um pipeline de dados completo construído no ecossistema **
 
 ---
 
+## Configuração do dbt
+
+> Para detalhes completos, veja [docs/dbt_configuration.md](docs/dbt_configuration.md).
+
+O projeto dbt se conecta ao Databricks Unity Catalog e organiza os dados em camadas:
+
+| Camada | Catalogo | Schema | Materialização |
+|--------|----------|--------|----------------|
+| Bronze | `dev_lh_nautical` / `prod_lh_nautical` | `bronze` | (fonte) |
+| Staging | `dev_lh_nautical` / `prod_lh_nautical` | `silver` | view |
+| Intermediate | `dev_lh_nautical` / `prod_lh_nautical` | `silver` | table |
+| Marts | `dev_lh_nautical` / `prod_lh_nautical` | `gold` | table |
+
+---
+
 ## Passo a Passo: Executar o Pipeline
 
 ### Pré-requisitos
 
 | Ferramenta                                                                   | Versão mín. | Instalação                                |
 | ---------------------------------------------------------------------------- | ----------- | ----------------------------------------- |
-| [Python](https://www.python.org/downloads/)                                  | 3.10+       | `winget install Python.Python.3.12`       |
+| [Python](https://www.python.org/downloads/)                                  | 3.12 (recomendado) | `winget install Python.Python.3.12`       |
 | [Git](https://git-scm.com/downloads)                                         | —           | `winget install Git.Git`                  |
 | [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/tutorial.html) | v1.x        | `winget install Databricks.DatabricksCLI` |
 
@@ -67,6 +83,22 @@ databricks auth token --host https://<url-do-workspace>
 ```
 
 > A URL do workspace tem o formato `https://dbc-xxxxx-xxxx.cloud.databricks.com`.
+
+### Passo 2: Criar variáveis de ambiente
+
+Crie o arquivo `.env` na raiz do projeto com suas credenciais:
+
+```
+# Dev - seu token pessoal
+DBT_DATABRICKS_TOKEN=seu_token_aqui
+DBT_HTTP_PATH=sql/1.0/warehouses/seu_warehouse_id
+
+# Prod - token da Service Principal
+DBT_DATABRICKS_TOKEN_PROD=token_da_sp_aqui
+```
+
+> O arquivo `.env` já está no `.gitignore` e não será versionado.
+> Para gerar o token da Service Principal, veja [docs/dbt_configuration.md](docs/dbt_configuration.md).
 
 ### Passo 3: Configurar segredos (uma única vez)
 
@@ -100,8 +132,8 @@ databricks bundle run extract_exchange_rates --target dev
 
 ### Passo 6: Verificar resultados
 
-- Acesse o Databricks Workspace → Catalog → `dev_lh_nautical` → `bronze`
-- Verifique as 25 tabelas Delta Lake criadas (24 do SQL Server + 1 de exchange rates)
+- **Bronze**: Databricks Workspace → Catalog → `dev_lh_nautical` → `bronze` (25 tabelas Delta Lake)
+- **Silver**: Databricks Workspace → Catalog → `dev_lh_nautical` → `silver` (staging views + intermediate tables)
 
 ---
 
@@ -123,6 +155,18 @@ databricks bundle run extract_exchange_rates --target prod
 
 # Destruir recursos criados (cuidado!)
 databricks bundle destroy --target dev
+
+# dbt - desenvolvimento
+source .env
+dbt debug
+dbt run
+dbt test
+
+# dbt - produção (usa Service Principal)
+source .env
+dbt debug --target prod
+dbt run --target prod
+dbt test --target prod
 ```
 
 ---
@@ -157,6 +201,9 @@ pytest tests/ -v --databricks
 ```
 lh_nautical/
 ├── databricks.yml                         # Config principal do DAB
+├── dbt_project.yml                        # Config dbt (models, schemas)
+├── profiles.yml                           # Conexão dbt → Databricks
+├── .env                                   # Variáveis de ambiente (não versionado)
 ├── bitbucket-pipelines.yml                # Pipeline CI/CD
 ├── requirements.txt                       # Dependências Python
 ├── resources/
@@ -170,14 +217,21 @@ lh_nautical/
 │   │   ├── utils.py                       # Funções compartilhadas (Spark, Delta)
 │   │   ├── extract_lh_nautical.py         # Extração SQL Server
 │   │   └── extract_exchange_rates.py      # Extração API BCB
-│   ├── dbt/                               # Transformações dbt (futuro)
+│   ├── dbt/                               # Transformações dbt
+│   │   ├── models/
+│   │   │   ├── staging/                   # Cópia organizada dos dados brutos
+│   │   │   ├── intermediate/              # Limpeza e validação
+│   │   │   └── marts/                     # Modelo dimensional (futuro)
+│   │   ├── macros/                        # Funções reutilizáveis
+│   │   └── tests/                         # Testes de qualidade
 │   └── analytics_ai/                      # ML e Gen AI (futuro)
 ├── docs/                                  # Documentação
 │   ├── dictionary.md                      # Dicionário de dados
 │   ├── extract_lh_nautical.md             # Docs extração SQL Server
 │   ├── extract_exchange_rates.md          # Docs extração API BCB
 │   ├── dab_configuration.md               # Configuração DAB
-│   └── sp_prod_deploy.md                  # CI/CD e Service Principal
+│   ├── sp_prod_deploy.md                  # CI/CD e Service Principal
+│   └── dbt_configuration.md              # Configuração do dbt
 └── tests/
     ├── notebooks/                         # Notebooks de teste
     └── sql/                               # Scripts SQL de teste
@@ -198,14 +252,19 @@ SQL Server (ERP)                API PTAX (BCB)
             │                              │
             └──────────────┬───────────────┘
                            │
-                           ▼ ─── dbt (FUTURO)
+                           ▼ ─── dbt
                   ┌─────────────────┐
                   │     SILVER      │
+                  │  staging (view) │
+                  │  intermediate   │
+                  │    (table)      │
                   └────────┬────────┘
                            │
-                           ▼ ─── dbt (FUTURO)
+                           ▼ ─── dbt
                   ┌─────────────────┐
                   │      GOLD       │
+                  │    marts        │
+                  │    (table)      │
                   └────────┬────────┘
                            │
                            ├── → Dashboards
@@ -224,6 +283,7 @@ SQL Server (ERP)                API PTAX (BCB)
 | `docs/extract_exchange_rates.md` | Detalhes da extração API BCB → Bronze                      |
 | `docs/dab_configuration.md`      | Configuração do DAB e governança                           |
 | `docs/sp_prod_deploy.md`         | CI/CD e Service Principal                                  |
+| `docs/dbt_configuration.md`      | Configuração do dbt e profiles                             |
 
 ---
 
@@ -237,6 +297,24 @@ SQL Server (ERP)                API PTAX (BCB)
 ---
 
 ## Boas Práticas e Dicas
+
+### Convenções de Código SQL
+
+O projeto adota a convenção **leading comma** para formatação de queries SQL:
+
+```sql
+SELECT
+    coluna_um
+    , coluna_dois
+    , coluna_tres
+FROM tabela
+WHERE condicao = 'valor'
+```
+
+**Por que leading comma?**
+- Facilita a inclusão/remoção de colunas sem alterar linhas anteriores
+- Melhora a revisão de código no Git (diff mais limpo)
+- Padrão adotado pelo time para manter consistência
 
 ### Git
 

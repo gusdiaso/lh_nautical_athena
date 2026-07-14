@@ -134,6 +134,22 @@ models:
         data_tests:
           - not_null
           - unique
+      
+      - name: brand_id
+        data_tests:
+          - not_null
+
+      - name: category_id
+        data_tests:
+          - not_null
+
+      - name: is_active
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
 
   - name: stg_locations
     columns:
@@ -142,6 +158,14 @@ models:
           - not_null
           - unique
 
+      - name: postal_code
+        data_tests:
+          - not_null
+
+      - name: number
+        data_tests:
+          - not_null
+          
       - name: location_type
         data_tests:
           - accepted_values:
@@ -149,6 +173,14 @@ models:
                 values:
                   - store
                   - warehouse
+
+      - name: is_active
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
 
   - name: stg_purchase_order_items
     columns:
@@ -164,9 +196,30 @@ models:
           - not_null
           - unique
 
+      - name: goods_receipt_id
+        data_tests:
+          - not_null
+
+      - name: purchase_order_item_id
+        data_tests:
+          - not_null
+
   - name: stg_attributes
     columns:
       - name: attribute_id
         data_tests:
           - not_null
           - unique
+      
+      - name: attribute_name
+        data_tests:
+          - not_null
+
+      - name: data_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - text
+                  - number
+                  - boolean

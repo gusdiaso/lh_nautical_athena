@@ -9,7 +9,7 @@ with source as (
 
 select
     id as attribute_id
-    , attribute_name
+    , name as attribute_name
     , data_type
 
 from source

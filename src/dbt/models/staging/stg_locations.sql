@@ -9,7 +9,7 @@ with source as (
 
 select
     id as location_id
-    , location_name
+    , name as location_name
     , location_type
     , postal_code
     , street
@@ -20,7 +20,5 @@ select
     , state
     , country
     , is_active
-    , created_at
-    , updated_at
 
 from source

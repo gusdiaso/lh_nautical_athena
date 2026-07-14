@@ -1,0 +1,139 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: "Dimensão calendário usada como base temporal dos marts do Danilo."
+    columns:
+      - name: sk_date
+        data_tests:
+          - not_null
+          - unique
+
+      - name: full_date
+        data_tests:
+          - not_null
+          - unique
+
+  - name: dim_brands
+    columns:
+      - name: sk_brand
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_brand_id
+        data_tests:
+          - not_null
+
+      - name: name
+        data_tests:
+          - not_null
+
+  - name: dim_categories
+    columns:
+      - name: sk_category
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_category_id
+        data_tests:
+          - not_null
+
+      - name: name
+        data_tests:
+          - not_null
+
+  - name: dim_customers
+    columns:
+      - name: sk_customer
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_customer_id
+        data_tests:
+          - not_null
+
+      - name: legal_name
+        data_tests:
+          - not_null
+
+  - name: dim_employees
+    columns:
+      - name: sk_employee
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_employee_id
+        data_tests:
+          - not_null
+
+      - name: full_name
+        data_tests:
+          - not_null
+
+  - name: fact_orders
+    columns:
+      - name: order_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: sk_date
+        data_tests:
+          - not_null
+
+      - name: order_number
+        data_tests:
+          - not_null
+
+  - name: fact_payments
+    columns:
+      - name: payment_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: sk_date
+        data_tests:
+          - not_null
+
+      - name: order_id
+        data_tests:
+          - not_null
+
+  - name: fact_goods_receipts
+    columns:
+      - name: goods_receipt_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: sk_date
+        data_tests:
+          - not_null
+
+      - name: purchase_order_id
+        data_tests:
+          - not_null
+
+  - name: fact_product_suppliers
+    columns:
+      - name: sk_product_supplier
+        data_tests:
+          - not_null
+          - unique
+
+      - name: sk_date
+        data_tests:
+          - not_null
+
+      - name: product_variant_id
+        data_tests:
+          - not_null
+
+      - name: supplier_id
+        data_tests:
+          - not_null

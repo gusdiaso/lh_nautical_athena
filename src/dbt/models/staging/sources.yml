@@ -29,3 +29,27 @@ sources:
 
       - name: exchange_rates
         description: "Cotações de moedas ingeridas para conversão cambial."
+
+      - name: purchase_orders
+        description: "Cabeçalho de pedidos de compra emitidos aos fornecedores."
+
+      - name: order_items
+        description: "Itens detalhados dos pedidos de venda."
+
+      - name: return_items
+        description: "Itens individuais de processos de devolução."
+
+      - name: products
+        description: "Cadastro base dos produtos (modelo pai)."
+
+      - name: locations
+        description: "Espaços físicos/lógicos: filiais, lojas e centros de distribuição."
+
+      - name: purchase_order_items
+        description: "Itens detalhados dos pedidos de compra."
+
+      - name: goods_receipt_items
+        description: "Itens recebidos fisicamente nos recebimentos de mercadoria."
+
+      - name: attributes
+        description: "Atributos customizáveis dos produtos (cor, tamanho, etc)."

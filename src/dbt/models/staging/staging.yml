@@ -83,3 +83,90 @@ models:
             combination_of_columns:
               - exchange_date
               - currency_code
+
+  - name: stg_purchase_orders
+    columns:
+      - name: purchase_order_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: po_number
+        data_tests:
+          - not_null
+
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - cancelled
+                  - draft
+                  - received
+                  - partially_received
+                  - sent
+
+  - name: stg_order_items
+    columns:
+      - name: order_item_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_return_items
+    columns:
+      - name: return_item_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: action
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - refund
+                  - exchange
+
+  - name: stg_products
+    columns:
+      - name: product_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_locations
+    columns:
+      - name: location_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: location_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - store
+                  - warehouse
+
+  - name: stg_purchase_order_items
+    columns:
+      - name: purchase_order_item_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_goods_receipt_items
+    columns:
+      - name: goods_receipt_item_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_attributes
+    columns:
+      - name: attribute_id
+        data_tests:
+          - not_null
+          - unique

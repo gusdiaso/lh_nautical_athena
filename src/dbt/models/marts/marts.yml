@@ -2,138 +2,350 @@ version: 2
 
 models:
   - name: dim_date
-    description: "Dimensão calendário usada como base temporal dos marts do Danilo."
+    description: "Dimensão calendário usada como base temporal para análises dos marts"
     columns:
       - name: sk_date
+        description: "Chave substituta da data no formato YYYYMMDD."
         data_tests:
           - not_null
           - unique
 
       - name: full_date
+        description: "Data completa no tipo date."
         data_tests:
           - not_null
           - unique
 
+      - name: day_number
+        description: "Número do dia no mês."
+
+      - name: month_number
+        description: "Número do mês."
+
+      - name: month_name
+        description: "Nome do mês por extenso."
+
+      - name: year
+        description: "Ano da data."
+
+      - name: day_of_week
+        description: "Nome do dia da semana."
+
+      - name: is_weekend
+        description: "Indica se a data cai em fim de semana."
+
   - name: dim_brands
+    description: "Dimensão de marcas padronizadas para análises de produto."
     columns:
       - name: sk_brand
+        description: "Chave substituta da marca baseada no identificador natural."
         data_tests:
           - not_null
           - unique
 
       - name: nk_brand_id
+        description: "Identificador natural da marca vindo da camada intermediate."
         data_tests:
           - not_null
 
       - name: name
+        description: "Nome da marca."
         data_tests:
           - not_null
 
+      - name: country
+        description: "País de origem da marca."
+
+      - name: is_active
+        description: "Indica se a marca está ativa."
+
   - name: dim_categories
+    description: "Dimensão hierárquica de categorias de produto."
     columns:
       - name: sk_category
+        description: "Chave substituta da categoria baseada no identificador natural."
         data_tests:
           - not_null
           - unique
 
       - name: nk_category_id
+        description: "Identificador natural da categoria."
         data_tests:
           - not_null
 
       - name: name
+        description: "Nome da categoria."
         data_tests:
           - not_null
 
+      - name: slug
+        description: "Slug padronizado da categoria."
+
+      - name: parent_category_id
+        description: "Identificador natural da categoria pai, quando existir."
+
+      - name: is_active
+        description: "Indica se a categoria está ativa."
+
   - name: dim_customers
+    description: "Dimensão de clientes com dados cadastrais consolidados."
     columns:
       - name: sk_customer
+        description: "Chave substituta do cliente baseada no identificador natural."
         data_tests:
           - not_null
           - unique
 
       - name: nk_customer_id
+        description: "Identificador natural do cliente."
         data_tests:
           - not_null
+
+      - name: person_type
+        description: "Tipo de pessoa do cliente."
 
       - name: legal_name
+        description: "Razão social ou nome legal do cliente."
         data_tests:
           - not_null
 
+      - name: trade_name
+        description: "Nome fantasia do cliente."
+
+      - name: tax_id
+        description: "Documento fiscal do cliente."
+
+      - name: state_registration
+        description: "Inscrição estadual do cliente."
+
+      - name: email
+        description: "E-mail principal de contato."
+
+      - name: phone
+        description: "Telefone principal de contato."
+
+      - name: is_active
+        description: "Indica se o cliente está ativo."
+
   - name: dim_employees
+    description: "Dimensão de funcionários usada para análises operacionais e comerciais."
     columns:
       - name: sk_employee
+        description: "Chave substituta do funcionário baseada no identificador natural."
         data_tests:
           - not_null
           - unique
 
       - name: nk_employee_id
+        description: "Identificador natural do funcionário."
         data_tests:
           - not_null
 
       - name: full_name
+        description: "Nome completo do funcionário."
         data_tests:
           - not_null
 
+      - name: cpf
+        description: "CPF do funcionário."
+
+      - name: email
+        description: "E-mail do funcionário."
+
+      - name: role
+        description: "Cargo ou função do funcionário."
+
+      - name: primary_location_id
+        description: "Localização principal associada ao funcionário."
+
+      - name: hire_date
+        description: "Data de admissão."
+
+      - name: termination_date
+        description: "Data de desligamento, quando existir."
+
+      - name: is_active
+        description: "Indica se o funcionário está ativo."
+
   - name: fact_orders
+    description: "Fato de pedidos de venda no grão de cabeçalho do pedido."
     columns:
       - name: order_id
+        description: "Identificador natural do pedido de venda."
         data_tests:
           - not_null
           - unique
 
       - name: sk_date
+        description: "Chave da dimensão calendário para a data do pedido."
         data_tests:
           - not_null
 
       - name: order_number
+        description: "Número de negócio do pedido."
         data_tests:
           - not_null
 
+      - name: sk_customer
+        description: "Chave do cliente associada ao pedido."
+
+      - name: sk_employee
+        description: "Chave do funcionário vendedor associado ao pedido."
+
+      - name: channel
+        description: "Canal de venda."
+
+      - name: customer_id
+        description: "Identificador natural do cliente usado no fato."
+
+      - name: salesperson_id
+        description: "Identificador natural do vendedor usado no fato."
+
+      - name: location_id
+        description: "Identificador natural da localização do pedido."
+
+      - name: status
+        description: "Status do pedido."
+
+      - name: subtotal
+        description: "Valor subtotal do pedido."
+
+      - name: discount_amount
+        description: "Valor do desconto aplicado."
+
+      - name: total
+        description: "Valor total do pedido."
+
+      - name: placed_at
+        description: "Data e hora de criação do pedido."
+
+      - name: created_at
+        description: "Timestamp de criação do registro."
+
+      - name: updated_at
+        description: "Timestamp da última atualização do registro."
+
   - name: fact_payments
+    description: "Fato de pagamentos vinculados aos pedidos de venda."
     columns:
       - name: payment_id
+        description: "Identificador natural do pagamento."
         data_tests:
           - not_null
           - unique
 
       - name: sk_date
+        description: "Chave da dimensão calendário para a data do pagamento."
         data_tests:
           - not_null
 
       - name: order_id
+        description: "Identificador natural do pedido relacionado ao pagamento."
         data_tests:
           - not_null
 
+      - name: sk_customer
+        description: "Chave do cliente associada ao pagamento via pedido."
+
+      - name: sk_employee
+        description: "Chave do funcionário associada ao pagamento via pedido."
+
+      - name: method
+        description: "Método de pagamento."
+
+      - name: installments
+        description: "Número de parcelas do pagamento."
+
+      - name: amount
+        description: "Valor pago."
+
+      - name: status
+        description: "Status do pagamento."
+
+      - name: paid_at
+        description: "Data e hora do pagamento."
+
+      - name: created_at
+        description: "Timestamp de criação do registro."
+
+      - name: updated_at
+        description: "Timestamp da última atualização do registro."
+
   - name: fact_goods_receipts
+    description: "Fato de recebimentos de mercadoria no grão de cabeçalho."
     columns:
       - name: goods_receipt_id
+        description: "Identificador natural do recebimento."
         data_tests:
           - not_null
           - unique
 
       - name: sk_date
+        description: "Chave da dimensão calendário para a data de recebimento."
         data_tests:
           - not_null
 
       - name: purchase_order_id
+        description: "Identificador natural do pedido de compra relacionado."
         data_tests:
           - not_null
 
+      - name: sk_employee
+        description: "Chave do funcionário que recebeu a mercadoria."
+
+      - name: received_by_employee_id
+        description: "Identificador natural do funcionário que recebeu a mercadoria."
+
+      - name: received_at
+        description: "Data e hora do recebimento."
+
+      - name: notes
+        description: "Observações do recebimento."
+
+      - name: created_at
+        description: "Timestamp de criação do registro."
+
+      - name: updated_at
+        description: "Timestamp da última atualização do registro."
+
   - name: fact_product_suppliers
+    description: "Fato de relacionamento entre variantes de produto e fornecedores."
     columns:
       - name: sk_product_supplier
+        description: "Chave substituta da relação produto-fornecedor."
         data_tests:
           - not_null
           - unique
 
       - name: sk_date
+        description: "Chave da dimensão calendário para a data de referência do relacionamento."
         data_tests:
           - not_null
 
       - name: product_variant_id
+        description: "Identificador natural da variante de produto."
         data_tests:
           - not_null
 
       - name: supplier_id
+        description: "Identificador natural do fornecedor."
         data_tests:
           - not_null
+
+      - name: supplier_sku
+        description: "SKU informado pelo fornecedor."
+
+      - name: last_quoted_cost
+        description: "Último custo cotado pelo fornecedor."
+
+      - name: lead_time_days
+        description: "Prazo de entrega em dias."
+
+      - name: is_preferred
+        description: "Indica se o fornecedor é preferencial para a variante."
+
+      - name: created_at
+        description: "Timestamp de criação do registro."
+
+      - name: updated_at
+        description: "Timestamp da última atualização do registro."

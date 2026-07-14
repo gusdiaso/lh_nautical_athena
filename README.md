@@ -220,6 +220,7 @@ SQL Server (ERP)                API PTAX (BCB)
 | Documento                        | Descrição                                                  |
 | -------------------------------- | ---------------------------------------------------------- |
 | `docs/dictionary.md`             | Dicionário de dados (24 tabelas, colunas, relacionamentos) |
+| `docs/marts.md`                  | Guia de leitura da camada marts e das decisões de modelagem |
 | `docs/extract_lh_nautical.md`    | Detalhes da extração SQL Server → Bronze                   |
 | `docs/extract_exchange_rates.md` | Detalhes da extração API BCB → Bronze                      |
 | `docs/dab_configuration.md`      | Configuração do DAB e governança                           |

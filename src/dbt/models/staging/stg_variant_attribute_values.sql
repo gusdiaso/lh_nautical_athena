@@ -8,8 +8,8 @@ with source as (
 )
 
 select
-    product_variant_id,
-    attribute_id,
-    trim(value) as value
+    product_variant_id
+    , attribute_id
+    , trim(value) as value
 
 from source

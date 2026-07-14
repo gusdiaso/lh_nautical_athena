@@ -8,16 +8,16 @@ with source as (
 )
 
 select
-    id as stock_movement_id,
-    product_variant_id,
-    location_id,
-    movement_type,
-    quantity,
-    reference_table,
-    reference_id,
-    employee_id,
-    trim(notes) as notes,
-    occurred_at,
-    created_at
+    id as stock_movement_id
+    , product_variant_id
+    , location_id
+    , movement_type
+    , quantity
+    , reference_table
+    , reference_id
+    , employee_id
+    , occurred_at
+    , created_at
+    , trim(notes) as notes
 
 from source

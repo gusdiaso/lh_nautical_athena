@@ -6,13 +6,22 @@ with stock_movements as (
 )
 
 select
-    stock_movement_id,
-    product_variant_id,
-    location_id,
-    movement_type,
-    quantity,
+    stock_movement_id
+    , product_variant_id
+    , location_id
+    , movement_type
+    , quantity
 
-    case
+    , reference_table
+
+    , reference_id
+
+    , employee_id
+    , notes
+    , occurred_at
+    , created_at
+
+    , case
         when movement_type in ('purchase_in', 'return_in')
             then 'entrada'
 
@@ -20,23 +29,10 @@ select
             then 'saida'
 
         else 'nao_classificado'
-    end as movement_direction,
+    end as movement_direction
 
-    abs(quantity) as absolute_quantity,
-
-    reference_table,
-    reference_id,
-    employee_id,
-    notes,
-
-    case
-        when lower(coalesce(notes, ''))
-            like '%opening balance%system migration%'
-            then true
-        else false
-    end as is_legacy_migration,
-
-    occurred_at,
-    created_at
+    , abs(quantity) as absolute_quantity
+    , coalesce(lower(coalesce(notes, ''))
+    like '%opening balance%system migration%', false) as is_legacy_migration
 
 from stock_movements

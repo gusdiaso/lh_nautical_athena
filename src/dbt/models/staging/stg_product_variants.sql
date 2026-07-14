@@ -8,17 +8,17 @@ with source as (
 )
 
 select
-    id as product_variant_id,
-    product_id,
-    sku,
-    barcode_ean,
-    sale_price,
-    cost_price,
-    weight_kg,
-    icms_rate,
-    ipi_rate,
-    is_active,
-    created_at,
-    updated_at
+    id as product_variant_id
+    , product_id
+    , sku
+    , barcode_ean
+    , sale_price
+    , cost_price
+    , weight_kg
+    , icms_rate
+    , ipi_rate
+    , is_active
+    , created_at
+    , updated_at
 
 from source

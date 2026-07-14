@@ -8,17 +8,17 @@ with source as (
 )
 
 select
-    id as supplier_id,
-    legal_name,
-    trade_name,
-    country,
-    tax_id,
-    tax_id_type,
-    email,
-    phone,
-    contact_name,
-    is_active,
-    created_at,
-    updated_at
+    id as supplier_id
+    , legal_name
+    , trade_name
+    , country
+    , tax_id
+    , tax_id_type
+    , email
+    , phone
+    , contact_name
+    , is_active
+    , created_at
+    , updated_at
 
 from source

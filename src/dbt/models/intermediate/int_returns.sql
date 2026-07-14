@@ -6,16 +6,23 @@ with returns as (
 )
 
 select
-    return_id,
-    return_number,
-    order_id,
-    customer_id,
-    received_at_location_id,
-    status,
-    reason as original_reason,
+    return_id
+    , return_number
+    , order_id
+    , customer_id
+    , received_at_location_id
+    , status
+    , reason as original_reason
 
-    case
-        when reason is null
+    , total_refund_amount
+
+    , created_at
+
+    , updated_at
+
+    , case
+        when
+            reason is null
             or trim(reason) in ('?', '—', '-')
             then 'nao_informado'
 
@@ -25,12 +32,14 @@ select
         when lower(trim(reason)) like '%desist%'
             then 'desistencia_cliente'
 
-        when lower(trim(reason)) like '%descri%'
+        when
+            lower(trim(reason)) like '%descri%'
             or lower(trim(reason)) like '%corresponde%'
             or lower(trim(reason)) like '%corressponde%'
             then 'divergencia_descricao'
 
-        when lower(trim(reason)) like '%avariado%'
+        when
+            lower(trim(reason)) like '%avariado%'
             or lower(trim(reason)) like '%variado%'
             or lower(trim(reason)) like '%transporte%'
             then 'avaria_transporte'
@@ -38,7 +47,8 @@ select
         when lower(trim(reason)) like '%defeito%'
             then 'defeito_fabrica'
 
-        when lower(trim(reason)) like '%tamanho%'
+        when
+            lower(trim(reason)) like '%tamanho%'
             or lower(trim(reason)) like '%cor%'
             then 'tamanho_cor_incorretos'
 
@@ -46,17 +56,7 @@ select
             then 'outros'
 
         else 'outros'
-    end as return_reason_group,
-
-    total_refund_amount,
-
-    case
-        when total_refund_amount > 0 then true
-        else false
-    end as has_refund_amount,
-
-    created_at,
-    updated_at
-
+    end as return_reason_group
+    , coalesce(total_refund_amount > 0, false) as has_refund_amount
 
 from returns

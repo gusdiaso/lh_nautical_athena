@@ -232,9 +232,8 @@ lh_nautical/
 │   ├── extract_exchange_rates.md          # Docs extração API BCB
 │   ├── dab_configuration.md               # Configuração DAB
 │   ├── ci_cd_pipeline.md                  # CI/CD e Service Principal
-│   ├── dbt_configuration.md              # Configuração do dbt
-│   ├── macros.md                          # Documentação das macros
-│   └── transform_after_extract.md         # Como rodar transformação após extração
+│   ├── dbt_configuration.md               # Configuração do dbt
+│   └── macros.md                          # Documentação das macros
 └── tests/
     ├── notebooks/                         # Notebooks de teste
     └── sql/                               # Scripts SQL de teste

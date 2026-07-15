@@ -67,54 +67,13 @@ cat target/compiled/lh_nautical/staging/stg_customers.sql
 
 ---
 
-### 2. `generate_database_name` — Controle do Catálogo (Database)
-
-**Arquivo:** `src/dbt/macros/generate_database_name.sql`
-
-```sql
-{% macro generate_database_name(custom_database_name, node) -%}
-
-    {%- if custom_database_name is none -%}
-
-        {{ target.database }}
-
-    {%- else -%}
-
-        {{ custom_database_name | trim }}
-
-    {%- endif -%}
-
-{%- endmacro %}
-```
-
-#### O que faz
-
-Permite sobrescrever o catálogo (database) por model via config. Por padrão usa o `target.database` do profile ativo.
-
-#### Quando usar
-
-Útil se você tiver models que precisam ir para catálogos diferentes (ex: um model em `analytics_db` enquanto a maioria vai para `dev_lh_nautical`).
-
-#### Exemplo de uso no model
-
-```sql
-{{ config(
-    materialized='table',
-    database='analytics_db'  -- usa a macro generate_database_name
-) }}
-
-SELECT * FROM {{ ref('int_customers') }}
-```
-
----
-
 ## Macros Recomendadas (Para Criar)
 
 As macros abaixo **não existem ainda** mas são altamente recomendadas para este projeto. Crie conforme a necessidade.
 
 ---
 
-### 3. `generate_surrogate_key` — Chave Substituta (Hash)
+### 2. `generate_surrogate_key` — Chave Substituta (Hash)
 
 **Arquivo sugerido:** `src/dbt/macros/generate_surrogate_key.sql`
 
@@ -148,7 +107,7 @@ FROM {{ ref('int_customers') }}
 
 ---
 
-### 4. `standardize_column_names` — Padronização de Nomes
+### 3. `standardize_column_names` — Padronização de Nomes
 
 **Arquivo sugerido:** `src/dbt/macros/standardize_column_names.sql`
 
@@ -185,7 +144,7 @@ FROM source
 
 ---
 
-### 5. `get_incremental_filter` — Filtro Incremental Padrão
+### 4. `get_incremental_filter` — Filtro Incremental Padrão
 
 **Arquivo sugerido:** `src/dbt/macros/get_incremental_filter.sql`
 
@@ -210,7 +169,7 @@ SELECT * FROM {{ ref('stg_orders') }}
 
 ---
 
-### 6. `test_no_duplicates` — Teste de Duplicatas Reutilizável
+### 5. `test_no_duplicates` — Teste de Duplicatas Reutilizável
 
 **Arquivo sugerido:** `src/dbt/macros/test_no_duplicates.sql`
 
@@ -233,7 +192,7 @@ tests:
 
 ---
 
-### 7. `exchange_rate_lookup` — Lookup de Câmbio (Regra de Negócio)
+### 6. `exchange_rate_lookup` — Lookup de Câmbio (Regra de Negócio)
 
 **Arquivo sugerido:** `src/dbt/macros/exchange_rate_lookup.sql`
 
@@ -272,7 +231,7 @@ FROM {{ ref('stg_purchase_order_items') }} poi
 
 ---
 
-### 8. `audit_columns` — Colunas de Auditoria Padrão
+### 7. `audit_columns` — Colunas de Auditoria Padrão
 
 **Arquivo sugerido:** `src/dbt/macros/audit_columns.sql`
 
@@ -412,27 +371,3 @@ dbt deps
 | `get_columns_in_relation(relation)` | Lista colunas de uma relation |
 | `escape_html(text)` | Escapa HTML |
 
----
-
-## Checklist para Novas Macros
-
-- [ ] Arquivo em `src/dbt/macros/nome_macro.sql`
-- [ ] Nome da macro = nome do arquivo (convenção)
-- [ ] Usa `{% -%}` / `{%- %}` para controle de whitespace
-- [ ] Tem comentário explicando propósito e parâmetros
-- [ ] Testada com `dbt compile --select model_que_usa`
-- [ ] Documentada aqui neste arquivo
-- [ ] Adicionada exemplos de uso
-
----
-
-## Próximas Macros a Implementar
-
-1. ✅ `generate_schema_name` (existe)
-2. ✅ `generate_database_name` (existe)
-3. 🔲 `generate_surrogate_key` — **Prioridade ALTA** (usar em todas as dims)
-4. 🔲 `exchange_rate_lookup` — **Prioridade ALTA** (regra de câmbio)
-5. 🔲 `get_incremental_filter` — Prioridade MÉDIA
-6. 🔲 `audit_columns` — Prioridade MÉDIA
-7. 🔲 `standardize_column_names` — Prioridade BAIXA
-8. 🔲 `test_no_duplicates` — Prioridade BAIXA

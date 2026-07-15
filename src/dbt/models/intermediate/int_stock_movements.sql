@@ -32,7 +32,9 @@ select
     end as movement_direction
 
     , abs(quantity) as absolute_quantity
-    , coalesce(lower(coalesce(notes, ''))
-    like '%opening balance%system migration%', false) as is_legacy_migration
+    , coalesce(
+        lower(coalesce(notes, ''))
+        like '%opening balance%system migration%', false
+    ) as is_legacy_migration
 
 from stock_movements

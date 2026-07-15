@@ -6,12 +6,12 @@ with source as (
 )
 
 select
-    id as category_id,
-    name,
-    slug,
-    parent_category_id,
-    is_active,
-    created_at,
-    updated_at
+    id as category_id
+    , name
+    , slug
+    , parent_category_id
+    , is_active
+    , created_at
+    , updated_at
 
 from source

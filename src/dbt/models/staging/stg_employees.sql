@@ -6,16 +6,16 @@ with source as (
 )
 
 select
-    id as employee_id,
-    full_name,
-    cpf,
-    email,
-    role,
-    primary_location_id,
-    hire_date,
-    termination_date,
-    is_active,
-    created_at,
-    updated_at
+    id as employee_id
+    , full_name
+    , cpf
+    , email
+    , role
+    , primary_location_id
+    , hire_date
+    , termination_date
+    , is_active
+    , created_at
+    , updated_at
 
 from source

@@ -1,11 +1,11 @@
 select
-    stock_movement_id,
-    movement_type,
-    quantity,
-    movement_direction,
-    absolute_quantity,
-    is_legacy_migration,
-    notes
+    stock_movement_id
+    , movement_type
+    , quantity
+    , movement_direction
+    , absolute_quantity
+    , is_legacy_migration
+    , notes
 from {{ ref('int_stock_movements') }}
 where
     absolute_quantity <> abs(quantity)
@@ -32,6 +32,6 @@ where
 
     or (
         lower(coalesce(notes, ''))
-            like '%opening balance%system migration%'
+        like '%opening balance%system migration%'
         and is_legacy_migration = false
     )

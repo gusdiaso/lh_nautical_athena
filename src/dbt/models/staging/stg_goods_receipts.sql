@@ -6,12 +6,12 @@ with source as (
 )
 
 select
-    id as goods_receipt_id,
-    purchase_order_id,
-    received_by_employee_id,
-    received_at,
-    notes,
-    created_at,
-    updated_at
+    id as goods_receipt_id
+    , purchase_order_id
+    , received_by_employee_id
+    , received_at
+    , notes
+    , created_at
+    , updated_at
 
 from source

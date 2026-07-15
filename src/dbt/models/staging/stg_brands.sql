@@ -6,11 +6,11 @@ with source as (
 )
 
 select
-    id as brand_id,
-    name,
-    country,
-    is_active,
-    created_at,
-    updated_at
+    id as brand_id
+    , name
+    , country
+    , is_active
+    , created_at
+    , updated_at
 
 from source

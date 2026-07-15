@@ -6,14 +6,14 @@ with source as (
 )
 
 select
-    id as payment_id,
-    order_id,
-    method,
-    installments,
-    amount,
-    status,
-    paid_at,
-    created_at,
-    updated_at
+    id as payment_id
+    , order_id
+    , method
+    , installments
+    , amount
+    , status
+    , paid_at
+    , created_at
+    , updated_at
 
 from source

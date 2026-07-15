@@ -10,7 +10,6 @@ select
     , currency_code
     , exchange_rate_buy
     , exchange_rate_sell
-
     , round(
         (exchange_rate_buy + exchange_rate_sell) / 2
         , 6

@@ -8,12 +8,20 @@ models:
           - not_null
           - unique
 
+      - name: category_name
+        data_tests:
+          - not_null
+
   - name: stg_brands
     columns:
       - name: brand_id
         data_tests:
           - not_null
           - unique
+
+      - name: brand_name
+        data_tests:
+          - not_null
 
   - name: stg_customers
     columns:

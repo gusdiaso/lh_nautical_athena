@@ -11,16 +11,12 @@ select
     , location_id
     , movement_type
     , quantity
-
     , reference_table
-
     , reference_id
-
     , employee_id
     , notes
     , occurred_at
     , created_at
-
     , case
         when movement_type in ('purchase_in', 'return_in')
             then 'entrada'
@@ -30,7 +26,6 @@ select
 
         else 'nao_classificado'
     end as movement_direction
-
     , abs(quantity) as absolute_quantity
     , coalesce(
         lower(coalesce(notes, ''))

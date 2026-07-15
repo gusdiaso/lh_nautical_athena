@@ -12,47 +12,43 @@ select
     , customer_id
     , received_at_location_id
     , status
-    , reason as original_reason
-
+    , reason_normalized
     , total_refund_amount
-
     , created_at
-
     , updated_at
-
     , case
         when
-            reason is null
-            or trim(reason) in ('?', '—', '-')
+            reason_normalized is null
+            or trim(reason_normalized) in ('?', '—', '-')
             then 'nao_informado'
 
-        when lower(trim(reason)) like '%duplicada%'
+        when lower(trim(reason_normalized)) like '%duplicada%'
             then 'compra_duplicada'
 
-        when lower(trim(reason)) like '%desist%'
+        when lower(trim(reason_normalized)) like '%desist%'
             then 'desistencia_cliente'
 
         when
-            lower(trim(reason)) like '%descri%'
-            or lower(trim(reason)) like '%corresponde%'
-            or lower(trim(reason)) like '%corressponde%'
+            lower(trim(reason_normalized)) like '%descri%'
+            or lower(trim(reason_normalized)) like '%corresponde%'
+            or lower(trim(reason_normalized)) like '%corressponde%'
             then 'divergencia_descricao'
 
         when
-            lower(trim(reason)) like '%avariado%'
-            or lower(trim(reason)) like '%variado%'
-            or lower(trim(reason)) like '%transporte%'
+            lower(trim(reason_normalized)) like '%avariado%'
+            or lower(trim(reason_normalized)) like '%variado%'
+            or lower(trim(reason_normalized)) like '%transporte%'
             then 'avaria_transporte'
 
-        when lower(trim(reason)) like '%defeito%'
+        when lower(trim(reason_normalized)) like '%defeito%'
             then 'defeito_fabrica'
 
         when
-            lower(trim(reason)) like '%tamanho%'
-            or lower(trim(reason)) like '%cor%'
+            lower(trim(reason_normalized)) like '%tamanho%'
+            or lower(trim(reason_normalized)) like '%cor%'
             then 'tamanho_cor_incorretos'
 
-        when lower(trim(reason)) like '%outros%'
+        when lower(trim(reason_normalized)) like '%outros%'
             then 'outros'
 
         else 'outros'

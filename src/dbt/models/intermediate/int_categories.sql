@@ -13,7 +13,7 @@ with source as (
         , is_active
         , created_at
         , updated_at
-        , trim(name) as name
+        , trim(category_name) as category_name
         , lower(trim(slug)) as slug
     from source
     where category_id is not null
@@ -34,7 +34,7 @@ with source as (
 
 select
     category_id
-    , name
+    , category_name
     , slug
     , parent_category_id
     , is_active

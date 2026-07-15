@@ -12,7 +12,7 @@ with source as (
         , is_active
         , created_at
         , updated_at
-        , trim(name) as name
+        , trim(brand_name) as brand_name
         , upper(trim(country)) as country
     from source
     where brand_id is not null
@@ -33,7 +33,7 @@ with source as (
 
 select
     brand_id
-    , name
+    , brand_name
     , country
     , is_active
     , created_at

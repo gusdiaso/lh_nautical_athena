@@ -7,9 +7,8 @@ with source as (
 
 select
     id as brand_id
-    , name
+    , name as brand_name
     , country
     , is_active
-    
 
 from source

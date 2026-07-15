@@ -7,10 +7,9 @@ with source as (
 
 select
     id as category_id
-    , name
+    , name as category_name
     , slug
     , parent_category_id
     , is_active
-    
 
 from source

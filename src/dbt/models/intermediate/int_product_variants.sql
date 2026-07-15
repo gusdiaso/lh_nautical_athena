@@ -16,11 +16,8 @@ select
     , icms_rate
     , ipi_rate
     , is_active
-
     , created_at
-
     , updated_at
-
     , round(
         sale_price - cost_price
         , 2

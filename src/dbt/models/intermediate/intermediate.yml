@@ -8,7 +8,7 @@ models:
           - not_null
           - unique
 
-      - name: name
+      - name: brand_name
         data_tests:
           - not_null
 
@@ -19,7 +19,7 @@ models:
           - not_null
           - unique
 
-      - name: name
+      - name: category_name
         data_tests:
           - not_null
 

@@ -6,16 +6,14 @@ with source as (
 )
 
 select
-    cast(date_format(coalesce(updated_at, created_at), 'yyyyMMdd') as string) as sk_date,
+    cast(date_format(current_date(), 'yyyyMMdd') as string) as sk_date,
     sk_product_supplier,
     product_variant_id,
     supplier_id,
     supplier_sku,
     last_quoted_cost,
     lead_time_days,
-    is_preferred,
-    created_at,
-    updated_at
+    is_preferred
 
 from source
 where sk_product_supplier is not null

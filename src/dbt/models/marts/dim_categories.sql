@@ -11,9 +11,7 @@ select
     name,
     slug,
     parent_category_id,
-    is_active,
-    created_at,
-    updated_at
+    is_active
 
 from source
 where category_id is not null

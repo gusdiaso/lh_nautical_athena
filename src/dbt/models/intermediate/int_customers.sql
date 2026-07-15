@@ -16,9 +16,7 @@ base as (
         trim(state_registration) as state_registration,
         lower(trim(email)) as email,
         trim(phone) as phone,
-        is_active,
-        created_at,
-        updated_at
+        is_active
     from source
     where customer_id is not null
 
@@ -30,7 +28,7 @@ deduplicated as (
         *,
         row_number() over (
             partition by customer_id
-            order by updated_at desc nulls last, created_at desc nulls last
+            order by customer_id
         ) as record_rank
     from base
 
@@ -45,9 +43,7 @@ select
     state_registration,
     email,
     phone,
-    is_active,
-    created_at,
-    updated_at
+    is_active
 
 from deduplicated
 where record_rank = 1

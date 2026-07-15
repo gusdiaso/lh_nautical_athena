@@ -28,12 +28,6 @@ with candidate_dates as (
     from {{ ref('int_employees') }}
     where termination_date is not null
 
-    union all
-
-    select cast(created_at as date) as event_date
-    from {{ ref('int_product_suppliers') }}
-    where created_at is not null
-
 ),
 
 bounds as (

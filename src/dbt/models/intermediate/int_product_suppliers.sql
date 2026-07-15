@@ -14,9 +14,7 @@ base as (
         trim(supplier_sku) as supplier_sku,
         last_quoted_cost,
         lead_time_days,
-        is_preferred,
-        created_at,
-        updated_at
+        is_preferred
     from source
     where product_variant_id is not null
       and supplier_id is not null
@@ -29,7 +27,7 @@ deduplicated as (
         *,
         row_number() over (
             partition by sk_product_supplier
-            order by updated_at desc nulls last, created_at desc nulls last
+            order by sk_product_supplier
         ) as record_rank
     from base
 
@@ -42,9 +40,7 @@ select
     supplier_sku,
     last_quoted_cost,
     lead_time_days,
-    is_preferred,
-    created_at,
-    updated_at
+    is_preferred
 
 from deduplicated
 where record_rank = 1

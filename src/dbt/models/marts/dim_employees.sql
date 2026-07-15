@@ -15,9 +15,7 @@ select
     primary_location_id,
     hire_date,
     termination_date,
-    is_active,
-    created_at,
-    updated_at
+    is_active
 
 from source
 where employee_id is not null

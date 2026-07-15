@@ -55,8 +55,5 @@ select
         else false
     end as has_refund_amount,
 
-    created_at,
-    updated_at
-
-
+from returns
 from returns

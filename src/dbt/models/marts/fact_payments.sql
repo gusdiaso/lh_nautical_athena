@@ -25,9 +25,7 @@ select
     payments.installments,
     payments.amount,
     payments.status,
-    payments.paid_at,
-    payments.created_at,
-    payments.updated_at
+    payments.paid_at
 
 from payments
 left join orders

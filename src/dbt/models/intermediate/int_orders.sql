@@ -18,9 +18,7 @@ base as (
         subtotal,
         discount_amount,
         total,
-        placed_at,
-        created_at,
-        updated_at
+        placed_at
     from source
     where order_id is not null
 
@@ -32,7 +30,7 @@ deduplicated as (
         *,
         row_number() over (
             partition by order_id
-            order by updated_at desc nulls last, created_at desc nulls last
+            order by order_id
         ) as record_rank
     from base
 
@@ -49,9 +47,7 @@ select
     subtotal,
     discount_amount,
     total,
-    placed_at,
-    created_at,
-    updated_at
+    placed_at
 
 from deduplicated
 where record_rank = 1

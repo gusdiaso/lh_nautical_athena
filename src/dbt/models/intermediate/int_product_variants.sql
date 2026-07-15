@@ -41,7 +41,6 @@ select
         else false
     end as is_profitable,
 
-    created_at,
-    updated_at
+    
 
 from product_variants

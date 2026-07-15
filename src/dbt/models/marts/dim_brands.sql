@@ -10,9 +10,7 @@ select
     brand_id as nk_brand_id,
     name,
     country,
-    is_active,
-    created_at,
-    updated_at
+    is_active
 
 from source
 where brand_id is not null

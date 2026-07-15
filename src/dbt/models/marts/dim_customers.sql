@@ -15,9 +15,7 @@ select
     state_registration,
     email,
     phone,
-    is_active,
-    created_at,
-    updated_at
+    is_active
 
 from source
 where customer_id is not null

@@ -19,9 +19,7 @@ select
     subtotal,
     discount_amount,
     total,
-    placed_at,
-    created_at,
-    updated_at
+    placed_at
 
 from source
 where order_id is not null

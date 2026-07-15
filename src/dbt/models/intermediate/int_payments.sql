@@ -14,9 +14,7 @@ base as (
         installments,
         amount,
         lower(trim(status)) as status,
-        paid_at,
-        created_at,
-        updated_at
+        paid_at
     from source
     where payment_id is not null
 
@@ -28,7 +26,7 @@ deduplicated as (
         *,
         row_number() over (
             partition by payment_id
-            order by updated_at desc nulls last, created_at desc nulls last
+            order by payment_id
         ) as record_rank
     from base
 
@@ -41,9 +39,7 @@ select
     installments,
     amount,
     status,
-    paid_at,
-    created_at,
-    updated_at
+    paid_at
 
 from deduplicated
 where record_rank = 1

@@ -36,7 +36,6 @@ select
         else false
     end as is_legacy_migration,
 
-    occurred_at,
-    created_at
+    occurred_at
 
 from stock_movements

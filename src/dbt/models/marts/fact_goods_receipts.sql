@@ -12,9 +12,7 @@ select
     purchase_order_id,
     received_by_employee_id,
     received_at,
-    notes,
-    created_at,
-    updated_at
+    notes
 
 from source
 where goods_receipt_id is not null

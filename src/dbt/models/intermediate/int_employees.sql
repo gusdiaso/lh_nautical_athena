@@ -16,9 +16,7 @@ base as (
         primary_location_id,
         hire_date,
         termination_date,
-        is_active,
-        created_at,
-        updated_at
+        is_active
     from source
     where employee_id is not null
 
@@ -30,7 +28,7 @@ deduplicated as (
         *,
         row_number() over (
             partition by employee_id
-            order by updated_at desc nulls last, created_at desc nulls last
+            order by employee_id
         ) as record_rank
     from base
 
@@ -45,9 +43,7 @@ select
     primary_location_id,
     hire_date,
     termination_date,
-    is_active,
-    created_at,
-    updated_at
+    is_active
 
 from deduplicated
 where record_rank = 1

@@ -13,8 +13,7 @@ base as (
         received_by_employee_id,
         received_at,
         trim(notes) as notes,
-        created_at,
-        updated_at
+            notes
     from source
     where goods_receipt_id is not null
 
@@ -26,7 +25,7 @@ deduplicated as (
         *,
         row_number() over (
             partition by goods_receipt_id
-            order by updated_at desc nulls last, created_at desc nulls last
+                order by goods_receipt_id
         ) as record_rank
     from base
 
@@ -37,9 +36,7 @@ select
     purchase_order_id,
     received_by_employee_id,
     received_at,
-    notes,
-    created_at,
-    updated_at
+        notes
 
 from deduplicated
 where record_rank = 1

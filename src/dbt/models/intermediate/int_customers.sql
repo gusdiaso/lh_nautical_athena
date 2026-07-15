@@ -10,8 +10,6 @@ with source as (
     select
         customer_id
         , is_active
-        , created_at
-        , updated_at
         , lower(trim(person_type)) as person_type
         , trim(legal_name) as legal_name
         , trim(trade_name) as trade_name
@@ -30,7 +28,7 @@ with source as (
         *
         , row_number() over (
             partition by customer_id
-            order by updated_at desc nulls last, created_at desc nulls last
+            order by customer_id
         ) as record_rank
     from base
 
@@ -46,8 +44,6 @@ select
     , email
     , phone
     , is_active
-    , created_at
-    , updated_at
 
 from deduplicated
 where record_rank = 1

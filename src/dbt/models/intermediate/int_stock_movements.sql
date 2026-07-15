@@ -16,7 +16,6 @@ select
     , employee_id
     , notes
     , occurred_at
-    , created_at
     , case
         when movement_type in ('purchase_in', 'return_in')
             then 'entrada'

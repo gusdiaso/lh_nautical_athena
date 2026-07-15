@@ -10,8 +10,6 @@ with source as (
     select
         brand_id
         , is_active
-        , created_at
-        , updated_at
         , trim(brand_name) as brand_name
         , upper(trim(country)) as country
     from source
@@ -25,7 +23,7 @@ with source as (
         *
         , row_number() over (
             partition by brand_id
-            order by updated_at desc nulls last, created_at desc nulls last
+            order by brand_id
         ) as record_rank
     from base
 
@@ -36,8 +34,6 @@ select
     , brand_name
     , country
     , is_active
-    , created_at
-    , updated_at
 
 from deduplicated
 where record_rank = 1

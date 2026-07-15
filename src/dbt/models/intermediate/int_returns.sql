@@ -14,8 +14,6 @@ select
     , status
     , reason_normalized
     , total_refund_amount
-    , created_at
-    , updated_at
     , case
         when
             reason_normalized is null

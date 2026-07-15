@@ -13,8 +13,6 @@ with source as (
         , installments
         , amount
         , paid_at
-        , created_at
-        , updated_at
         , lower(trim(method)) as method
         , lower(trim(status)) as status
     from source
@@ -28,7 +26,7 @@ with source as (
         *
         , row_number() over (
             partition by payment_id
-            order by updated_at desc nulls last, created_at desc nulls last
+            order by paid_at desc nulls last
         ) as record_rank
     from base
 
@@ -42,8 +40,6 @@ select
     , amount
     , status
     , paid_at
-    , created_at
-    , updated_at
 
 from deduplicated
 where record_rank = 1

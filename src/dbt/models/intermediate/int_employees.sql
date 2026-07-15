@@ -13,8 +13,6 @@ with source as (
         , hire_date
         , termination_date
         , is_active
-        , created_at
-        , updated_at
         , trim(full_name) as full_name
         , trim(cpf) as cpf
         , lower(trim(email)) as email
@@ -30,7 +28,7 @@ with source as (
         *
         , row_number() over (
             partition by employee_id
-            order by updated_at desc nulls last, created_at desc nulls last
+            order by hire_date desc nulls last
         ) as record_rank
     from base
 
@@ -46,8 +44,6 @@ select
     , hire_date
     , termination_date
     , is_active
-    , created_at
-    , updated_at
 
 from deduplicated
 where record_rank = 1

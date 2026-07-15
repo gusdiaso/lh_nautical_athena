@@ -11,8 +11,6 @@ with source as (
         category_id
         , parent_category_id
         , is_active
-        , created_at
-        , updated_at
         , trim(category_name) as category_name
         , lower(trim(slug)) as slug
     from source
@@ -26,7 +24,7 @@ with source as (
         *
         , row_number() over (
             partition by category_id
-            order by updated_at desc nulls last, created_at desc nulls last
+            order by category_id
         ) as record_rank
     from base
 
@@ -38,8 +36,6 @@ select
     , slug
     , parent_category_id
     , is_active
-    , created_at
-    , updated_at
 
 from deduplicated
 where record_rank = 1

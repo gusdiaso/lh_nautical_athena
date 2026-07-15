@@ -13,8 +13,6 @@ select
     , last_quoted_cost
     , lead_time_days
     , is_preferred
-    , created_at
-    , updated_at
     , md5(
         concat_ws(
             '||'

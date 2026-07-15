@@ -15,7 +15,5 @@ select
     , email
     , phone
     , is_active
-    , created_at
-    , updated_at
 
 from source

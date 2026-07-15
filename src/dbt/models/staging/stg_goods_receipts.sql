@@ -11,7 +11,5 @@ select
     , received_by_employee_id
     , received_at
     , notes
-    , created_at
-    , updated_at
 
 from source

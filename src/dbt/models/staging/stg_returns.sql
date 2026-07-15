@@ -15,8 +15,6 @@ select
     , received_at_location_id
     , status
     , total_refund_amount
-    , created_at
-    , updated_at
     , lower(trim(reason)) as reason
 
 from source

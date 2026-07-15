@@ -17,7 +17,6 @@ select
     , reference_id
     , employee_id
     , occurred_at
-    , created_at
     , trim(notes) as notes
 
 from source

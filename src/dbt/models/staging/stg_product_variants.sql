@@ -18,7 +18,5 @@ select
     , icms_rate
     , ipi_rate
     , is_active
-    , created_at
-    , updated_at
 
 from source

@@ -17,7 +17,5 @@ select
     , discount_amount
     , total
     , placed_at
-    , created_at
-    , updated_at
 
 from source

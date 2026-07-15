@@ -15,7 +15,5 @@ select
     , hire_date
     , termination_date
     , is_active
-    , created_at
-    , updated_at
 
 from source

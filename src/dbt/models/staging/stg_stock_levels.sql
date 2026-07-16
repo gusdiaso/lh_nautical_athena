@@ -8,10 +8,9 @@ with source as (
 )
 
 select
-    product_variant_id,
-    location_id,
-    quantity_on_hand,
-    reorder_point,
-    updated_at
+    product_variant_id
+    , location_id
+    , quantity_on_hand
+    , reorder_point
 
 from source

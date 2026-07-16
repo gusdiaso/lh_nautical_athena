@@ -8,15 +8,14 @@ with source as (
 )
 
 select
-    id as return_id,
-    return_number,
-    order_id,
-    customer_id,
-    received_at_location_id,
-    status,
-    lower(trim(reason)) as reason,
-    total_refund_amount,
-    created_at,
-    updated_at
+    id as return_id
+    , return_number
+    , order_id
+    , customer_id
+    , received_at_location_id
+    , status
+    , reason as original_reason
+    , total_refund_amount
+    , lower(trim(reason)) as reason_normalized
 
 from source

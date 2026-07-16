@@ -8,9 +8,9 @@ with source as (
 )
 
 select
-    exchange_date,
-    currency_code,
-    exchange_rate_buy,
-    exchange_rate_sell
+    exchange_date
+    , currency_code
+    , exchange_rate_buy
+    , exchange_rate_sell
 
 from source

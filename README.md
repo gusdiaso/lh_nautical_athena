@@ -2,12 +2,13 @@
 
 ## Descrição do Projeto
 
-O **LH Nautical** é um pipeline de dados completo construído no ecossistema **Databricks**, seguindo a **Arquitetura Medallion** (Bronze → Silver → Gold). O projeto extrai dados de um ERP SQL Server (24 tabelas de domínio náutico/comercial) e cotações de moedas USD/EUR da API do Banco Central, salvando tudo como tabelas **Delta Lake** no Unity Catalog.
+O **LH Nautical** é um pipeline de dados completo construído no ecossistema **Databricks**, seguindo a **Arquitetura Medalhão** (Bronze → Silver → Gold). O projeto extrai dados de um ERP SQL Server (24 tabelas de domínio náutico/comercial) e cotações de moedas USD/EUR da API do Banco Central, salvando tudo como tabelas **Delta Lake** no Unity Catalog.
 
-### Solução Atual (Bronze)
+### Solução Atual (Bronze + Silver)
 
 - **Ingestão SQL Server → Bronze**: Extração via JDBC de 24 tabelas (clientes, produtos, vendas, estoque, compras, etc.) com carga completa (full overwrite)
 - **Ingestão API BCB → Bronze**: Extração incremental de cotações PTAX (USD/EUR) via HTTP com merge/upsert
+- **Transformação dbt → Silver**: Staging (views) e Intermediate (tables) com limpeza, padronização e testes
 - **Infraestrutura como Código**: Databricks Asset Bundles (DAB) para declarar jobs e permissões
 - **CI/CD**: Pipeline automatizado via Bitbucket Pipelines (deploy em produção)
 - **Retry Automático**: Tratamento de falhas de conexão com tenacity (3 tentativas, backoff exponencial)
@@ -15,19 +16,18 @@ O **LH Nautical** é um pipeline de dados completo construído no ecossistema **
 
 ### Próximas Fases
 
-| Fase                 | Descrição                                                     | Status          |
-| -------------------- | ------------------------------------------------------------- | --------------- |
-| **Silver**           | Transformações com dbt: limpeza, padronização, desduplicação  | Em planejamento |
-| **Gold**             | Modelos analíticos prontos para consumo (métricas de negócio) | Em planejamento |
-| **Dashboards**       | Visualizações e relatórios                                    | Futuro          |
-| **Machine Learning** | Modelos preditivos (previsão de demanda, churn)               | Futuro          |
-| **Gen AI**           | Assistentes inteligentes e análise em linguagem natural       | Futuro          |
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| **Silver** | Transformações com dbt: limpeza, padronização, desduplicação | Em andamento |
+| **Gold** | Modelos analíticos prontos para consumo (métricas de negócio) | Em planejamento |
+| **Dashboards** | Visualizações e relatórios | Futuro |
+| **Machine Learning** | Modelos preditivos (previsão de demanda, churn) | Futuro |
+| **Gen AI** | Assistentes inteligentes e análise em linguagem natural | Futuro |
 
 ---
 
-## Navegação
+## Navegação Rápida
 
-- [Descrição do Projeto](#descrição-do-projeto)
 - [Passo a Passo: Executar o Pipeline](#passo-a-passo-executar-o-pipeline)
 - [Comandos Úteis](#comandos-úteis)
 - [Ambiente Local](#ambiente-local-opcional---testes)
@@ -39,15 +39,30 @@ O **LH Nautical** é um pipeline de dados completo construído no ecossistema **
 
 ---
 
+## Configuração do dbt
+
+> Para detalhes completos, veja [docs/dbt_configuration.md](docs/dbt_configuration.md).
+
+O projeto dbt se conecta ao Databricks Unity Catalog e organiza os dados em camadas:
+
+| Camada | Catálogo | Schema | Materialização |
+|--------|----------|--------|----------------|
+| Bronze | `dev_lh_nautical` / `prod_lh_nautical` | `bronze` | (fonte) |
+| Staging | `dev_lh_nautical` / `prod_lh_nautical` | `silver` | view |
+| Intermediate | `dev_lh_nautical` / `prod_lh_nautical` | `silver` | table |
+| Marts | `dev_lh_nautical` / `prod_lh_nautical` | `gold` | table |
+
+---
+
 ## Passo a Passo: Executar o Pipeline
 
 ### Pré-requisitos
 
-| Ferramenta                                                                   | Versão mín. | Instalação                                |
-| ---------------------------------------------------------------------------- | ----------- | ----------------------------------------- |
-| [Python](https://www.python.org/downloads/)                                  | 3.10+       | `winget install Python.Python.3.12`       |
-| [Git](https://git-scm.com/downloads)                                         | —           | `winget install Git.Git`                  |
-| [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/tutorial.html) | v1.x        | `winget install Databricks.DatabricksCLI` |
+| Ferramenta | Versão mín. | Instalação |
+|------------|-------------|------------|
+| [Python](https://www.python.org/downloads/) | 3.12 (recomendado) | `winget install Python.Python.3.12` |
+| [Git](https://git-scm.com/downloads) | — | `winget install Git.Git` |
+| [Databricks CLI](https://docs.databricks.com/en/dev-tools/cli/tutorial.html) | v1.x | `winget install Databricks.DatabricksCLI` |
 
 ### Passo 1: Clonar o repositório
 
@@ -68,7 +83,23 @@ databricks auth token --host https://<url-do-workspace>
 
 > A URL do workspace tem o formato `https://dbc-xxxxx-xxxx.cloud.databricks.com`.
 
-### Passo 3: Configurar segredos (uma única vez)
+### Passo 3: Criar variáveis de ambiente
+
+Crie o arquivo `.env` na raiz do projeto com suas credenciais:
+
+```
+# Dev - seu token pessoal
+DBT_DATABRICKS_TOKEN=seu_token_aqui
+DBT_HTTP_PATH=sql/1.0/warehouses/seu_warehouse_id
+
+# Prod - token da Service Principal
+DBT_DATABRICKS_TOKEN_PROD=token_da_sp_aqui
+```
+
+> O arquivo `.env` já está no `.gitignore` e não será versionado.
+> Para gerar o token da Service Principal, veja [docs/dbt_configuration.md](docs/dbt_configuration.md).
+
+### Passo 4: Configurar segredos (uma única vez)
 
 ```bash
 # Criar scope de segredos
@@ -79,13 +110,13 @@ databricks secrets put --scope lh_nautical --key secret_lh_nautical_bd
 # (digite a senha quando solicitado)
 ```
 
-### Passo 4: Validar o bundle
+### Passo 5: Validar o bundle
 
 ```bash
 databricks bundle validate
 ```
 
-### Passo 5: Deploy e execução
+### Passo 6: Deploy e execução
 
 ```bash
 # Deploy em desenvolvimento
@@ -98,10 +129,10 @@ databricks bundle run extract_lh_nautical --target dev
 databricks bundle run extract_exchange_rates --target dev
 ```
 
-### Passo 6: Verificar resultados
+### Passo 7: Verificar resultados
 
-- Acesse o Databricks Workspace → Catalog → `dev_lh_nautical` → `bronze`
-- Verifique as 25 tabelas Delta Lake criadas (24 do SQL Server + 1 de exchange rates)
+- **Bronze**: Databricks Workspace → Catalog → `dev_lh_nautical` → `bronze` (25 tabelas Delta Lake)
+- **Silver**: Databricks Workspace → Catalog → `dev_lh_nautical` → `silver` (staging views + intermediate tables)
 
 ---
 
@@ -123,6 +154,20 @@ databricks bundle run extract_exchange_rates --target prod
 
 # Destruir recursos criados (cuidado!)
 databricks bundle destroy --target dev
+
+# dbt - desenvolvimento
+source .env
+dbt debug
+dbt run
+dbt test
+dbt docs generate
+dbt docs serve
+
+# dbt - produção (usa Service Principal)
+source .env
+dbt debug --target prod
+dbt run --target prod
+dbt test --target prod
 ```
 
 ---
@@ -157,6 +202,9 @@ pytest tests/ -v --databricks
 ```
 lh_nautical/
 ├── databricks.yml                         # Config principal do DAB
+├── dbt_project.yml                        # Config dbt (models, schemas)
+├── profiles.yml                           # Conexão dbt → Databricks
+├── .env                                   # Variáveis de ambiente (não versionado)
 ├── bitbucket-pipelines.yml                # Pipeline CI/CD
 ├── requirements.txt                       # Dependências Python
 ├── resources/
@@ -170,14 +218,22 @@ lh_nautical/
 │   │   ├── utils.py                       # Funções compartilhadas (Spark, Delta)
 │   │   ├── extract_lh_nautical.py         # Extração SQL Server
 │   │   └── extract_exchange_rates.py      # Extração API BCB
-│   ├── dbt/                               # Transformações dbt (futuro)
+│   ├── dbt/                               # Transformações dbt
+│   │   ├── models/
+│   │   │   ├── staging/                   # Cópia organizada dos dados brutos
+│   │   │   ├── intermediate/              # Limpeza e validação
+│   │   │   └── marts/                     # Modelo dimensional (futuro)
+│   │   ├── macros/                        # Funções reutilizáveis
+│   │   └── tests/                         # Testes de qualidade
 │   └── analytics_ai/                      # ML e Gen AI (futuro)
 ├── docs/                                  # Documentação
 │   ├── dictionary.md                      # Dicionário de dados
 │   ├── extract_lh_nautical.md             # Docs extração SQL Server
 │   ├── extract_exchange_rates.md          # Docs extração API BCB
 │   ├── dab_configuration.md               # Configuração DAB
-│   └── sp_prod_deploy.md                  # CI/CD e Service Principal
+│   ├── ci_cd_pipeline.md                  # CI/CD e Service Principal
+│   ├── dbt_configuration.md               # Configuração do dbt
+│   └── macros.md                          # Documentação das macros
 └── tests/
     ├── notebooks/                         # Notebooks de teste
     └── sql/                               # Scripts SQL de teste
@@ -198,32 +254,41 @@ SQL Server (ERP)                API PTAX (BCB)
             │                              │
             └──────────────┬───────────────┘
                            │
-                           ▼ ─── dbt (FUTURO)
-                  ┌─────────────────┐
-                  │     SILVER      │
-                  └────────┬────────┘
-                           │
-                           ▼ ─── dbt (FUTURO)
-                  ┌─────────────────┐
-                  │      GOLD       │
-                  └────────┬────────┘
-                           │
-                           ├── → Dashboards
-                           ├── → Machine Learning
-                           └── → Gen AI
+                           ▼ ─── dbt
+                   ┌─────────────────┐
+                   │     SILVER      │
+                   │  intermediate   │
+                   │    (table)      │
+                   └────────┬────────┘
+                            │
+                            ▼ ─── dbt
+                   ┌─────────────────┐
+                   │      GOLD       │
+                   │    marts        │
+                   │    (table)      │
+                   └────────┬────────┘
+                            │
+                            ├── → Dashboards
+                            ├── → Machine Learning
+                            └── → Gen AI
 ```
 
 ---
 
 ## Documentação
 
-| Documento                        | Descrição                                                  |
-| -------------------------------- | ---------------------------------------------------------- |
-| `docs/dictionary.md`             | Dicionário de dados (24 tabelas, colunas, relacionamentos) |
-| `docs/extract_lh_nautical.md`    | Detalhes da extração SQL Server → Bronze                   |
-| `docs/extract_exchange_rates.md` | Detalhes da extração API BCB → Bronze                      |
-| `docs/dab_configuration.md`      | Configuração do DAB e governança                           |
-| `docs/sp_prod_deploy.md`         | CI/CD e Service Principal                                  |
+| Documento | Descrição |
+|-----------|-----------|
+| `docs/dictionary.md` | Dicionário de dados (24 tabelas, colunas, relacionamentos) |
+| `docs/extract_lh_nautical.md` | Detalhes da extração SQL Server → Bronze |
+| `docs/extract_exchange_rates.md` | Detalhes da extração API BCB → Bronze |
+| `docs/dab_configuration.md` | Configuração do DAB e governança |
+| `docs/ci_cd_pipeline.md` | CI/CD completo: como colocar dbt no pipeline |
+| `docs/dbt_configuration.md` | Configuração do dbt e profiles |
+| `docs/macros.md` | Documentação das macros dbt |
+| `docs/star_schema.md` | Modelo dimensional (Star Schema) |
+| `docs/planejamento_dbt.md` | Planejamento e convenções do projeto dbt |
+| `docs/transform_after_extract.md` | Como rodar transformação logo após extração |
 
 ---
 
@@ -237,6 +302,24 @@ SQL Server (ERP)                API PTAX (BCB)
 ---
 
 ## Boas Práticas e Dicas
+
+### Convenções de Código SQL
+
+O projeto adota a convenção **leading comma** para formatação de queries SQL:
+
+```sql
+SELECT
+    coluna_um
+    , coluna_dois
+    , coluna_tres
+FROM tabela
+WHERE condicao = 'valor'
+```
+
+**Por que leading comma?**
+- Facilita a inclusão/remoção de colunas sem alterar linhas anteriores
+- Melhora a revisão de código no Git (diff mais limpo)
+- Padrão adotado pelo time para manter consistência
 
 ### Git
 
@@ -252,6 +335,7 @@ git commit -m "feat: adiciona parametrização no script de extração"
 ```
 
 **Convenção de mensagens:**
+
 | Prefixo | Uso |
 |---------|-----|
 | `feat` | Nova funcionalidade |
@@ -274,23 +358,23 @@ git commit -m "feat: adiciona parametrização no script de extração"
 - Use `databricks bundle validate` para verificar erros de sintaxe
 - Revise o plano com `databricks bundle plan` antes de aplicar
 
-### Retry automático
+### Retry Automático
 
 Os scripts de extração possuem retry automático via biblioteca `tenacity`:
 
-| Componente | Tentativas | Espera                   | Exceções                  |
-| ---------- | ---------- | ------------------------ | ------------------------- |
-| SQL Server | 3          | Exponencial (2s, 4s, 8s) | Qualquer Exception        |
-| API PTAX   | 3          | Exponencial (2s, 4s, 8s) | RequestException, Timeout |
+| Componente | Tentativas | Espera | Exceções |
+|------------|------------|--------|----------|
+| SQL Server | 3 | Exponencial (2s, 4s, 8s) | Qualquer Exception |
+| API PTAX | 3 | Exponencial (2s, 4s, 8s) | RequestException, Timeout |
 
 ### Agendamento dos Jobs
 
 Os jobs rodam automaticamente conforme configuração nos YAMLs:
 
-| Job                    | Horários      | Frequência |
-| ---------------------- | ------------- | ---------- |
-| extract_lh_nautical    | 00:00 e 18:00 | 2x ao dia  |
-| extract_exchange_rates | 18:00         | 1x ao dia  |
+| Job | Horários | Frequência |
+|-----|----------|------------|
+| extract_lh_nautical | 00:00 e 18:00 | 2x ao dia |
+| extract_exchange_rates | 18:00 | 1x ao dia |
 
 ### CI/CD (Bitbucket)
 
@@ -301,3 +385,9 @@ O pipeline `bitbucket-pipelines.yml` executa automaticamente ao fazer push na br
 3. Roda os jobs de extração (`databricks bundle run ...`)
 
 **Autenticação:** Via variáveis de ambiente do Bitbucket (`DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID`, `DATABRICKS_CLIENT_SECRET`) — nunca no código.
+
+---
+
+## Como Executar a Transformação Após a Extração
+
+Para rodar as transformações dbt (Silver) logo após os jobs de extração (Bronze), veja [docs/transform_after_extract.md](docs/transform_after_extract.md).

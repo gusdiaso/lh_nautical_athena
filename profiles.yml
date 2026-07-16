@@ -1,0 +1,18 @@
+lh_nautical:
+  target: dev
+  outputs:
+    dev:
+      type: databricks
+      catalog: dev_lh_nautical
+      schema: silver
+      host: https://dbc-c4e046bc-37b5.cloud.databricks.com
+      http_path: "{{ env_var('DBT_HTTP_PATH') }}"
+      token: "{{ env_var('DBT_DATABRICKS_TOKEN') }}"
+
+    prod:
+      type: databricks
+      catalog: prod_lh_nautical
+      schema: silver
+      host: https://dbc-c4e046bc-37b5.cloud.databricks.com
+      http_path: "{{ env_var('DBT_HTTP_PATH') }}"
+      token: "{{ env_var('DBT_DATABRICKS_TOKEN_PROD') }}"

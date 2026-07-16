@@ -381,3 +381,42 @@ Camada Intermediate
 | `fact_*` | Marts | Tabelas de fato (numeros e metricas) |
 | `sk_*` | Marts | Chave substituta (surrogate key) |
 | `nk_*` | Marts | Chave natural (natural key) |
+
+---
+
+## Convenções de Código SQL
+
+### Leading Comma
+
+O projeto adota a convenção **leading comma** para formatação de queries SQL. Cada vírgula é colocada no **início** da linha, não no final.
+
+**Exemplo:**
+
+```sql
+-- ✅ CORRETO (leading comma)
+SELECT
+    order_id
+    , customer_id
+    , order_date
+    , total_amount
+FROM int_orders
+WHERE status = 'completed'
+
+-- ❌ ERRADO (trailing comma)
+SELECT
+    order_id,
+    customer_id,
+    order_date,
+    total_amount
+FROM int_orders
+WHERE status = 'completed'
+```
+
+**Vantagens:**
+- **Git-friendly**: Ao adicionar ou remover colunas, o diff mostra apenas a linha alterada
+- **Revisão facilitada**: Cada coluna fica em sua própria linha, tornando o código mais legível
+- **Consistência**: Todo o time segue o mesmo padrão, evitando debates sobre formatação
+
+**Regras:**
+1. Coloque a vírgula no início da linha, alinhada com o nome da coluna
+2. Uma coluna por linha

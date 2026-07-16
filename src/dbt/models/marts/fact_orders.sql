@@ -7,8 +7,8 @@ with source as (
 
 select
     cast(date_format(placed_at, 'yyyyMMdd') as string) as sk_date,
-    md5(cast(customer_id as string)) as sk_customer,
-    md5(cast(salesperson_id as string)) as sk_employee,
+    {{ sk_from_keys(['customer_id']) }} as sk_customer,
+    {{ sk_from_keys(['salesperson_id']) }} as sk_employee,
     order_id,
     order_number,
     channel,

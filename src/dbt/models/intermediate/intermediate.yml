@@ -83,6 +83,9 @@ models:
       - name: purchase_order_id
         data_tests:
           - not_null
+          - relationships:
+              to: ref('stg_purchase_orders')
+              field: purchase_order_id
 
   - name: int_orders
     columns:
@@ -98,6 +101,21 @@ models:
       - name: customer_id
         data_tests:
           - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+
+      - name: salesperson_id
+        data_tests:
+          - relationships:
+              to: ref('stg_employees')
+              field: employee_id
+
+      - name: location_id
+        data_tests:
+          - relationships:
+              to: ref('stg_locations')
+              field: location_id
 
   - name: int_payments
     columns:
@@ -109,6 +127,9 @@ models:
       - name: order_id
         data_tests:
           - not_null
+          - relationships:
+              to: ref('int_orders')
+              field: order_id
 
   - name: int_products
     description: "Produtos padronizados com flags de qualidade (registros incompletos e descrições ausentes)."
@@ -175,10 +196,16 @@ models:
       - name: product_variant_id
         data_tests:
           - not_null
+          - relationships:
+              to: ref('stg_product_variants')
+              field: product_variant_id
 
       - name: supplier_id
         data_tests:
           - not_null
+          - relationships:
+              to: ref('stg_suppliers')
+              field: supplier_id
 
   - name: int_returns
     description: "Padronização analítica dos registros de devoluções."
@@ -220,10 +247,16 @@ models:
       - name: return_id
         data_tests:
           - not_null
+          - relationships:
+              to: ref('int_returns')
+              field: return_id
 
       - name: order_item_id
         data_tests:
           - not_null
+          - relationships:
+              to: ref('int_order_items')
+              field: order_item_id
 
       - name: quantity_returned
         data_tests:

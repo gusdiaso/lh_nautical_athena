@@ -17,8 +17,8 @@ orders as (
 
 select
     cast(date_format(paid_at, 'yyyyMMdd') as string) as sk_date,
-    md5(cast(coalesce(orders.customer_id, payments.order_id) as string)) as sk_customer,
-    md5(cast(orders.salesperson_id as string)) as sk_employee,
+    {{ sk_from_keys(['coalesce(orders.customer_id, payments.order_id)']) }} as sk_customer,
+    {{ sk_from_keys(['orders.salesperson_id']) }} as sk_employee,
     payments.payment_id,
     payments.order_id,
     payments.method,

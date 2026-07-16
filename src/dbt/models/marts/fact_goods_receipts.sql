@@ -7,7 +7,7 @@ with source as (
 
 select
     cast(date_format(received_at, 'yyyyMMdd') as string) as sk_date,
-    md5(cast(received_by_employee_id as string)) as sk_employee,
+    {{ sk_from_keys(['received_by_employee_id']) }} as sk_employee,
     goods_receipt_id,
     purchase_order_id,
     received_by_employee_id,

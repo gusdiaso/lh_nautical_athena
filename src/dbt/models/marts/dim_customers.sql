@@ -6,7 +6,7 @@ with source as (
 )
 
 select
-    md5(cast(customer_id as string)) as sk_customer,
+    {{ sk_from_keys(['customer_id']) }} as sk_customer,
     customer_id as nk_customer_id,
     person_type,
     legal_name,

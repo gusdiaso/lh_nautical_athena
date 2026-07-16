@@ -34,6 +34,34 @@ models:
         data_tests:
           - not_null
 
+  - name: int_locations
+    columns:
+      - name: location_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: location_name
+        data_tests:
+          - not_null
+
+      - name: location_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - store
+                  - warehouse
+
+      - name: is_active
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
   - name: int_employees
     columns:
       - name: employee_id
@@ -82,6 +110,61 @@ models:
         data_tests:
           - not_null
 
+  - name: int_products
+    description: "Produtos padronizados com flags de qualidade (registros incompletos e descrições ausentes)."
+
+    columns:
+      - name: product_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: product_name
+        data_tests:
+          - not_null
+
+      - name: brand_id
+        data_tests:
+          - not_null
+
+      - name: category_id
+        data_tests:
+          - not_null
+
+      - name: ncm_code
+        data_tests:
+          - not_null
+
+      - name: unit_of_measure
+        data_tests:
+          - not_null
+
+      - name: is_active
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_incomplete_record
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_missing_description
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
   - name: int_product_suppliers
     columns:
       - name: sk_product_supplier
@@ -122,6 +205,48 @@ models:
                   - outros
 
       - name: has_refund_amount
+        data_tests:
+          - not_null
+
+  - name: int_return_items
+    description: "Itens de devolução com classificação de ação e cálculo de reembolso por linha."
+
+    columns:
+      - name: return_item_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: return_id
+        data_tests:
+          - not_null
+
+      - name: order_item_id
+        data_tests:
+          - not_null
+
+      - name: quantity_returned
+        data_tests:
+          - not_null
+
+      - name: action
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - refund
+                  - exchange
+
+      - name: is_exchange
+        data_tests:
+          - not_null
+
+      - name: is_refund
+        data_tests:
+          - not_null
+
+      - name: total_line_refund_amount
         data_tests:
           - not_null
 
@@ -179,6 +304,142 @@ models:
       - name: is_profitable
         data_tests:
           - not_null
+
+  - name: int_order_items
+    description: "Itens de pedido com cálculos de ICMS, IPI e total com impostos."
+
+    columns:
+      - name: order_item_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: order_id
+        data_tests:
+          - not_null
+
+      - name: product_variant_id
+        data_tests:
+          - not_null
+
+      - name: quantity_ordered
+        data_tests:
+          - not_null
+
+      - name: unit_price
+        data_tests:
+          - not_null
+
+      - name: icms_rate
+        data_tests:
+          - not_null
+
+      - name: ipi_rate
+        data_tests:
+          - not_null
+
+      - name: original_line_total
+        data_tests:
+          - not_null
+
+      - name: icms_amount
+        data_tests:
+          - not_null
+
+      - name: ipi_amount
+        data_tests:
+          - not_null
+
+      - name: total_tax_amount
+        data_tests:
+          - not_null
+
+      - name: total_with_taxes
+        data_tests:
+          - not_null
+
+  - name: int_purchase_orders
+    description: "Pedidos de compra padronizados com flags de entrega e moeda."
+
+    columns:
+      - name: purchase_order_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: po_number
+        data_tests:
+          - not_null
+
+      - name: supplier_id
+        data_tests:
+          - not_null
+
+      - name: buyer_id
+        data_tests:
+          - not_null
+
+      - name: destination_location_id
+        data_tests:
+          - not_null
+
+      - name: status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - cancelled
+                  - draft
+                  - received
+                  - partially_received
+                  - sent
+
+      - name: currency
+        data_tests:
+          - not_null
+
+      - name: subtotal
+        data_tests:
+          - not_null
+
+      - name: original_total
+        data_tests:
+          - not_null
+
+      - name: placed_at
+        data_tests:
+          - not_null
+
+      - name: expected_delivery_at
+        data_tests: []
+
+      - name: has_expected_delivery
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_foreign_currency
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: has_total_adjustment
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
 
   - name: int_stock_movements
     description: "Movimentações de estoque com direção, quantidade absoluta e identificação de migração."

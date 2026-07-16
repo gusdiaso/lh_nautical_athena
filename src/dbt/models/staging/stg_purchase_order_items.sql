@@ -8,10 +8,10 @@ with source as (
 )
 
 select
-    id as purchase_order_item_id
+    cast(id as integer) as purchase_order_item_id
     , purchase_order_id
     , product_variant_id
-    , quantity_ordered
+    , cast(round(quantity_ordered, 2) as decimal(10, 2)) as quantity_ordered
     , unit_cost
     , line_total
 

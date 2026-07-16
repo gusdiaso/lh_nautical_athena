@@ -8,13 +8,13 @@ with source as (
 )
 
 select
-    id as order_item_id
-    , order_id
-    , product_variant_id
-    , quantity
+    cast(id as integer) as order_item_id
+    , cast(order_id as integer) as order_id
+    , cast(product_variant_id as integer) as product_variant_id
+    , cast(round(quantity,2) as decimal(10,2)) as quantity_ordered
     , unit_price
     , icms_rate
     , ipi_rate
-    , line_total
+    , line_total as original_line_total
 
 from source

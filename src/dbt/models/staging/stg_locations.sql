@@ -8,7 +8,7 @@ with source as (
 )
 
 select
-    id as location_id
+    cast(id as integer) as location_id
     , name as location_name
     , location_type
     , postal_code

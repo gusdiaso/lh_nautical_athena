@@ -8,7 +8,7 @@ with source as (
 )
 
 select
-    id as attribute_id
+    cast(id as integer) as attribute_id
     , name as attribute_name
     , data_type
 

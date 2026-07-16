@@ -8,16 +8,16 @@ with source as (
 )
 
 select
-    id as purchase_order_id
+    cast(id as integer) as purchase_order_id
     , po_number
-    , supplier_id
-    , buyer_id
-    , destination_location_id
+    , cast(supplier_id as integer) as supplier_id
+    , cast(buyer_id as integer) as buyer_id
+    , cast(destination_location_id as integer) as destination_location_id
     , status
     , currency
     , subtotal
-    , total
-    , placed_at
-    , expected_delivery_at
+    , total as original_total
+    , cast(placed_at as timestamp) as placed_at
+    , cast(expected_delivery_at as date) as expected_delivery_at
 
 from source

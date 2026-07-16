@@ -8,9 +8,9 @@ with source as (
 )
 
 select
-    id as goods_receipt_item_id
-    , goods_receipt_id
-    , purchase_order_item_id
-    , quantity_received
+    cast(id as integer) as goods_receipt_item_id
+    , cast(goods_receipt_id as integer) as goods_receipt_id
+    , cast(purchase_order_item_id as integer) as purchase_order_item_id
+    , cast(round(quantity_received, 2) as decimal(10, 2)) as quantity_received
 
 from source

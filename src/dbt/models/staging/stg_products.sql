@@ -8,11 +8,11 @@ with source as (
 )
 
 select
-    id as product_id
+    cast(id as integer) as product_id
     , name as product_name
     , description
-    , brand_id
-    , category_id
+    , cast(brand_id as integer) as brand_id
+    , cast(category_id as integer) as category_id
     , ncm_code
     , unit_of_measure
     , is_active

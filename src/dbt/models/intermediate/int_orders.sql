@@ -3,9 +3,9 @@ with source as (
     select *
     from {{ ref('stg_orders') }}
 
-),
+)
 
-base as (
+, base as (
 
     select
         order_id,
@@ -18,19 +18,21 @@ base as (
         subtotal,
         discount_amount,
         total,
-        placed_at
+        placed_at,
+        created_at,
+        updated_at
     from source
     where order_id is not null
 
-),
+)
 
-deduplicated as (
+, deduplicated as (
 
     select
-        *,
-        row_number() over (
+        *
+        , row_number() over (
             partition by order_id
-            order by order_id
+            order by updated_at desc nulls last, created_at desc nulls last
         ) as record_rank
     from base
 
@@ -47,7 +49,9 @@ select
     subtotal,
     discount_amount,
     total,
-    placed_at
+    placed_at,
+    created_at,
+    updated_at
 
 from deduplicated
 where record_rank = 1

@@ -8,17 +8,17 @@ with source as (
 )
 
 select
-    id as address_id,
-    customer_id,
-    address_type,
-    postal_code,
-    street,
-    number,
-    complement,
-    district,
-    city,
-    state,
-    country,
-    is_primary
+    id as address_id
+    , customer_id
+    , address_type
+    , postal_code
+    , street
+    , number
+    , complement
+    , district
+    , city
+    , state
+    , country
+    , is_primary
 
 from source

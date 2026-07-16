@@ -6,54 +6,51 @@ with returns as (
 )
 
 select
-    return_id,
-    return_number,
-    order_id,
-    customer_id,
-    received_at_location_id,
-    status,
-    reason as original_reason,
-
-    case
-        when reason is null
-            or trim(reason) in ('?', '—', '-')
+    return_id
+    , return_number
+    , order_id
+    , customer_id
+    , received_at_location_id
+    , status
+    , reason_normalized
+    , total_refund_amount
+    , case
+        when
+            reason_normalized is null
+            or trim(reason_normalized) in ('?', '—', '-')
             then 'nao_informado'
 
-        when lower(trim(reason)) like '%duplicada%'
+        when lower(trim(reason_normalized)) like '%duplicada%'
             then 'compra_duplicada'
 
-        when lower(trim(reason)) like '%desist%'
+        when lower(trim(reason_normalized)) like '%desist%'
             then 'desistencia_cliente'
 
-        when lower(trim(reason)) like '%descri%'
-            or lower(trim(reason)) like '%corresponde%'
-            or lower(trim(reason)) like '%corressponde%'
+        when
+            lower(trim(reason_normalized)) like '%descri%'
+            or lower(trim(reason_normalized)) like '%corresponde%'
+            or lower(trim(reason_normalized)) like '%corressponde%'
             then 'divergencia_descricao'
 
-        when lower(trim(reason)) like '%avariado%'
-            or lower(trim(reason)) like '%variado%'
-            or lower(trim(reason)) like '%transporte%'
+        when
+            lower(trim(reason_normalized)) like '%avariado%'
+            or lower(trim(reason_normalized)) like '%variado%'
+            or lower(trim(reason_normalized)) like '%transporte%'
             then 'avaria_transporte'
 
-        when lower(trim(reason)) like '%defeito%'
+        when lower(trim(reason_normalized)) like '%defeito%'
             then 'defeito_fabrica'
 
-        when lower(trim(reason)) like '%tamanho%'
-            or lower(trim(reason)) like '%cor%'
+        when
+            lower(trim(reason_normalized)) like '%tamanho%'
+            or lower(trim(reason_normalized)) like '%cor%'
             then 'tamanho_cor_incorretos'
 
-        when lower(trim(reason)) like '%outros%'
+        when lower(trim(reason_normalized)) like '%outros%'
             then 'outros'
 
         else 'outros'
-    end as return_reason_group,
+    end as return_reason_group
+    , coalesce(total_refund_amount > 0, false) as has_refund_amount
 
-    total_refund_amount,
-
-    case
-        when total_refund_amount > 0 then true
-        else false
-    end as has_refund_amount,
-
-from returns
 from returns

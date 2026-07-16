@@ -23,7 +23,7 @@ models:
 
     intermediate:
       +schema: silver
-      +materialized: view
+      +materialized: table
 
     marts:
       +schema: gold

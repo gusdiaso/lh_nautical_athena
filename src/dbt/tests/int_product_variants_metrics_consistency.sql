@@ -1,11 +1,11 @@
 select
-    product_variant_id,
-    sale_price,
-    cost_price,
-    gross_margin_amount,
-    gross_margin_percentage,
-    total_tax_rate,
-    is_profitable
+    product_variant_id
+    , sale_price
+    , cost_price
+    , gross_margin_amount
+    , gross_margin_percentage
+    , total_tax_rate
+    , is_profitable
 from {{ ref('int_product_variants') }}
 where
     round(sale_price - cost_price, 2) <> gross_margin_amount
@@ -13,8 +13,8 @@ where
     or (
         sale_price > 0
         and round(
-            ((sale_price - cost_price) / sale_price) * 100,
-            2
+            ((sale_price - cost_price) / sale_price) * 100
+            , 2
         ) <> gross_margin_percentage
     )
 

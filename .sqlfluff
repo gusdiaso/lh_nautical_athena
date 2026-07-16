@@ -1,0 +1,13 @@
+[sqlfluff]
+dialect = sparksql
+templater = dbt
+
+[sqlfluff:templater:dbt]
+project_dir = .
+
+[sqlfluff:layout:type:comma]
+spacing_before = touch
+line_position = leading
+
+[sqlfluff:rules:convention.select_trailing_comma]
+enable = false

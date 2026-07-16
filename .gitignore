@@ -9,7 +9,6 @@ __pycache__/
 target/
 dbt_packages/
 logs/
-profiles.yml
 .databricks/
 build/
 dist/
@@ -22,3 +21,4 @@ scratch/**
 .vscode/tasks.json
 .vscode/__builtins__.pyi
 tests/secrets.py
+.user.yml

@@ -6,16 +6,14 @@ with source as (
 )
 
 select
-    id as customer_id,
-    person_type,
-    legal_name,
-    trade_name,
-    tax_id,
-    state_registration,
-    email,
-    phone,
-    is_active,
-    created_at,
-    updated_at
+    id as customer_id
+    , person_type
+    , legal_name
+    , trade_name
+    , tax_id
+    , state_registration
+    , email
+    , phone
+    , is_active
 
 from source

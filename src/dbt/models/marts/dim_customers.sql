@@ -7,7 +7,7 @@ with source as (
 
 select
     {{ sk_from_keys(['customer_id']) }} as sk_customer,
-    customer_id as nk_customer_id,
+    customer_id,
     person_type,
     legal_name,
     trade_name,

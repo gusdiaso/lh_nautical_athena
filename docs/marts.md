@@ -22,6 +22,8 @@ Este conjunto contém os seguintes modelos:
 
 As dimensões descrevem o contexto das análises e usam chaves substitutas com prefixo `sk_`. As fatos carregam os eventos de negócio e mantêm o menor grão útil para análise.
 
+Nem todo atributo descritivo segue o padrão `sk_`/`nk_`. Campos de domínio vindos da origem, como `brand_name` e `category_name`, preservam a nomenclatura funcional para facilitar leitura humana e rastreabilidade com o dado original.
+
 - `dim_date` organiza a leitura temporal e permite agrupar por dia, mês, ano e fim de semana.
 - `dim_brands`, `dim_categories`, `dim_customers` e `dim_employees` servem como eixo descritivo das análises.
 - `fact_orders` é o ponto de partida para pedidos de venda.

@@ -467,3 +467,114 @@ models:
       - name: is_legacy_migration
         data_tests:
           - not_null
+
+  - name: int_variant_attribute_values
+    description: "Valores dos atributos das variantes, limpos e padronizados."
+
+    columns:
+      - name: product_variant_id
+        data_tests:
+          - not_null
+
+      - name: attribute_id
+        data_tests:
+          - not_null
+
+      - name: attribute_name
+        data_tests:
+          - not_null
+
+      - name: attribute_data_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - text
+                  - number
+                  - boolean
+                  
+  - name: int_addresses
+    description: "Endereços com CEP padronizado e limpeza de campos textuais."
+
+    columns:
+      - name: address_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        data_tests:
+          - not_null
+
+      - name: address_type
+        data_tests:
+          - not_null
+
+      - name: postal_code
+        data_tests:
+          - not_null
+
+      - name: is_primary
+        data_tests:
+          - not_null
+
+  - name: int_stock_levels
+    description: "Níveis de estoque com identificação de produtos sem saldo."
+
+    columns:
+      - name: product_variant_id
+        data_tests:
+          - not_null
+
+      - name: location_id
+        data_tests:
+          - not_null
+
+      - name: quantity_on_hand
+        data_tests:
+          - not_null
+
+      - name: is_out_of_stock
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+  - name: int_suppliers
+    description: "Fornecedores com padronização de campos textuais."
+
+    columns:
+      - name: supplier_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: legal_name
+        data_tests:
+          - not_null
+
+      - name: country
+        data_tests:
+          - not_null
+
+      - name: tax_id_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - CNPJ
+                  - VAT
+
+      - name: is_active
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false

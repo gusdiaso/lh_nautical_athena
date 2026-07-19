@@ -447,6 +447,15 @@ models:
       - name: expected_delivery_at
         data_tests: []
 
+      - name: exchange_rate_sell
+        description: "Taxa de câmbio de venda (PTAX) na data do pedido, ou NULL se a moeda for BRL ou data sem cotação."
+        data_tests: []
+
+      - name: total_brl
+        description: "Valor total do pedido convertido para BRL. Para moedas estrangeiras, usa a average_exchange_rate; para BRL, mantém o original_total."
+        data_tests:
+          - not_null
+
       - name: has_expected_delivery
         data_tests:
           - not_null

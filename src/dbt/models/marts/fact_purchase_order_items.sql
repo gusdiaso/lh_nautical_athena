@@ -77,7 +77,25 @@ with purchase_order_items as (
 
 , joined as (
     select
-        md5(
+        purchase_order_items.purchase_order_item_id
+            as nk_purchase_order_item_id
+        , purchase_order_items.purchase_order_id
+            as nk_purchase_order_id
+        , purchase_orders.po_number
+        , order_dates.sk_date as sk_order_date
+        , expected_dates.sk_date as sk_expected_delivery_date
+        , purchase_orders.status as purchase_order_status
+        , purchase_orders.currency
+        , purchase_orders.exchange_rate_sell
+        , purchase_order_items.quantity_ordered
+        , purchase_order_items.unit_cost
+            as unit_cost_original_currency
+        , purchase_order_items.line_total
+            as line_total_original_currency
+        , purchase_orders.placed_at
+        , purchase_orders.expected_delivery_at
+        , cast(1 as integer) as purchase_order_item_count
+        , md5(
             concat_ws(
                 '||'
                 , 'purchase_order_item'
@@ -87,11 +105,6 @@ with purchase_order_items as (
                 )
             )
         ) as sk_purchase_order_item
-        , purchase_order_items.purchase_order_item_id
-            as nk_purchase_order_item_id
-        , purchase_order_items.purchase_order_id
-            as nk_purchase_order_id
-        , purchase_orders.po_number
         , coalesce(
             products.sk_product
             , md5('product||nao_informado')
@@ -108,16 +121,6 @@ with purchase_order_items as (
             employees.sk_employee
             , md5('employee||nao_informado')
         ) as sk_employee
-        , order_dates.sk_date as sk_order_date
-        , expected_dates.sk_date as sk_expected_delivery_date
-        , purchase_orders.status as purchase_order_status
-        , purchase_orders.currency
-        , purchase_orders.exchange_rate_sell
-        , purchase_order_items.quantity_ordered
-        , purchase_order_items.unit_cost
-            as unit_cost_original_currency
-        , purchase_order_items.line_total
-            as line_total_original_currency
         , case
             when purchase_orders.currency = 'BRL'
                 then purchase_order_items.unit_cost
@@ -138,32 +141,36 @@ with purchase_order_items as (
                     , 2
                 )
         end as line_total_brl
-        , purchase_orders.placed_at
         , purchase_orders.expected_delivery_at
-        , purchase_orders.expected_delivery_at
-            < current_date() as is_expected_delivery_overdue
-        , cast(1 as integer) as purchase_order_item_count
+        < current_date() as is_expected_delivery_overdue
     from purchase_order_items
     inner join purchase_orders
-        on purchase_order_items.purchase_order_id
+        on
+            purchase_order_items.purchase_order_id
             = purchase_orders.purchase_order_id
     left join products
-        on purchase_order_items.product_variant_id
+        on
+            purchase_order_items.product_variant_id
             = products.nk_product_variant_id
     left join suppliers
-        on purchase_orders.supplier_id
+        on
+            purchase_orders.supplier_id
             = suppliers.nk_supplier_id
     left join locations
-        on purchase_orders.destination_location_id
+        on
+            purchase_orders.destination_location_id
             = locations.nk_location_id
     left join employees
-        on coalesce(purchase_orders.buyer_id, -3)
+        on
+            coalesce(purchase_orders.buyer_id, -3)
             = employees.nk_employee_id
     left join dates as order_dates
-        on cast(purchase_orders.placed_at as date)
+        on
+            cast(purchase_orders.placed_at as date)
             = order_dates.full_date
     left join dates as expected_dates
-        on purchase_orders.expected_delivery_at
+        on
+            purchase_orders.expected_delivery_at
             = expected_dates.full_date
 )
 

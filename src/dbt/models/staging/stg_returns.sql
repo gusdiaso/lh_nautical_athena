@@ -12,9 +12,9 @@ with source as (
         , received_at_location_id
         , status
         , reason as original_reason
-        , lower(trim(reason)) as reason_normalized
         , total_refund_amount
         , cast(created_at as timestamp) as created_at
+        , lower(trim(reason)) as reason_normalized
     from source
 )
 

@@ -20,11 +20,11 @@ with returns as (
         , order_id
         , customer_id
         , received_at_location_id
-        , lower(trim(status)) as status
         , original_reason
         , reason_normalized
         , total_refund_amount
         , created_at
+        , lower(trim(status)) as status
         , case
             when
                 reason_normalized is null

@@ -36,6 +36,11 @@ models:
 
       - name: nk_primary_location_id
         description: "Identificador natural da localização principal."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: nk_location_id
 
       - name: hire_date
         description: "Data de admissão."

@@ -88,13 +88,16 @@ with goods_receipt_items as (
         ) as cumulative_quantity_received
     from goods_receipt_items
     inner join goods_receipts
-        on goods_receipt_items.goods_receipt_id
+        on
+            goods_receipt_items.goods_receipt_id
             = goods_receipts.goods_receipt_id
     inner join purchase_order_items
-        on goods_receipt_items.purchase_order_item_id
+        on
+            goods_receipt_items.purchase_order_item_id
             = purchase_order_items.purchase_order_item_id
     inner join purchase_orders
-        on purchase_order_items.purchase_order_id
+        on
+            purchase_order_items.purchase_order_id
             = purchase_orders.purchase_order_id
 )
 
@@ -135,14 +138,7 @@ with goods_receipt_items as (
 
 , joined as (
     select
-        md5(
-            concat_ws(
-                '||'
-                , 'goods_receipt_item'
-                , cast(receipt_base.goods_receipt_item_id as string)
-            )
-        ) as sk_goods_receipt_item
-        , receipt_base.goods_receipt_item_id
+        receipt_base.goods_receipt_item_id
             as nk_goods_receipt_item_id
         , receipt_base.goods_receipt_id
             as nk_goods_receipt_id
@@ -151,6 +147,29 @@ with goods_receipt_items as (
         , receipt_base.purchase_order_id
             as nk_purchase_order_id
         , receipt_base.po_number
+        , receipt_dates.sk_date as sk_receipt_date
+        , order_dates.sk_date as sk_order_date
+        , expected_dates.sk_date as sk_expected_delivery_date
+        , receipt_base.purchase_order_status
+        , receipt_base.currency
+        , receipt_base.exchange_rate_sell
+        , receipt_base.quantity_ordered
+        , receipt_base.quantity_received
+        , receipt_base.cumulative_quantity_received
+        , receipt_base.unit_cost
+            as unit_cost_original_currency
+        , receipt_base.placed_at
+        , receipt_base.expected_delivery_at
+        , receipt_base.received_at
+        , receipt_base.notes
+        , cast(1 as integer) as goods_receipt_item_count
+        , md5(
+            concat_ws(
+                '||'
+                , 'goods_receipt_item'
+                , cast(receipt_base.goods_receipt_item_id as string)
+            )
+        ) as sk_goods_receipt_item
         , coalesce(
             products.sk_product
             , md5('product||nao_informado')
@@ -167,26 +186,15 @@ with goods_receipt_items as (
             employees.sk_employee
             , md5('employee||nao_informado')
         ) as sk_employee
-        , receipt_dates.sk_date as sk_receipt_date
-        , order_dates.sk_date as sk_order_date
-        , expected_dates.sk_date as sk_expected_delivery_date
-        , receipt_base.purchase_order_status
-        , receipt_base.currency
-        , receipt_base.exchange_rate_sell
-        , receipt_base.quantity_ordered
-        , receipt_base.quantity_received
-        , receipt_base.cumulative_quantity_received
         , greatest(
             receipt_base.quantity_ordered
             - receipt_base.cumulative_quantity_received
             , 0
         ) as remaining_quantity_after_receipt
         , receipt_base.cumulative_quantity_received
-            >= receipt_base.quantity_ordered as is_fully_received
+        >= receipt_base.quantity_ordered as is_fully_received
         , receipt_base.cumulative_quantity_received
-            < receipt_base.quantity_ordered as is_partial_receipt
-        , receipt_base.unit_cost
-            as unit_cost_original_currency
+        < receipt_base.quantity_ordered as is_partial_receipt
         , round(
             receipt_base.quantity_received
             * receipt_base.unit_cost
@@ -207,38 +215,40 @@ with goods_receipt_items as (
                     , 2
                 )
         end as received_value_brl
-        , receipt_base.placed_at
-        , receipt_base.expected_delivery_at
-        , receipt_base.received_at
         , datediff(
             cast(receipt_base.received_at as date)
             , receipt_base.expected_delivery_at
         ) as delivery_variance_days
         , cast(receipt_base.received_at as date)
-            > receipt_base.expected_delivery_at as is_late_receipt
-        , receipt_base.notes
-        , cast(1 as integer) as goods_receipt_item_count
+        > receipt_base.expected_delivery_at as is_late_receipt
     from receipt_base
     left join products
-        on receipt_base.product_variant_id
+        on
+            receipt_base.product_variant_id
             = products.nk_product_variant_id
     left join suppliers
-        on receipt_base.supplier_id
+        on
+            receipt_base.supplier_id
             = suppliers.nk_supplier_id
     left join locations
-        on receipt_base.destination_location_id
+        on
+            receipt_base.destination_location_id
             = locations.nk_location_id
     left join employees
-        on coalesce(receipt_base.received_by_employee_id, -3)
+        on
+            coalesce(receipt_base.received_by_employee_id, -3)
             = employees.nk_employee_id
     left join dates as receipt_dates
-        on cast(receipt_base.received_at as date)
+        on
+            cast(receipt_base.received_at as date)
             = receipt_dates.full_date
     left join dates as order_dates
-        on cast(receipt_base.placed_at as date)
+        on
+            cast(receipt_base.placed_at as date)
             = order_dates.full_date
     left join dates as expected_dates
-        on receipt_base.expected_delivery_at
+        on
+            receipt_base.expected_delivery_at
             = expected_dates.full_date
 )
 

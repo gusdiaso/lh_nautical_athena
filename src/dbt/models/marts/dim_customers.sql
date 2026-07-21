@@ -41,7 +41,7 @@ with customers as (
             partition by customer_id
             order by
                 is_primary desc
-                , address_id
+                , address_id asc
         ) as address_rank
     from {{ ref('int_addresses') }}
 )
@@ -66,8 +66,7 @@ with customers as (
 
 , technical_customer as (
     select
-        md5('customer||nao_informado') as sk_customer
-        , cast(-1 as bigint) as nk_customer_id
+        cast(-1 as bigint) as nk_customer_id
         , cast(null as string) as person_type
         , 'Cliente não informado' as legal_name
         , cast(null as string) as trade_name
@@ -88,18 +87,12 @@ with customers as (
         , false as is_primary_address
         , false as is_active
         , true as is_technical_member
+        , md5('customer||nao_informado') as sk_customer
 )
 
 , customers_dimension as (
     select
-        md5(
-            concat_ws(
-                '||'
-                , 'customer'
-                , cast(customers.customer_id as string)
-            )
-        ) as sk_customer
-        , customers.customer_id as nk_customer_id
+        customers.customer_id as nk_customer_id
         , customers.person_type
         , customers.legal_name
         , customers.trade_name
@@ -117,9 +110,16 @@ with customers as (
         , selected_addresses.city
         , selected_addresses.state
         , selected_addresses.country
-        , coalesce(selected_addresses.is_primary, false) as is_primary_address
         , customers.is_active
         , false as is_technical_member
+        , md5(
+            concat_ws(
+                '||'
+                , 'customer'
+                , cast(customers.customer_id as string)
+            )
+        ) as sk_customer
+        , coalesce(selected_addresses.is_primary, false) as is_primary_address
     from customers
     left join selected_addresses
         on customers.customer_id = selected_addresses.customer_id

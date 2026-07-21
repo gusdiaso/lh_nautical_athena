@@ -1,5 +1,5 @@
 select
-    purchase_order_item_id
+    nk_purchase_order_item_id as purchase_order_item_id
     , currency
     , exchange_rate_sell
     , unit_cost_original_currency

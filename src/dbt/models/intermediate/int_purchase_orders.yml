@@ -75,29 +75,3 @@ models:
         data_tests:
           - not_null
 
-      - name: has_expected_delivery
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - true
-                  - false
-
-      - name: is_foreign_currency
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - true
-                  - false
-
-      - name: has_total_adjustment
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - true
-                  - false

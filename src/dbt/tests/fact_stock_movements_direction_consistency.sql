@@ -1,5 +1,5 @@
 select
-    stock_movement_id
+    nk_stock_movement_id as stock_movement_id
     , movement_direction
     , is_inbound
     , is_outbound

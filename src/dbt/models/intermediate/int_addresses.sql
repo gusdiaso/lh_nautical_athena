@@ -20,6 +20,7 @@ with source as (
         address_id
         , customer_id
         , address_type
+        , is_primary
         , regexp_replace(postal_code, '[^0-9]', '') as postal_code
         , trim(street) as street
         , trim(number) as number
@@ -31,7 +32,6 @@ with source as (
         , trim(city) as city
         , trim(state) as state
         , trim(country) as country
-        , is_primary
     from source
 )
 

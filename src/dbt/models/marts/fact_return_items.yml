@@ -28,11 +28,19 @@ models:
         description: "Identificador natural do item originalmente vendido."
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('fact_order_items')
+                field: nk_order_item_id
 
       - name: nk_order_id
         description: "Identificador natural do pedido original."
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('fact_order_items')
+                field: nk_order_id
 
       - name: sk_returned_product
         description: "Chave do produto devolvido."
@@ -147,13 +155,19 @@ models:
         description: "Indica ação de troca."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: is_refund
         description: "Indica ação de reembolso."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
-      - name: has_refund_amount
+      - name: return_has_refund_amount
         description: "Indica se a devolução possui valor de reembolso."
         data_tests:
           - not_null

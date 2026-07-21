@@ -1,5 +1,5 @@
 select
-    order_item_id
+    nk_order_item_id as order_item_id
     , order_status
     , is_cancelled
     , is_paid

@@ -86,11 +86,25 @@ models:
         description: "Status do pedido de compra."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - cancelled
+                  - draft
+                  - received
+                  - partially_received
+                  - sent
 
       - name: currency
         description: "Moeda original da compra."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - BRL
+                  - USD
+                  - EUR
 
       - name: exchange_rate_sell
         description: "Taxa cambial associada ao pedido."
@@ -130,6 +144,9 @@ models:
         description: "Indica se a data prevista já passou."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: purchase_order_item_count
         description: "Contador aditivo de itens de compra."

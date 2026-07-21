@@ -87,14 +87,25 @@ with stock_movements as (
 
 , joined as (
     select
-        md5(
+        resolved_movements.stock_movement_id as nk_stock_movement_id
+        , dates.sk_date
+        , resolved_movements.reference_table
+        , resolved_movements.reference_id as nk_reference_id
+        , resolved_movements.movement_type
+        , resolved_movements.movement_direction
+        , resolved_movements.quantity
+        , resolved_movements.absolute_quantity
+        , resolved_movements.notes
+        , resolved_movements.occurred_at
+        , resolved_movements.is_legacy_migration
+        , cast(1 as integer) as movement_count
+        , md5(
             concat_ws(
                 '||'
                 , 'stock_movement'
                 , cast(resolved_movements.stock_movement_id as string)
             )
         ) as sk_stock_movement
-        , resolved_movements.stock_movement_id as nk_stock_movement_id
         , coalesce(
             products.sk_product
             , md5('product||nao_informado')
@@ -107,31 +118,24 @@ with stock_movements as (
             employees.sk_employee
             , md5('employee||nao_informado')
         ) as sk_employee
-        , dates.sk_date
-        , resolved_movements.reference_table
-        , resolved_movements.reference_id as nk_reference_id
-        , resolved_movements.movement_type
-        , resolved_movements.movement_direction
-        , resolved_movements.quantity
-        , resolved_movements.absolute_quantity
-        , resolved_movements.notes
-        , resolved_movements.occurred_at
-        , resolved_movements.is_legacy_migration
         , resolved_movements.movement_direction = 'entrada' as is_inbound
         , resolved_movements.movement_direction = 'saida' as is_outbound
-        , cast(1 as integer) as movement_count
     from resolved_movements
     left join products
-        on resolved_movements.product_variant_id
+        on
+            resolved_movements.product_variant_id
             = products.nk_product_variant_id
     left join locations
-        on resolved_movements.location_id
+        on
+            resolved_movements.location_id
             = locations.nk_location_id
     left join employees
-        on resolved_movements.resolved_employee_id
+        on
+            resolved_movements.resolved_employee_id
             = employees.nk_employee_id
     left join dates
-        on cast(resolved_movements.occurred_at as date)
+        on
+            cast(resolved_movements.occurred_at as date)
             = dates.full_date
 )
 

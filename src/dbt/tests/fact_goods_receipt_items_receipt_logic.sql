@@ -1,5 +1,5 @@
 select
-    goods_receipt_item_id
+    nk_goods_receipt_item_id as goods_receipt_item_id
     , currency
     , exchange_rate_sell
     , quantity_ordered

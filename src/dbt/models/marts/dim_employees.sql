@@ -66,14 +66,7 @@ with employees as (
 
 , employees_dimension as (
     select
-        md5(
-            concat_ws(
-                '||'
-                , 'employee'
-                , cast(employee_id as string)
-            )
-        ) as sk_employee
-        , employee_id as nk_employee_id
+        employee_id as nk_employee_id
         , full_name
         , cpf
         , email
@@ -83,6 +76,13 @@ with employees as (
         , termination_date
         , is_active
         , false as is_technical_member
+        , md5(
+            concat_ws(
+                '||'
+                , 'employee'
+                , cast(employee_id as string)
+            )
+        ) as sk_employee
     from employees
 )
 

@@ -69,6 +69,21 @@ models:
         description: "Nome do mês."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Janeiro
+                  - Fevereiro
+                  - Março
+                  - Abril
+                  - Maio
+                  - Junho
+                  - Julho
+                  - Agosto
+                  - Setembro
+                  - Outubro
+                  - Novembro
+                  - Dezembro
 
       - name: year_month
         description: "Ano e mês no formato YYYY-MM."
@@ -87,6 +102,13 @@ models:
         description: "Identificação do trimestre no formato T1 a T4."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - T1
+                  - T2
+                  - T3
+                  - T4
 
       - name: year_quarter
         description: "Ano e trimestre no formato YYYY-TN."

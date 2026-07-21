@@ -108,6 +108,11 @@ models:
 
       - name: is_profitable
         description: "Indica se o preço cadastral é superior ao custo cadastral."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: is_product_active
         description: "Indica se o produto pai está ativo."

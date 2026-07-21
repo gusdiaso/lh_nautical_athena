@@ -97,6 +97,13 @@ models:
         description: "Status do pagamento."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - approved
+                  - refunded
+                  - pending
+                  - refused
 
       - name: placed_at
         description: "Data e hora de criação do pedido."
@@ -110,21 +117,33 @@ models:
         description: "Indica pagamento concluído."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: is_refunded
         description: "Indica pagamento estornado."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: is_pending
         description: "Indica pagamento pendente."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: is_cancelled
         description: "Indica pagamento cancelado."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: paid_amount
         description: "Valor preenchido somente para pagamentos concluídos."

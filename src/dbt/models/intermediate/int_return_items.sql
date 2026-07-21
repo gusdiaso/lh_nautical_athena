@@ -4,9 +4,9 @@ with source as (
         , return_id
         , order_item_id
         , quantity_returned
-        , lower(trim(action)) as action
         , exchange_variant_id
         , unit_refund_amount
+        , lower(trim(action)) as action
     from {{ ref('stg_return_items') }}
     where return_item_id is not null
 )

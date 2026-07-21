@@ -83,17 +83,32 @@ with return_items as (
 
 , joined as (
     select
-        md5(
+        return_items.return_item_id as nk_return_item_id
+        , return_items.return_id as nk_return_id
+        , return_items.order_item_id as nk_order_item_id
+        , returns.order_id as nk_order_id
+        , dates.sk_date
+        , returns.return_number
+        , returns.status as return_status
+        , returns.original_reason
+        , returns.reason_normalized
+        , returns.return_reason_group
+        , return_items.action
+        , return_items.quantity_returned
+        , return_items.unit_refund_amount
+        , return_items.total_line_refund_amount
+        , return_items.is_exchange
+        , return_items.is_refund
+        , returns.has_refund_amount as return_has_refund_amount
+        , returns.created_at as returned_at
+        , cast(1 as integer) as returned_item_count
+        , md5(
             concat_ws(
                 '||'
                 , 'return_item'
                 , cast(return_items.return_item_id as string)
             )
         ) as sk_return_item
-        , return_items.return_item_id as nk_return_item_id
-        , return_items.return_id as nk_return_id
-        , return_items.order_item_id as nk_order_item_id
-        , returns.order_id as nk_order_id
         , coalesce(
             returned_products.sk_product
             , md5('product||nao_informado')
@@ -113,31 +128,18 @@ with return_items as (
             locations.sk_location
             , md5('location||nao_informada')
         ) as sk_location
-        , dates.sk_date
-        , returns.return_number
-        , returns.status as return_status
-        , returns.original_reason
-        , returns.reason_normalized
-        , returns.return_reason_group
-        , return_items.action
-        , return_items.quantity_returned
-        , return_items.unit_refund_amount
-        , return_items.total_line_refund_amount
-        , return_items.is_exchange
-        , return_items.is_refund
-        , returns.has_refund_amount as return_has_refund_amount
-        , returns.created_at as returned_at
-        , cast(1 as integer) as returned_item_count
     from return_items
     inner join returns
         on return_items.return_id = returns.return_id
     left join order_items
         on return_items.order_item_id = order_items.order_item_id
     left join products as returned_products
-        on order_items.product_variant_id
+        on
+            order_items.product_variant_id
             = returned_products.nk_product_variant_id
     left join products as exchange_products
-        on return_items.exchange_variant_id
+        on
+            return_items.exchange_variant_id
             = exchange_products.nk_product_variant_id
     left join customers
         on returns.customer_id = customers.nk_customer_id

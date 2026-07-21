@@ -138,11 +138,17 @@ models:
         description: "Indica se o item foi completamente recebido."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: is_partial_receipt
         description: "Indica se ainda existe quantidade pendente após o evento."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: unit_cost_original_currency
         description: "Custo unitário na moeda original."

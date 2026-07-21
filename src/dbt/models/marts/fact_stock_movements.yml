@@ -111,11 +111,17 @@ models:
         description: "Indica movimentação de entrada."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: is_outbound
         description: "Indica movimentação de saída."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: movement_count
         description: "Contador aditivo de movimentações."

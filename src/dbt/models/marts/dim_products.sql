@@ -62,8 +62,7 @@ with product_variants as (
 
 , technical_product as (
     select
-        md5('product||nao_informado') as sk_product
-        , cast(-1 as bigint) as nk_product_variant_id
+        cast(-1 as bigint) as nk_product_variant_id
         , cast(-1 as bigint) as nk_product_id
         , cast(null as string) as sku
         , cast(null as string) as barcode_ean
@@ -91,43 +90,21 @@ with product_variants as (
         , false as is_product_active
         , false as is_variant_active
         , true as is_technical_member
+        , md5('product||nao_informado') as sk_product
 )
 
 , products_dimension as (
     select
-        md5(
-            concat_ws(
-                '||'
-                , 'product'
-                , cast(product_variants.product_variant_id as string)
-            )
-        ) as sk_product
-        , product_variants.product_variant_id as nk_product_variant_id
+        product_variants.product_variant_id as nk_product_variant_id
         , product_variants.product_id as nk_product_id
         , product_variants.sku
         , product_variants.barcode_ean
         , products.product_name
         , products.description
         , products.brand_id as nk_brand_id
-        , coalesce(
-            brands.brand_name
-            , 'Marca não informada'
-        ) as brand_name
         , brands.country as brand_country
-        , coalesce(
-            brands.is_active
-            , false
-        ) as is_brand_active
         , products.category_id as nk_category_id
-        , coalesce(
-            categories.category_name
-            , 'Categoria não informada'
-        ) as category_name
         , categories.slug as category_slug
-        , coalesce(
-            categories.is_active
-            , false
-        ) as is_category_active
         , products.ncm_code
         , products.unit_of_measure
         , product_variants.sale_price
@@ -142,6 +119,29 @@ with product_variants as (
         , products.is_active as is_product_active
         , product_variants.is_active as is_variant_active
         , false as is_technical_member
+        , md5(
+            concat_ws(
+                '||'
+                , 'product'
+                , cast(product_variants.product_variant_id as string)
+            )
+        ) as sk_product
+        , coalesce(
+            brands.brand_name
+            , 'Marca não informada'
+        ) as brand_name
+        , coalesce(
+            brands.is_active
+            , false
+        ) as is_brand_active
+        , coalesce(
+            categories.category_name
+            , 'Categoria não informada'
+        ) as category_name
+        , coalesce(
+            categories.is_active
+            , false
+        ) as is_category_active
     from product_variants
     left join products
         on product_variants.product_id = products.product_id

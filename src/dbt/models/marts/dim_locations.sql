@@ -24,8 +24,7 @@ with locations as (
 
 , technical_location as (
     select
-        md5('location||nao_informada') as sk_location
-        , cast(-1 as bigint) as nk_location_id
+        cast(-1 as bigint) as nk_location_id
         , 'Localização não informada' as location_name
         , 'nao_informado' as location_type
         , cast(null as string) as postal_code
@@ -38,18 +37,12 @@ with locations as (
         , cast(null as string) as country
         , false as is_active
         , true as is_technical_member
+        , md5('location||nao_informada') as sk_location
 )
 
 , locations_dimension as (
     select
-        md5(
-            concat_ws(
-                '||'
-                , 'location'
-                , cast(location_id as string)
-            )
-        ) as sk_location
-        , location_id as nk_location_id
+        location_id as nk_location_id
         , location_name
         , location_type
         , postal_code
@@ -62,6 +55,13 @@ with locations as (
         , country
         , is_active
         , false as is_technical_member
+        , md5(
+            concat_ws(
+                '||'
+                , 'location'
+                , cast(location_id as string)
+            )
+        ) as sk_location
     from locations
 )
 

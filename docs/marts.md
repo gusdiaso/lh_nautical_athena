@@ -70,4 +70,4 @@ Para checagem de qualidade após a geração dos modelos, rode também os testes
 
 ## Observações
 
-Este documento é uma visão prática para leitura humana. A documentação técnica complementar fica nas descrições dos modelos e colunas do dbt, em `src/dbt/models/marts/marts.yml`.
+Este documento é uma visão prática para leitura humana. A documentação técnica complementar fica nas descrições dos modelos e colunas do dbt, nos arquivos `src/dbt/models/marts/*.yml`.

@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: int_exchange_rates
+    description: "Cotações cambiais com taxa média e spread."
+
+    columns:
+      - name: exchange_date
+        data_tests:
+          - not_null
+
+      - name: currency_code
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - USD
+                  - EUR
+
+      - name: average_exchange_rate
+        data_tests:
+          - not_null
+
+      - name: exchange_rate_spread
+        data_tests:
+          - not_null

@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: dim_employees
+    description: >
+      Dimensão de funcionários com registros reais e membros técnicos
+      para migração legada, sistema de e-commerce e funcionário não informado.
+    columns:
+      - name: sk_employee
+        description: "Chave substituta do funcionário."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_employee_id
+        description: "Identificador natural ou técnico do funcionário."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: full_name
+        description: "Nome do funcionário ou agente técnico."
+        data_tests:
+          - not_null
+
+      - name: cpf
+        description: "CPF do funcionário."
+
+      - name: email
+        description: "E-mail do funcionário."
+
+      - name: role
+        description: "Cargo, função ou classificação técnica."
+        data_tests:
+          - not_null
+
+      - name: nk_primary_location_id
+        description: "Identificador natural da localização principal."
+
+      - name: hire_date
+        description: "Data de admissão."
+
+      - name: termination_date
+        description: "Data de desligamento."
+
+      - name: is_active
+        description: "Indica se o funcionário ou agente está ativo."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_technical_member
+        description: "Indica se o registro é um membro técnico."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]

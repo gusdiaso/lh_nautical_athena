@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: int_addresses
+    description: "Endereços com CEP padronizado e limpeza de campos textuais."
+
+    columns:
+      - name: address_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        data_tests:
+          - not_null
+
+      - name: address_type
+        data_tests:
+          - not_null
+
+      - name: postal_code
+        data_tests:
+          - not_null
+
+      - name: is_primary
+        data_tests:
+          - not_null

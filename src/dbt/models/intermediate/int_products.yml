@@ -1,0 +1,63 @@
+version: 2
+
+models:
+  - name: int_products
+    description: "Produtos padronizados com flags de qualidade (registros incompletos e descrições ausentes)."
+
+    columns:
+      - name: product_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: product_name
+        data_tests:
+          - not_null
+
+      - name: brand_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('int_brands')
+              field: brand_id
+
+      - name: category_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('int_categories')
+              field: category_id
+
+      - name: ncm_code
+        data_tests:
+          - not_null
+
+      - name: unit_of_measure
+        data_tests:
+          - not_null
+
+      - name: is_active
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_incomplete_record
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_missing_description
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false

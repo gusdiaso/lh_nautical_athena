@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: int_returns
+    description: "Padronização analítica dos registros de devoluções."
+
+    columns:
+      - name: return_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: return_reason_group
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - compra_duplicada
+                  - desistencia_cliente
+                  - divergencia_descricao
+                  - avaria_transporte
+                  - tamanho_cor_incorretos
+                  - defeito_fabrica
+                  - nao_informado
+                  - outros
+
+      - name: has_refund_amount
+        data_tests:
+          - not_null

@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: int_product_variants
+    description: "Variações de produtos com métricas de margem e impostos."
+
+    columns:
+      - name: product_variant_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: sku
+        data_tests:
+          - not_null
+          - unique
+
+      - name: gross_margin_amount
+        data_tests:
+          - not_null
+
+      - name: gross_margin_percentage
+        data_tests:
+          - not_null
+
+      - name: total_tax_rate
+        data_tests:
+          - not_null
+
+      - name: is_profitable
+        data_tests:
+          - not_null

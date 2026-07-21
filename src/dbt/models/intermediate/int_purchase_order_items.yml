@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: int_purchase_order_items
+    description: "Itens de pedidos de compra padronizados com deduplicação."
+
+    columns:
+      - name: purchase_order_item_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: purchase_order_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('int_purchase_orders')
+              field: purchase_order_id
+
+      - name: product_variant_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('int_product_variants')
+              field: product_variant_id
+
+      - name: quantity_ordered
+        data_tests:
+          - not_null
+
+      - name: unit_cost
+        data_tests:
+          - not_null
+
+      - name: line_total
+        data_tests:
+          - not_null

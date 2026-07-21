@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: int_product_suppliers
+    description: "Relacionamento produto-fornecedor padronizado."
+    columns:
+      - name: sk_product_supplier
+        data_tests:
+          - not_null
+          - unique
+
+      - name: product_variant_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_product_variants')
+              field: product_variant_id
+
+      - name: supplier_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_suppliers')
+              field: supplier_id

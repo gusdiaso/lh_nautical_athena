@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: int_categories
+    description: "Categorias padronizadas."
+    columns:
+      - name: category_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: category_name
+        data_tests:
+          - not_null

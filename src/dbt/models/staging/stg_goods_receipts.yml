@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: stg_goods_receipts
+    description: "Recebimentos de mercadorias."
+    columns:
+      - name: goods_receipt_id
+        data_tests:
+          - not_null
+          - unique

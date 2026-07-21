@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: int_employees
+    description: "Funcionários padronizados."
+    columns:
+      - name: employee_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: full_name
+        data_tests:
+          - not_null

@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: int_return_items
+    description: "Itens de devolução com classificação de ação e cálculo de reembolso por linha."
+
+    columns:
+      - name: return_item_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: return_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('int_returns')
+              field: return_id
+
+      - name: order_item_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('int_order_items')
+              field: order_item_id
+
+      - name: quantity_returned
+        data_tests:
+          - not_null
+
+      - name: action
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - refund
+                  - exchange
+
+      - name: is_exchange
+        data_tests:
+          - not_null
+
+      - name: is_refund
+        data_tests:
+          - not_null
+
+      - name: total_line_refund_amount
+        data_tests:
+          - not_null

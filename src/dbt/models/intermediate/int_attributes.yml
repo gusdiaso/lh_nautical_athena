@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: int_attributes
+    description: "Atributos customizáveis padronizados com limpeza de campos textuais."
+
+    columns:
+      - name: attribute_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: attribute_name
+        data_tests:
+          - not_null
+
+      - name: data_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - text
+                  - number
+                  - boolean

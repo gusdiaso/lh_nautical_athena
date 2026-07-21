@@ -1,0 +1,126 @@
+version: 2
+
+models:
+  - name: fact_stock_movements
+    description: >
+      Fato de estoque no grão de uma movimentação individual.
+      Distingue entradas, saídas, migração legada, processos
+      automáticos e movimentações sem responsável identificado.
+    columns:
+      - name: sk_stock_movement
+        description: "Chave substituta da movimentação."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_stock_movement_id
+        description: "Identificador natural da movimentação."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: sk_product
+        description: "Chave da dimensão de produtos."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: sk_product
+
+      - name: sk_location
+        description: "Chave da dimensão de localizações."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: sk_location
+
+      - name: sk_employee
+        description: "Chave da dimensão de funcionários."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_employees')
+                field: sk_employee
+
+      - name: sk_date
+        description: "Chave da data da movimentação."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: sk_date
+
+      - name: reference_table
+        description: "Tabela operacional que originou a movimentação."
+
+      - name: nk_reference_id
+        description: "Identificador natural do registro de referência."
+
+      - name: movement_type
+        description: "Tipo da movimentação."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - purchase_in
+                  - sale_out
+                  - return_in
+                  - return_out
+
+      - name: movement_direction
+        description: "Direção padronizada da movimentação."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - entrada
+                  - saida
+                  - nao_classificado
+
+      - name: quantity
+        description: "Quantidade com sinal da movimentação."
+        data_tests:
+          - not_null
+
+      - name: absolute_quantity
+        description: "Magnitude absoluta da movimentação."
+        data_tests:
+          - not_null
+
+      - name: notes
+        description: "Observações operacionais."
+
+      - name: occurred_at
+        description: "Data e hora registrada para a movimentação."
+        data_tests:
+          - not_null
+
+      - name: is_legacy_migration
+        description: "Indica saldo inicial proveniente da migração legada."
+        data_tests:
+          - not_null
+
+      - name: is_inbound
+        description: "Indica movimentação de entrada."
+        data_tests:
+          - not_null
+
+      - name: is_outbound
+        description: "Indica movimentação de saída."
+        data_tests:
+          - not_null
+
+      - name: movement_count
+        description: "Contador aditivo de movimentações."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1]

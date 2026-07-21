@@ -1,0 +1,145 @@
+version: 2
+
+models:
+  - name: fact_payments
+    description: >
+      Fato financeira no grão de uma transação de pagamento.
+      Mantém separadamente a data do pedido e a data do pagamento.
+    columns:
+      - name: sk_payment
+        description: "Chave substituta do pagamento."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_payment_id
+        description: "Identificador natural do pagamento."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_order_id
+        description: "Identificador natural do pedido."
+        data_tests:
+          - not_null
+
+      - name: order_number
+        description: "Número comercial do pedido."
+        data_tests:
+          - not_null
+
+      - name: sk_customer
+        description: "Chave da dimensão de clientes."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: sk_customer
+
+      - name: sk_location
+        description: "Chave da dimensão de localizações."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: sk_location
+
+      - name: sk_order_date
+        description: "Chave da data de criação do pedido."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: sk_date
+
+      - name: sk_payment_date
+        description: >
+          Chave da data efetiva do pagamento.
+          Pode ser nula quando paid_at ainda não existe.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: sk_date
+
+      - name: channel
+        description: "Canal de venda."
+        data_tests:
+          - not_null
+
+      - name: order_status
+        description: "Status do pedido."
+        data_tests:
+          - not_null
+
+      - name: method
+        description: "Método de pagamento."
+        data_tests:
+          - not_null
+
+      - name: installments
+        description: "Quantidade de parcelas."
+        data_tests:
+          - not_null
+
+      - name: payment_amount
+        description: "Valor original da transação."
+        data_tests:
+          - not_null
+
+      - name: order_total
+        description: "Valor total do pedido associado."
+
+      - name: payment_status
+        description: "Status do pagamento."
+        data_tests:
+          - not_null
+
+      - name: placed_at
+        description: "Data e hora de criação do pedido."
+        data_tests:
+          - not_null
+
+      - name: paid_at
+        description: "Data e hora efetiva do pagamento."
+
+      - name: is_paid
+        description: "Indica pagamento concluído."
+        data_tests:
+          - not_null
+
+      - name: is_refunded
+        description: "Indica pagamento estornado."
+        data_tests:
+          - not_null
+
+      - name: is_pending
+        description: "Indica pagamento pendente."
+        data_tests:
+          - not_null
+
+      - name: is_cancelled
+        description: "Indica pagamento cancelado."
+        data_tests:
+          - not_null
+
+      - name: paid_amount
+        description: "Valor preenchido somente para pagamentos concluídos."
+        data_tests:
+          - not_null
+
+      - name: refunded_amount
+        description: "Valor preenchido somente para pagamentos estornados."
+        data_tests:
+          - not_null
+
+      - name: payment_count
+        description: "Contador aditivo de pagamentos."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1]

@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: stg_employees
+    description: "Funcionários."
+    columns:
+      - name: employee_id
+        data_tests:
+          - not_null
+          - unique

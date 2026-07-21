@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: stg_locations
+    description: "Lojas e armazéns."
+    columns:
+      - name: location_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: location_name
+        data_tests:
+          - not_null
+
+      - name: location_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - store
+                  - warehouse
+
+      - name: postal_code
+        data_tests:
+          - not_null
+
+      - name: street
+        data_tests:
+          - not_null
+
+      - name: number
+        data_tests:
+          - not_null
+
+      - name: city
+        data_tests:
+          - not_null
+
+      - name: state
+        data_tests:
+          - not_null
+
+      - name: country
+        data_tests:
+          - not_null
+
+      - name: is_active
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false

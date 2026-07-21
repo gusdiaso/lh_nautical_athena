@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: stg_order_items
+    description: "Itens dos pedidos de venda."
+    columns:
+      - name: order_item_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: order_id
+        data_tests:
+          - not_null
+
+      - name: product_variant_id
+        data_tests:
+          - not_null
+
+      - name: quantity_ordered
+        data_tests:
+          - not_null
+
+      - name: unit_price
+        data_tests:
+          - not_null
+
+      - name: icms_rate
+        data_tests:
+          - not_null
+
+      - name: ipi_rate
+        data_tests:
+          - not_null
+
+      - name: original_line_total
+        data_tests:
+          - not_null
+
+      - name: order_id
+        data_tests:
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+
+      - name: product_variant_id
+        data_tests:
+          - relationships:
+              to: ref('stg_product_variants')
+              field: product_variant_id

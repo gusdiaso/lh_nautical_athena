@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: stg_products
+    description: "Produtos."
+    columns:
+      - name: product_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: product_name
+        data_tests:
+          - not_null
+
+      - name: brand_id
+        data_tests:
+          - not_null
+
+      - name: category_id
+        data_tests:
+          - not_null
+
+      - name: ncm_code
+        data_tests:
+          - not_null
+
+      - name: unit_of_measure
+        data_tests:
+          - not_null
+
+      - name: is_active
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: brand_id
+        data_tests:
+          - relationships:
+              to: ref('stg_brands')
+              field: brand_id
+
+      - name: category_id
+        data_tests:
+          - relationships:
+              to: ref('stg_categories')
+              field: category_id

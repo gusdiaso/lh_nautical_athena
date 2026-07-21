@@ -1,0 +1,140 @@
+version: 2
+
+models:
+  - name: fact_purchase_order_items
+    description: >
+      Fato de compras no grão de um item por pedido de compra.
+      Preserva valores na moeda original e valores convertidos para BRL.
+    columns:
+      - name: sk_purchase_order_item
+        description: "Chave substituta do item do pedido de compra."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_purchase_order_item_id
+        description: "Identificador natural do item do pedido de compra."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_purchase_order_id
+        description: "Identificador natural do pedido de compra."
+        data_tests:
+          - not_null
+
+      - name: po_number
+        description: "Número comercial do pedido de compra."
+        data_tests:
+          - not_null
+
+      - name: sk_product
+        description: "Chave da dimensão de produtos."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: sk_product
+
+      - name: sk_supplier
+        description: "Chave da dimensão de fornecedores."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_suppliers')
+                field: sk_supplier
+
+      - name: sk_location
+        description: "Chave da localização de destino."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: sk_location
+
+      - name: sk_employee
+        description: "Chave do funcionário comprador."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_employees')
+                field: sk_employee
+
+      - name: sk_order_date
+        description: "Chave da data de emissão do pedido."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: sk_date
+
+      - name: sk_expected_delivery_date
+        description: "Chave da data prevista de entrega."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: sk_date
+
+      - name: purchase_order_status
+        description: "Status do pedido de compra."
+        data_tests:
+          - not_null
+
+      - name: currency
+        description: "Moeda original da compra."
+        data_tests:
+          - not_null
+
+      - name: exchange_rate_sell
+        description: "Taxa cambial associada ao pedido."
+
+      - name: quantity_ordered
+        description: "Quantidade comprada."
+        data_tests:
+          - not_null
+
+      - name: unit_cost_original_currency
+        description: "Custo unitário na moeda original."
+        data_tests:
+          - not_null
+
+      - name: line_total_original_currency
+        description: "Valor da linha na moeda original."
+        data_tests:
+          - not_null
+
+      - name: unit_cost_brl
+        description: "Custo unitário convertido para BRL."
+
+      - name: line_total_brl
+        description: "Valor da linha convertido para BRL."
+
+      - name: placed_at
+        description: "Data e hora de emissão do pedido."
+        data_tests:
+          - not_null
+
+      - name: expected_delivery_at
+        description: "Data prevista de entrega."
+        data_tests:
+          - not_null
+
+      - name: is_expected_delivery_overdue
+        description: "Indica se a data prevista já passou."
+        data_tests:
+          - not_null
+
+      - name: purchase_order_item_count
+        description: "Contador aditivo de itens de compra."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1]

@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: int_variant_attribute_values
+    description: "Valores dos atributos das variantes, limpos e padronizados."
+
+    columns:
+      - name: product_variant_id
+        data_tests:
+          - not_null
+
+      - name: attribute_id
+        data_tests:
+          - not_null
+
+      - name: attribute_name
+        data_tests:
+          - not_null
+
+      - name: attribute_data_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - text
+                  - number
+                  - boolean

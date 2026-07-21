@@ -1,0 +1,125 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: >
+      Dimensão calendário compartilhada pelas tabelas fato.
+      Possui uma linha por dia e cobre o intervalo temporal
+      identificado nos processos operacionais do projeto.
+    columns:
+      - name: sk_date
+        description: "Chave substituta da data no formato YYYYMMDD."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: full_date
+        description: "Data completa."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: day_number
+        description: "Número do dia no mês."
+        data_tests:
+          - not_null
+
+      - name: day_of_year
+        description: "Número sequencial do dia no ano."
+        data_tests:
+          - not_null
+
+      - name: day_of_week_number
+        description: "Número do dia da semana, de 1 para segunda-feira a 7 para domingo."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7]
+
+      - name: day_of_week_name
+        description: "Nome do dia da semana."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Segunda-feira
+                  - Terça-feira
+                  - Quarta-feira
+                  - Quinta-feira
+                  - Sexta-feira
+                  - Sábado
+                  - Domingo
+
+      - name: week_of_year
+        description: "Número da semana no ano."
+        data_tests:
+          - not_null
+
+      - name: month_number
+        description: "Número do mês."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+      - name: month_name
+        description: "Nome do mês."
+        data_tests:
+          - not_null
+
+      - name: year_month
+        description: "Ano e mês no formato YYYY-MM."
+        data_tests:
+          - not_null
+
+      - name: quarter_number
+        description: "Número do trimestre."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]
+
+      - name: quarter_name
+        description: "Identificação do trimestre no formato T1 a T4."
+        data_tests:
+          - not_null
+
+      - name: year_quarter
+        description: "Ano e trimestre no formato YYYY-TN."
+        data_tests:
+          - not_null
+
+      - name: semester_number
+        description: "Número do semestre."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2]
+
+      - name: year_number
+        description: "Ano da data."
+        data_tests:
+          - not_null
+
+      - name: is_weekend
+        description: "Indica se a data corresponde a sábado ou domingo."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_high_season
+        description: >
+          Indica se a data pertence à alta temporada náutica,
+          considerada entre outubro e janeiro.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]

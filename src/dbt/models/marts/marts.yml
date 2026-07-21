@@ -69,6 +69,21 @@ models:
         description: "Nome do mês."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Janeiro
+                  - Fevereiro
+                  - Março
+                  - Abril
+                  - Maio
+                  - Junho
+                  - Julho
+                  - Agosto
+                  - Setembro
+                  - Outubro
+                  - Novembro
+                  - Dezembro
 
       - name: year_month
         description: "Ano e mês no formato YYYY-MM."
@@ -87,6 +102,13 @@ models:
         description: "Identificação do trimestre no formato T1 a T4."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - T1
+                  - T2
+                  - T3
+                  - T4
 
       - name: year_quarter
         description: "Ano e trimestre no formato YYYY-TN."
@@ -256,6 +278,11 @@ models:
 
       - name: nk_primary_location_id
         description: "Identificador natural da localização principal."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: nk_location_id
 
       - name: hire_date
         description: "Data de admissão."
@@ -461,6 +488,11 @@ models:
 
       - name: is_profitable
         description: "Indica se o preço cadastral é superior ao custo cadastral."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: is_product_active
         description: "Indica se o produto pai está ativo."
@@ -831,6 +863,13 @@ models:
         description: "Status do pagamento."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - approved
+                  - refunded
+                  - pending
+                  - cancelled
 
       - name: placed_at
         description: "Data e hora de criação do pedido."
@@ -844,21 +883,33 @@ models:
         description: "Indica pagamento concluído."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: is_refunded
         description: "Indica pagamento estornado."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: is_pending
         description: "Indica pagamento pendente."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: is_cancelled
         description: "Indica pagamento cancelado."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: paid_amount
         description: "Valor preenchido somente para pagamentos concluídos."
@@ -964,11 +1015,25 @@ models:
         description: "Status do pedido de compra."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - cancelled
+                  - draft
+                  - received
+                  - partially_received
+                  - sent
 
       - name: currency
         description: "Moeda original da compra."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - BRL
+                  - USD
+                  - EUR
 
       - name: exchange_rate_sell
         description: "Taxa cambial associada ao pedido."
@@ -1008,6 +1073,9 @@ models:
         description: "Indica se a data prevista já passou."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: purchase_order_item_count
         description: "Contador aditivo de itens de compra."
@@ -1155,11 +1223,17 @@ models:
         description: "Indica se o item foi completamente recebido."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: is_partial_receipt
         description: "Indica se ainda existe quantidade pendente após o evento."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: unit_cost_original_currency
         description: "Custo unitário na moeda original."
@@ -1321,11 +1395,17 @@ models:
         description: "Indica movimentação de entrada."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: is_outbound
         description: "Indica movimentação de saída."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: movement_count
         description: "Contador aditivo de movimentações."
@@ -1363,11 +1443,19 @@ models:
         description: "Identificador natural do item originalmente vendido."
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('fact_order_items')
+                field: nk_order_item_id
 
       - name: nk_order_id
         description: "Identificador natural do pedido original."
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('fact_order_items')
+                field: nk_order_id
 
       - name: sk_returned_product
         description: "Chave do produto devolvido."
@@ -1482,11 +1570,17 @@ models:
         description: "Indica ação de troca."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: is_refund
         description: "Indica ação de reembolso."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
 
       - name: has_refund_amount
         description: "Indica se a devolução possui valor de reembolso."

@@ -43,8 +43,9 @@
 
 ### Fase 3: Marts (14-17/07 - 23/07)
 
-#### Em planejamento
-...
+#### Concluída
+
+Os marts do projeto foram implementados e estão documentados em [docs/marts.md](marts.md) e [docs/star_schema.md](star_schema.md).
 
 ---
 ---
@@ -156,9 +157,9 @@ Cada model tem seu teste. Se algum teste falhar, o dbt para a execucao e mostra 
 | Camada | Catalogo | Schema | Status |
 |--------|----------|--------|--------|
 | Bronze | `dev_lh_nautical` / `prod_lh_nautical` | `bronze` | Implementado |
-| Staging | `dev_lh_nautical` / `prod_lh_nautical` |  | Planejado |
-| Intermediate | `dev_lh_nautical` / `prod_lh_nautical` | `silver` | Planejado |
-| Marts | `dev_lh_nautical` / `prod_lh_nautical` | `gold` | Planejado |
+| Staging | `dev_lh_nautical` / `prod_lh_nautical` | `silver` | Implementado |
+| Intermediate | `dev_lh_nautical` / `prod_lh_nautical` | `silver` | Implementado |
+| Marts | `dev_lh_nautical` / `prod_lh_nautical` | `gold` | Implementado |
 
 ### Tabelas Bronze Existentes (24 tabelas)
 

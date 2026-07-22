@@ -24,6 +24,7 @@
 ```
 lh_nautical/
 ├── databricks.yml                         # Configuracao principal do bundle
+├── dbt_project.yml                        # Incluido no sync do bundle
 ├── resources/
 │   └── extract/
 │       ├── extract_lh_nautical.yml        # Job: SQL Server → Bronze
@@ -55,6 +56,8 @@ include:
 # Quais arquivos Python sincronizar
 sync:
   include:
+    - dbt_project.yml
+    - src/dbt/**
     - src/*/*.py
 
 # Quem pode acessar o bundle
@@ -203,7 +206,7 @@ targets:
       catalog: prod_lh_nautical
       schema: bronze
 
-# Configuracao do job
+  # Configuracao do job
 resources:
   jobs:
     extract_lh_nautical:
@@ -212,7 +215,7 @@ resources:
       max_concurrent_runs: 1
       
       schedule:
-        quartz_cron_expression: '0 0 18 * * ?'
+        quartz_cron_expression: '0 0 0,18 * * ?'
         timezone_id: 'America/Sao_Paulo'
         pause_status: UNPAUSED
       
@@ -220,7 +223,8 @@ resources:
         - environment_key: default
           spec:
             environment_version: '2'
-            dependencies: []
+            dependencies:
+              - tenacity
       
       # Uma task por tabela (24 tabelas)
       tasks:

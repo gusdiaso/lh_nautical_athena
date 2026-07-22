@@ -23,10 +23,11 @@ src/dbt/
 │   ├── staging/             # 24 models stg_*
 │   │   └── sources.yml      # Definição das sources (Bronze)
 │   ├── intermediate/        # 24 models int_*
-│   └── marts/               # 13 models dim_*/fact_*
+│   └── marts/               # 12 models dim_*/fact_*
 ├── macros/                  # Macros reutilizáveis
 │   ├── generate_schema_name.sql
-│   └── generate_database_name.sql
+│   ├── sk_from_keys.sql
+│   └── clean_cep.sql
 ├── tests/                   # Testes singulares (SQL)
 │   ├── int_stock_movements_consistency.sql
 │   ├── int_returns_has_refund_amount.sql
@@ -195,9 +196,11 @@ FROM source
 | Macro | Arquivo | Descrição |
 |-------|---------|-----------|
 | `generate_schema_name` | `macros/generate_schema_name.sql` | Evita concatenação de schema (usa só o `+schema` do dbt_project.yml) |
-| `generate_database_name` | `macros/generate_database_name.sql` | Permite sobrescrever catálogo via config do model |
+| `sk_from_keys` | `macros/sk_from_keys.sql` | Gera surrogate keys com hash MD5 a partir de uma ou mais colunas |
+| `clean_cep` | `macros/clean_cep.sql` | Normaliza CEP removendo caracteres não numéricos |
 
 **Documentação completa:** [`docs/macros.md`](../docs/macros.md)
+**Visão das camadas:** [`docs/staging.md`](../docs/staging.md), [`docs/intermediate.md`](../docs/intermediate.md) e [`docs/marts.md`](../docs/marts.md)
 
 ---
 

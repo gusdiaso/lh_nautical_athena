@@ -14,12 +14,14 @@ O **LH Nautical** é um pipeline de dados completo construído no ecossistema **
 - **Retry Automático**: Tratamento de falhas de conexão com tenacity (3 tentativas, backoff exponencial)
 - **Agendamento**: Jobs configurados para execução automática diária
 
-### Próximas Fases
+### Camadas Atuais
 
 | Fase | Descrição | Status |
 |------|-----------|--------|
-| **Silver** | Transformações com dbt: limpeza, padronização, desduplicação | Em andamento |
-| **Gold** | Modelos analíticos prontos para consumo (métricas de negócio) | Em planejamento |
+| **Bronze** | Ingestão SQL Server e API BCB para Delta Lake | Implementado |
+| **Staging** | Views dbt para organização e tipagem dos dados brutos | Implementado |
+| **Intermediate** | Tabelas dbt com limpeza, validação e enriquecimento | Implementado |
+| **Gold / Marts** | Modelos dimensionais prontos para análise | Implementado |
 | **Dashboards** | Visualizações e relatórios | Futuro |
 | **Machine Learning** | Modelos preditivos (previsão de demanda, churn) | Futuro |
 | **Gen AI** | Assistentes inteligentes e análise em linguagem natural | Futuro |
@@ -222,7 +224,7 @@ lh_nautical/
 │   │   ├── models/
 │   │   │   ├── staging/                   # Cópia organizada dos dados brutos
 │   │   │   ├── intermediate/              # Limpeza e validação
-│   │   │   └── marts/                     # Modelo dimensional (futuro)
+│   │   │   └── marts/                     # Modelo dimensional (Gold)
 │   │   ├── macros/                        # Funções reutilizáveis
 │   │   └── tests/                         # Testes de qualidade
 │   └── analytics_ai/                      # ML e Gen AI (futuro)
@@ -282,6 +284,10 @@ SQL Server (ERP)                API PTAX (BCB)
 | `docs/dictionary.md` | Dicionário de dados (24 tabelas, colunas, relacionamentos) |
 | `docs/extract_lh_nautical.md` | Detalhes da extração SQL Server → Bronze |
 | `docs/extract_exchange_rates.md` | Detalhes da extração API BCB → Bronze |
+| `docs/staging.md` | Camada Staging do dbt |
+| `docs/intermediate.md` | Camada Intermediate do dbt |
+| `docs/marts.md` | Camada Marts e modelo dimensional |
+| `docs/marts_tests.md` | Estratégia de testes da camada Marts |
 | `docs/dab_configuration.md` | Configuração do DAB e governança |
 | `docs/ci_cd_pipeline.md` | CI/CD completo: como colocar dbt no pipeline |
 | `docs/dbt_configuration.md` | Configuração do dbt e profiles |

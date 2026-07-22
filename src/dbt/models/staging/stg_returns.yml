@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: stg_returns
+    description: "Devoluções."
+    columns:
+      - name: return_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - cancelled
+                  - completed
+                  - open

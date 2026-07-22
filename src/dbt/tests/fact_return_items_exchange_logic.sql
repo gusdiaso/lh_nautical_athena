@@ -1,5 +1,5 @@
 select
-    return_item_id
+    nk_return_item_id as return_item_id
     , action
     , sk_exchange_product
     , is_exchange

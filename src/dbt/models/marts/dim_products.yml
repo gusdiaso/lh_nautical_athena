@@ -1,0 +1,139 @@
+version: 2
+
+models:
+  - name: dim_products
+    description: >
+      Dimensão de produtos no grão de variante comercial ou SKU.
+      Consolida dados da variante, produto pai, marca, categoria
+      e hierarquia de categoria.
+    columns:
+      - name: sk_product
+        description: "Chave substituta da variante de produto."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_product_variant_id
+        description: "Identificador natural da variante."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_product_id
+        description: "Identificador natural do produto pai."
+        data_tests:
+          - not_null
+
+      - name: sku
+        description: "Código SKU da variante."
+
+      - name: barcode_ean
+        description: "Código de barras EAN."
+
+      - name: product_name
+        description: "Nome do produto."
+        data_tests:
+          - not_null
+
+      - name: description
+        description: "Descrição do produto."
+
+      - name: nk_brand_id
+        description: "Identificador natural da marca."
+
+      - name: brand_name
+        description: "Nome da marca."
+        data_tests:
+          - not_null
+
+      - name: brand_country
+        description: "País de origem da marca."
+
+      - name: is_brand_active
+        description: "Indica se a marca está ativa."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: nk_category_id
+        description: "Identificador natural da categoria."
+
+      - name: category_name
+        description: "Nome da categoria."
+        data_tests:
+          - not_null
+
+      - name: category_slug
+        description: "Slug da categoria."
+
+      - name: is_category_active
+        description: "Indica se a categoria está ativa."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: ncm_code
+        description: "Código NCM do produto."
+
+      - name: unit_of_measure
+        description: "Unidade de medida."
+
+      - name: sale_price
+        description: "Preço cadastral de venda."
+
+      - name: cost_price
+        description: "Custo cadastral padrão em BRL."
+
+      - name: gross_margin_amount
+        description: "Margem bruta cadastral em valor."
+
+      - name: gross_margin_percentage
+        description: "Margem bruta cadastral percentual."
+
+      - name: weight_kg
+        description: "Peso da variante em quilogramas."
+
+      - name: icms_rate
+        description: "Alíquota de ICMS."
+
+      - name: ipi_rate
+        description: "Alíquota de IPI."
+
+      - name: total_tax_rate
+        description: "Soma das alíquotas de ICMS e IPI."
+
+      - name: is_profitable
+        description: "Indica se o preço cadastral é superior ao custo cadastral."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_product_active
+        description: "Indica se o produto pai está ativo."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_variant_active
+        description: "Indica se a variante está ativa."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_technical_member
+        description: "Indica se o registro é um membro técnico."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]

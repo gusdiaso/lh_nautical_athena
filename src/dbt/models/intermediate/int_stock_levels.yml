@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: int_stock_levels
+    description: "Níveis de estoque com identificação de produtos sem saldo."
+
+    columns:
+      - name: product_variant_id
+        data_tests:
+          - not_null
+
+      - name: location_id
+        data_tests:
+          - not_null
+
+      - name: quantity_on_hand
+        data_tests:
+          - not_null
+
+      - name: is_out_of_stock
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false

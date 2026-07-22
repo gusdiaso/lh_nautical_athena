@@ -77,11 +77,12 @@ with order_items as (
         , case
             when orders.salesperson_id is not null
                 then orders.salesperson_id
-            when regexp_replace(
-                lower(coalesce(orders.channel, ''))
-                , '[^a-z0-9]'
-                , ''
-            ) = 'ecommerce'
+            when
+                regexp_replace(
+                    lower(coalesce(orders.channel, ''))
+                    , '[^a-z0-9]'
+                    , ''
+                ) = 'ecommerce'
                 then -2
             else -3
         end as resolved_employee_id
@@ -144,16 +145,32 @@ with order_items as (
 
 , joined as (
     select
-        md5(
+        enriched_order_items.order_item_id as nk_order_item_id
+        , enriched_order_items.order_id as nk_order_id
+        , enriched_order_items.order_number
+        , dates.sk_date
+        , enriched_order_items.channel
+        , enriched_order_items.order_status
+        , enriched_order_items.quantity_ordered
+        , enriched_order_items.unit_price
+        , enriched_order_items.original_line_total as gross_line_total
+        , enriched_order_items.allocated_discount_amount
+        , enriched_order_items.icms_rate
+        , enriched_order_items.ipi_rate
+        , enriched_order_items.icms_amount
+        , enriched_order_items.ipi_amount
+        , enriched_order_items.total_tax_amount
+        , enriched_order_items.total_with_taxes
+        , products.cost_price as standard_unit_cost
+        , enriched_order_items.placed_at
+        , cast(1 as integer) as order_item_count
+        , md5(
             concat_ws(
                 '||'
                 , 'order_item'
                 , cast(enriched_order_items.order_item_id as string)
             )
         ) as sk_order_item
-        , enriched_order_items.order_item_id as nk_order_item_id
-        , enriched_order_items.order_id as nk_order_id
-        , enriched_order_items.order_number
         , coalesce(
             products.sk_product
             , md5('product||nao_informado')
@@ -170,25 +187,11 @@ with order_items as (
             employees.sk_employee
             , md5('employee||nao_informado')
         ) as sk_employee
-        , dates.sk_date
-        , enriched_order_items.channel
-        , enriched_order_items.order_status
-        , enriched_order_items.quantity_ordered
-        , enriched_order_items.unit_price
-        , enriched_order_items.original_line_total as gross_line_total
-        , enriched_order_items.allocated_discount_amount
         , round(
             enriched_order_items.original_line_total
             - enriched_order_items.allocated_discount_amount
             , 2
         ) as net_line_total
-        , enriched_order_items.icms_rate
-        , enriched_order_items.ipi_rate
-        , enriched_order_items.icms_amount
-        , enriched_order_items.ipi_amount
-        , enriched_order_items.total_tax_amount
-        , enriched_order_items.total_with_taxes
-        , products.cost_price as standard_unit_cost
         , round(
             enriched_order_items.quantity_ordered
             * products.cost_price
@@ -205,27 +208,30 @@ with order_items as (
             )
             , 2
         ) as estimated_gross_profit
-        , enriched_order_items.placed_at
         , enriched_order_items.order_status = 'cancelled' as is_cancelled
         , enriched_order_items.order_status = 'paid' as is_paid
         , enriched_order_items.order_status = 'confirmed' as is_confirmed
         , enriched_order_items.order_status = 'draft' as is_draft
-        , cast(1 as integer) as order_item_count
     from enriched_order_items
     left join products
-        on enriched_order_items.product_variant_id
+        on
+            enriched_order_items.product_variant_id
             = products.nk_product_variant_id
     left join customers
-        on enriched_order_items.customer_id
+        on
+            enriched_order_items.customer_id
             = customers.nk_customer_id
     left join locations
-        on enriched_order_items.location_id
+        on
+            enriched_order_items.location_id
             = locations.nk_location_id
     left join employees
-        on enriched_order_items.resolved_employee_id
+        on
+            enriched_order_items.resolved_employee_id
             = employees.nk_employee_id
     left join dates
-        on cast(enriched_order_items.placed_at as date)
+        on
+            cast(enriched_order_items.placed_at as date)
             = dates.full_date
 )
 

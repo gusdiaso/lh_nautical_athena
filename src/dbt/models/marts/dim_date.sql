@@ -14,50 +14,43 @@
 -- ============================================================
 
 with event_dates as (
-    select
-        cast(placed_at as date) as event_date
+    select cast(placed_at as date) as event_date
     from {{ ref('int_orders') }}
     where placed_at is not null
 
     union all
 
-    select
-        cast(occurred_at as date) as event_date
+    select cast(occurred_at as date) as event_date
     from {{ ref('int_stock_movements') }}
     where occurred_at is not null
 
     union all
 
-    select
-        cast(paid_at as date) as event_date
+    select cast(paid_at as date) as event_date
     from {{ ref('int_payments') }}
     where paid_at is not null
 
     union all
 
-    select
-        cast(placed_at as date) as event_date
+    select cast(placed_at as date) as event_date
     from {{ ref('int_purchase_orders') }}
     where placed_at is not null
 
     union all
 
-    select
-        cast(expected_delivery_at as date) as event_date
+    select cast(expected_delivery_at as date) as event_date
     from {{ ref('int_purchase_orders') }}
     where expected_delivery_at is not null
 
     union all
 
-    select
-        cast(received_at as date) as event_date
+    select cast(received_at as date) as event_date
     from {{ ref('int_goods_receipts') }}
     where received_at is not null
 
     union all
 
-    select
-        cast(exchange_date as date) as event_date
+    select cast(exchange_date as date) as event_date
     from {{ ref('int_exchange_rates') }}
     where exchange_date is not null
 )

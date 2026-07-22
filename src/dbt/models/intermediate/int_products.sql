@@ -37,32 +37,57 @@ with source as (
 
     select
         product_id
-        , case
-            when lower(trim(product_name)) in ('tbd') then 'GPS Navegador Pro 7000'
-            when lower(trim(product_name)) = 'asdf' and description like '%Defensa%' then 'Defensa NX6 Reforçada'
-            when lower(trim(product_name)) = 'asdf' and description like '%Cabo%' then 'Cabo de Amarração T6 Premium'
-            else product_name
-        end as product_name
-        , case
-            when description is null then
-                case
-                    when product_name like 'GPS Plotter%' then 'GPS Plotter cartográfico com ecrã de alta resolução para navegação marítima'
-                    when product_name like 'Tinta Antifouling%' then 'Tinta anti-incrustante para proteção do casco contra organismos marinhos'
-                    when product_name like 'Âncora Bruce%' then 'Âncora tipo Bruce em aço galvanizado, ideal para fundos de areia e lama'
-                    when product_name like 'Bússola%' then 'Bússola magnética de navegação para embarcações'
-                    when product_name like 'Colete Salva-Vidas%' then 'Colete salva-vidas com certificação de segurança para navegação'
-                    when product_name like 'Vela Mestra%' then 'Vela mestra em poliéster de alta resistência para embarcações à vela'
-                    when product_name like 'Hélice%' then 'Hélice náutica em alumínio de alto desempenho para motores de popa'
-                    when product_name like 'Defensa%' then 'Defensa cilíndrica em PVC para proteção de embarcações'
-                    else description
-                end
-            else description
-        end as description
         , brand_id
         , category_id
         , ncm_code
         , unit_of_measure
         , is_active
+        , case
+            when
+                lower(trim(product_name)) in ('tbd')
+                then 'GPS Navegador Pro 7000'
+            when
+                lower(trim(product_name)) = 'asdf'
+                and description like '%Defensa%'
+                then 'Defensa NX6 Reforçada'
+            when
+                lower(trim(product_name)) = 'asdf' and description like '%Cabo%'
+                then 'Cabo de Amarração T6 Premium'
+            else product_name
+        end as product_name
+        , coalesce(description, case
+            when
+                product_name like 'GPS Plotter%'
+                then
+                    'GPS Plotter cartográfico com ecrã de alta resolução para navegação marítima'
+            when
+                product_name like 'Tinta Antifouling%'
+                then
+                    'Tinta anti-incrustante para proteção do casco contra organismos marinhos'
+            when
+                product_name like 'Âncora Bruce%'
+                then
+                    'Âncora tipo Bruce em aço galvanizado, ideal para fundos de areia e lama'
+            when
+                product_name like 'Bússola%'
+                then 'Bússola magnética de navegação para embarcações'
+            when
+                product_name like 'Colete Salva-Vidas%'
+                then
+                    'Colete salva-vidas com certificação de segurança para navegação'
+            when
+                product_name like 'Vela Mestra%'
+                then
+                    'Vela mestra em poliéster de alta resistência para embarcações à vela'
+            when
+                product_name like 'Hélice%'
+                then
+                    'Hélice náutica em alumínio de alto desempenho para motores de popa'
+            when
+                product_name like 'Defensa%'
+                then 'Defensa cilíndrica em PVC para proteção de embarcações'
+            else description
+        end) as description
     from deduplicated
     where record_rank = 1
 
@@ -75,6 +100,9 @@ with source as (
         , product_name
         , description
         , brand_id
+        , ncm_code
+        , unit_of_measure
+        , is_active
         , case
             when lower(trim(description)) like 'motor%' then 4
             when lower(trim(description)) like 'vela%' then 6
@@ -90,9 +118,6 @@ with source as (
             when lower(trim(description)) like 'bateria%' then 5
             else category_id
         end as category_id
-        , ncm_code
-        , unit_of_measure
-        , is_active
     from mapped
 
 )

@@ -1,0 +1,200 @@
+version: 2
+
+models:
+  - name: fact_goods_receipt_items
+    description: >
+      Fato de recebimentos físicos no grão de um item por evento
+      de recebimento de mercadoria.
+    columns:
+      - name: sk_goods_receipt_item
+        description: "Chave substituta do item recebido."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_goods_receipt_item_id
+        description: "Identificador natural do item recebido."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_goods_receipt_id
+        description: "Identificador natural do recebimento."
+        data_tests:
+          - not_null
+
+      - name: nk_purchase_order_item_id
+        description: "Identificador natural do item comprado."
+        data_tests:
+          - not_null
+
+      - name: nk_purchase_order_id
+        description: "Identificador natural do pedido de compra."
+        data_tests:
+          - not_null
+
+      - name: po_number
+        description: "Número comercial do pedido de compra."
+        data_tests:
+          - not_null
+
+      - name: sk_product
+        description: "Chave da dimensão de produtos."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: sk_product
+
+      - name: sk_supplier
+        description: "Chave da dimensão de fornecedores."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_suppliers')
+                field: sk_supplier
+
+      - name: sk_location
+        description: "Chave da localização de recebimento."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: sk_location
+
+      - name: sk_employee
+        description: "Chave do funcionário responsável pelo recebimento."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_employees')
+                field: sk_employee
+
+      - name: sk_receipt_date
+        description: "Chave da data do recebimento."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: sk_date
+
+      - name: sk_order_date
+        description: "Chave da data de emissão da ordem."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: sk_date
+
+      - name: sk_expected_delivery_date
+        description: "Chave da data prevista de entrega."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: sk_date
+
+      - name: purchase_order_status
+        description: "Status do pedido de compra."
+        data_tests:
+          - not_null
+
+      - name: currency
+        description: "Moeda original da compra."
+        data_tests:
+          - not_null
+
+      - name: exchange_rate_sell
+        description: "Taxa cambial associada ao pedido."
+
+      - name: quantity_ordered
+        description: "Quantidade originalmente comprada."
+        data_tests:
+          - not_null
+
+      - name: quantity_received
+        description: "Quantidade recebida neste evento."
+        data_tests:
+          - not_null
+
+      - name: cumulative_quantity_received
+        description: "Quantidade acumulada recebida até o evento."
+        data_tests:
+          - not_null
+
+      - name: remaining_quantity_after_receipt
+        description: "Quantidade pendente após o evento."
+        data_tests:
+          - not_null
+
+      - name: is_fully_received
+        description: "Indica se o item foi completamente recebido."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_partial_receipt
+        description: "Indica se ainda existe quantidade pendente após o evento."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: unit_cost_original_currency
+        description: "Custo unitário na moeda original."
+        data_tests:
+          - not_null
+
+      - name: received_value_original_currency
+        description: "Valor recebido na moeda original."
+        data_tests:
+          - not_null
+
+      - name: received_value_brl
+        description: "Valor recebido convertido para BRL."
+
+      - name: placed_at
+        description: "Data e hora de emissão do pedido."
+        data_tests:
+          - not_null
+
+      - name: expected_delivery_at
+        description: "Data prevista de entrega."
+        data_tests:
+          - not_null
+
+      - name: received_at
+        description: "Data e hora do recebimento."
+        data_tests:
+          - not_null
+
+      - name: delivery_variance_days
+        description: "Diferença em dias entre recebimento e previsão."
+        data_tests:
+          - not_null
+
+      - name: is_late_receipt
+        description: "Indica recebimento posterior à data prevista."
+        data_tests:
+          - not_null
+
+      - name: notes
+        description: "Observações operacionais do recebimento."
+
+      - name: goods_receipt_item_count
+        description: "Contador aditivo de itens recebidos."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1]

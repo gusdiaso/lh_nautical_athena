@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: stg_purchase_order_items
+    description: "Itens dos pedidos de compra."
+    columns:
+      - name: purchase_order_item_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: purchase_order_id
+        data_tests:
+          - not_null
+
+      - name: product_variant_id
+        data_tests:
+          - not_null
+
+      - name: quantity_ordered
+        data_tests:
+          - not_null
+
+      - name: unit_cost
+        data_tests:
+          - not_null
+
+      - name: line_total
+        data_tests:
+          - not_null
+
+      - name: purchase_order_id
+        data_tests:
+          - relationships:
+              to: ref('stg_purchase_orders')
+              field: purchase_order_id
+
+      - name: product_variant_id
+        data_tests:
+          - relationships:
+              to: ref('stg_product_variants')
+              field: product_variant_id

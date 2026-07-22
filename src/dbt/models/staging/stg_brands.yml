@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: stg_brands
+    description: "Marcas dos produtos."
+    columns:
+      - name: brand_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: brand_name
+        data_tests:
+          - not_null

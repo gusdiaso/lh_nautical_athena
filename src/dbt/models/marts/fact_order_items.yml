@@ -1,0 +1,189 @@
+version: 2
+
+models:
+  - name: fact_order_items
+    description: >
+      Fato de vendas no grão de um item por pedido.
+      Contém valores comerciais, impostos, desconto alocado,
+      custo padrão e margem estimada por SKU.
+    columns:
+      - name: sk_order_item
+        description: "Chave substituta do item do pedido."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_order_item_id
+        description: "Identificador natural do item do pedido."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_order_id
+        description: "Identificador natural do pedido."
+        data_tests:
+          - not_null
+
+      - name: order_number
+        description: "Número comercial do pedido."
+        data_tests:
+          - not_null
+
+      - name: sk_product
+        description: "Chave da dimensão de produtos."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: sk_product
+
+      - name: sk_customer
+        description: "Chave da dimensão de clientes."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: sk_customer
+
+      - name: sk_location
+        description: "Chave da dimensão de localizações."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: sk_location
+
+      - name: sk_employee
+        description: "Chave da dimensão de funcionários."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_employees')
+                field: sk_employee
+
+      - name: sk_date
+        description: "Chave da data do pedido."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: sk_date
+
+      - name: channel
+        description: "Canal de venda."
+        data_tests:
+          - not_null
+
+      - name: order_status
+        description: "Status do pedido."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - paid
+                  - confirmed
+                  - cancelled
+                  - draft
+
+      - name: quantity_ordered
+        description: "Quantidade vendida."
+        data_tests:
+          - not_null
+
+      - name: unit_price
+        description: "Preço unitário de venda."
+        data_tests:
+          - not_null
+
+      - name: gross_line_total
+        description: "Valor bruto da linha antes do desconto."
+        data_tests:
+          - not_null
+
+      - name: allocated_discount_amount
+        description: "Parcela do desconto do pedido alocada ao item."
+        data_tests:
+          - not_null
+
+      - name: net_line_total
+        description: "Valor da linha após o desconto alocado."
+        data_tests:
+          - not_null
+
+      - name: icms_rate
+        description: "Alíquota de ICMS."
+        data_tests:
+          - not_null
+
+      - name: ipi_rate
+        description: "Alíquota de IPI."
+        data_tests:
+          - not_null
+
+      - name: icms_amount
+        description: "Valor de ICMS da linha."
+        data_tests:
+          - not_null
+
+      - name: ipi_amount
+        description: "Valor de IPI da linha."
+        data_tests:
+          - not_null
+
+      - name: total_tax_amount
+        description: "Valor total de tributos da linha."
+        data_tests:
+          - not_null
+
+      - name: total_with_taxes
+        description: "Valor bruto da linha acrescido dos tributos."
+        data_tests:
+          - not_null
+
+      - name: standard_unit_cost
+        description: "Custo cadastral padrão da variante."
+
+      - name: estimated_cost_of_goods_sold
+        description: "Custo estimado da mercadoria vendida."
+
+      - name: estimated_gross_profit
+        description: "Lucro bruto estimado após o desconto."
+
+      - name: placed_at
+        description: "Data e hora de criação do pedido."
+        data_tests:
+          - not_null
+
+      - name: is_cancelled
+        description: "Indica se o pedido foi cancelado."
+        data_tests:
+          - not_null
+
+      - name: is_paid
+        description: "Indica se o pedido está pago."
+        data_tests:
+          - not_null
+
+      - name: is_confirmed
+        description: "Indica se o pedido está confirmado."
+        data_tests:
+          - not_null
+
+      - name: is_draft
+        description: "Indica se o pedido está em rascunho."
+        data_tests:
+          - not_null
+
+      - name: order_item_count
+        description: "Contador aditivo de itens de pedido."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1]

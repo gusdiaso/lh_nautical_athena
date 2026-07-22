@@ -1,5 +1,5 @@
 select
-    payment_id
+    nk_payment_id as payment_id
     , payment_status
     , payment_amount
     , paid_amount

@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: int_stock_movements
+    description: "Movimentações de estoque com direção, quantidade absoluta e identificação de migração."
+
+    columns:
+      - name: stock_movement_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: movement_direction
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - entrada
+                  - saida
+                  - nao_classificado
+
+      - name: absolute_quantity
+        data_tests:
+          - not_null
+
+      - name: is_legacy_migration
+        data_tests:
+          - not_null

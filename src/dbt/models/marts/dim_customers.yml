@@ -1,0 +1,97 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: >
+      Dimensão de clientes com uma linha por cliente cadastrado.
+      Incorpora um endereço selecionado de forma determinística
+      e um membro técnico para cliente não informado.
+    columns:
+      - name: sk_customer
+        description: "Chave substituta do cliente."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_customer_id
+        description: "Identificador natural do cliente no ERP."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: person_type
+        description: "Tipo de pessoa do cliente."
+
+      - name: legal_name
+        description: "Nome legal ou razão social do cliente."
+        data_tests:
+          - not_null
+
+      - name: trade_name
+        description: "Nome fantasia do cliente."
+
+      - name: tax_id
+        description: "Documento fiscal do cliente."
+
+      - name: state_registration
+        description: "Inscrição estadual do cliente."
+
+      - name: email
+        description: "E-mail principal do cliente."
+
+      - name: phone
+        description: "Telefone principal do cliente."
+
+      - name: nk_address_id
+        description: "Identificador natural do endereço selecionado."
+
+      - name: address_type
+        description: "Tipo do endereço selecionado."
+
+      - name: postal_code
+        description: "CEP do endereço."
+
+      - name: street
+        description: "Logradouro do endereço."
+
+      - name: number
+        description: "Número do endereço."
+
+      - name: complement
+        description: "Complemento do endereço."
+
+      - name: district
+        description: "Bairro do endereço."
+
+      - name: city
+        description: "Cidade do endereço."
+
+      - name: state
+        description: "Estado do endereço."
+
+      - name: country
+        description: "País do endereço."
+
+      - name: is_primary_address
+        description: "Indica se o endereço selecionado é o principal."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_active
+        description: "Indica se o cliente está ativo."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_technical_member
+        description: "Identifica o membro técnico da dimensão."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]

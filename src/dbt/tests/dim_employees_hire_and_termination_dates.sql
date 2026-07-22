@@ -1,5 +1,5 @@
 select
-    employee_id
+    nk_employee_id as employee_id
     , full_name
     , hire_date
     , termination_date

@@ -59,24 +59,9 @@ with payments as (
 
 , joined as (
     select
-        md5(
-            concat_ws(
-                '||'
-                , 'payment'
-                , cast(payments.payment_id as string)
-            )
-        ) as sk_payment
-        , payments.payment_id as nk_payment_id
+        payments.payment_id as nk_payment_id
         , payments.order_id as nk_order_id
         , orders.order_number
-        , coalesce(
-            customers.sk_customer
-            , md5('customer||nao_informado')
-        ) as sk_customer
-        , coalesce(
-            locations.sk_location
-            , md5('location||nao_informada')
-        ) as sk_location
         , order_dates.sk_date as sk_order_date
         , payment_dates.sk_date as sk_payment_date
         , orders.channel
@@ -88,6 +73,22 @@ with payments as (
         , payments.status as payment_status
         , orders.placed_at
         , payments.paid_at
+        , cast(1 as integer) as payment_count
+        , md5(
+            concat_ws(
+                '||'
+                , 'payment'
+                , cast(payments.payment_id as string)
+            )
+        ) as sk_payment
+        , coalesce(
+            customers.sk_customer
+            , md5('customer||nao_informado')
+        ) as sk_customer
+        , coalesce(
+            locations.sk_location
+            , md5('location||nao_informada')
+        ) as sk_location
         , payments.status = 'approved' as is_paid
         , payments.status = 'refunded' as is_refunded
         , payments.status = 'pending' as is_pending
@@ -102,7 +103,6 @@ with payments as (
                 then payments.amount
             else cast(0 as decimal(18, 2))
         end as refunded_amount
-        , cast(1 as integer) as payment_count
     from payments
     inner join orders
         on payments.order_id = orders.order_id

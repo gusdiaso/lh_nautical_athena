@@ -38,14 +38,16 @@ with variant_attribute_values as (
                 , 'xxx'
             ) then null
 
-            when attributes.attribute_name = 'color'
+            when
+                attributes.attribute_name = 'color'
                 and lower(trim(variant_attribute_values.value)) in (
                     'braco'
                     , 'brancoo'
                 )
                 then 'Branco'
 
-            when attributes.attribute_name = 'color'
+            when
+                attributes.attribute_name = 'color'
                 and lower(trim(variant_attribute_values.value)) in (
                     'cinaz'
                     , 'ccinza'
@@ -56,7 +58,8 @@ with variant_attribute_values as (
             when attributes.attribute_name = 'color'
                 then initcap(lower(trim(variant_attribute_values.value)))
 
-            when attributes.attribute_name = 'size'
+            when
+                attributes.attribute_name = 'size'
                 and upper(trim(variant_attribute_values.value)) = 'GX'
                 then 'XG'
 
@@ -71,7 +74,8 @@ with variant_attribute_values as (
     from variant_attribute_values
     left join attributes
         on variant_attribute_values.attribute_id = attributes.attribute_id
-    where variant_attribute_values.product_variant_id is not null
+    where
+        variant_attribute_values.product_variant_id is not null
         and variant_attribute_values.attribute_id is not null
 )
 

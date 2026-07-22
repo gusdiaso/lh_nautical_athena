@@ -1,0 +1,186 @@
+version: 2
+
+models:
+  - name: fact_return_items
+    description: >
+      Fato de pós-venda no grão de um item pertencente a uma devolução.
+      Relaciona produto devolvido, possível produto de troca, cliente,
+      localização, data, motivo e valores de reembolso.
+    columns:
+      - name: sk_return_item
+        description: "Chave substituta do item devolvido."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_return_item_id
+        description: "Identificador natural do item devolvido."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_return_id
+        description: "Identificador natural da devolução."
+        data_tests:
+          - not_null
+
+      - name: nk_order_item_id
+        description: "Identificador natural do item originalmente vendido."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fact_order_items')
+                field: nk_order_item_id
+
+      - name: nk_order_id
+        description: "Identificador natural do pedido original."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fact_order_items')
+                field: nk_order_id
+
+      - name: sk_returned_product
+        description: "Chave do produto devolvido."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: sk_product
+
+      - name: sk_exchange_product
+        description: >
+          Chave do produto de troca. Pode ser nula em operações
+          de reembolso, nas quais não existe produto substituto.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: sk_product
+
+      - name: sk_customer
+        description: "Chave da dimensão de clientes."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: sk_customer
+
+      - name: sk_location
+        description: "Chave da localização que recebeu a devolução."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: sk_location
+
+      - name: sk_date
+        description: "Chave da data da devolução."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: sk_date
+
+      - name: return_number
+        description: "Número comercial da devolução."
+        data_tests:
+          - not_null
+
+      - name: return_status
+        description: "Status da devolução."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - open
+                  - completed
+                  - cancelled
+
+      - name: original_reason
+        description: "Motivo original registrado no ERP."
+
+      - name: reason_normalized
+        description: "Motivo textual normalizado."
+
+      - name: return_reason_group
+        description: "Grupo analítico padronizado do motivo."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - compra_duplicada
+                  - desistencia_cliente
+                  - divergencia_descricao
+                  - avaria_transporte
+                  - tamanho_cor_incorretos
+                  - defeito_fabrica
+                  - nao_informado
+                  - outros
+
+      - name: action
+        description: "Ação aplicada ao item."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - refund
+                  - exchange
+
+      - name: quantity_returned
+        description: "Quantidade devolvida."
+        data_tests:
+          - not_null
+
+      - name: unit_refund_amount
+        description: "Valor unitário do reembolso."
+        data_tests:
+          - not_null
+
+      - name: total_line_refund_amount
+        description: "Valor total reembolsado na linha."
+        data_tests:
+          - not_null
+
+      - name: is_exchange
+        description: "Indica ação de troca."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_refund
+        description: "Indica ação de reembolso."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: return_has_refund_amount
+        description: "Indica se a devolução possui valor de reembolso."
+        data_tests:
+          - not_null
+
+      - name: returned_at
+        description: "Data e hora da devolução."
+        data_tests:
+          - not_null
+
+      - name: returned_item_count
+        description: "Contador aditivo de itens devolvidos."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1]

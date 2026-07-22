@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: stg_exchange_rates
+    description: "Taxas de câmbio."
+    columns:
+      - name: exchange_date
+        data_tests:
+          - not_null
+
+      - name: currency_code
+        data_tests:
+          - not_null
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - exchange_date
+              - currency_code

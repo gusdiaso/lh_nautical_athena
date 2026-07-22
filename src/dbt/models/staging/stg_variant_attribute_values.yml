@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: stg_variant_attribute_values
+    description: "Valores dos atributos das variantes."
+    columns:
+      - name: product_variant_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_product_variants')
+              field: product_variant_id
+
+      - name: attribute_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_attributes')
+              field: attribute_id
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - product_variant_id
+              - attribute_id

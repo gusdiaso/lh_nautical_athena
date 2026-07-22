@@ -1,6 +1,6 @@
 select
-    order_item_id
-    , order_id
+    nk_order_item_id as order_item_id
+    , nk_order_id as order_id
     , gross_line_total
     , allocated_discount_amount
     , net_line_total

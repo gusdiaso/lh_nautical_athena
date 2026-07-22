@@ -13,10 +13,7 @@ with source as (
         , location_id
         , quantity_on_hand
         , reorder_point
-        , case
-            when quantity_on_hand = 0 then true
-            else false
-        end as is_out_of_stock
+        , coalesce(quantity_on_hand = 0, false) as is_out_of_stock
     from source
 )
 

@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: stg_payments
+    description: "Pagamentos dos pedidos."
+    columns:
+      - name: payment_id
+        data_tests:
+          - not_null
+          - unique

@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: int_customers
+    description: "Clientes padronizados."
+    columns:
+      - name: customer_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: legal_name
+        data_tests:
+          - not_null

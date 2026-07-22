@@ -1,0 +1,46 @@
+version: 2
+
+models:
+  - name: stg_return_items
+    description: "Itens das devoluções."
+    columns:
+      - name: return_item_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: return_id
+        data_tests:
+          - not_null
+
+      - name: order_item_id
+        data_tests:
+          - not_null
+
+      - name: quantity_returned
+        data_tests:
+          - not_null
+
+      - name: action
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - refund
+                  - exchange
+
+      - name: unit_refund_amount
+        data_tests:
+          - not_null
+
+      - name: return_id
+        data_tests:
+          - relationships:
+              to: ref('stg_returns')
+              field: return_id
+
+      - name: order_item_id
+        data_tests:
+          - relationships:
+              to: ref('stg_order_items')
+              field: order_item_id

@@ -16,15 +16,15 @@ with source as (
 , final as (
     select
         supplier_id
-        , trim(legal_name) as legal_name
-        , trim(trade_name) as trade_name
         , country
         , tax_id
         , tax_id_type
         , email
         , phone
-        , trim(contact_name) as contact_name
         , is_active
+        , trim(legal_name) as legal_name
+        , trim(trade_name) as trade_name
+        , trim(contact_name) as contact_name
     from source
 )
 

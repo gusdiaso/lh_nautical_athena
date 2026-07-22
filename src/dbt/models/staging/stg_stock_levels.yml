@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: stg_stock_levels
+    description: "Níveis de estoque."
+    columns:
+      - name: product_variant_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_product_variants')
+              field: product_variant_id
+
+      - name: location_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_locations')
+              field: location_id
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - product_variant_id
+              - location_id

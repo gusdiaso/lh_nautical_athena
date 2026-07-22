@@ -31,7 +31,6 @@ Antes da decisão de limitar a validação a `staging` e `intermediate`, foram a
 - `src/dbt/models/marts/fact_orders.sql`
 - `src/dbt/models/marts/fact_payments.sql`
 - `src/dbt/models/marts/fact_goods_receipts.sql`
-- `src/dbt/models/marts/marts.yml`
 - `src/dbt/tests/test_product_suppliers_sk_date_not_placeholder.sql`
 
 Essas alterações introduziram padronização de surrogate keys e testes de relacionamento, mas a camada `marts` não foi validada nesta rodada final por decisão do escopo.
@@ -124,7 +123,6 @@ Alguns pontos dependem de modelos ou decisões de outros desenvolvedores:
 - `src/dbt/models/marts/fact_orders.sql`
 - `src/dbt/models/marts/fact_payments.sql`
 - `src/dbt/models/marts/fact_goods_receipts.sql`
-- `src/dbt/models/marts/marts.yml`
 - `src/dbt/tests/test_product_suppliers_sk_date_not_placeholder.sql`
 
 ## Conclusão

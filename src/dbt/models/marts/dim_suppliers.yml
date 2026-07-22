@@ -1,0 +1,61 @@
+version: 2
+
+models:
+  - name: dim_suppliers
+    description: >
+      Dimensão de fornecedores usada nas análises de compras,
+      abastecimento e recebimentos de mercadorias.
+    columns:
+      - name: sk_supplier
+        description: "Chave substituta do fornecedor."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_supplier_id
+        description: "Identificador natural do fornecedor."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: legal_name
+        description: "Razão social ou nome legal."
+        data_tests:
+          - not_null
+
+      - name: trade_name
+        description: "Nome fantasia."
+
+      - name: country
+        description: "País do fornecedor."
+
+      - name: tax_id
+        description: "Documento fiscal."
+
+      - name: tax_id_type
+        description: "Tipo do documento fiscal."
+
+      - name: email
+        description: "E-mail do fornecedor."
+
+      - name: phone
+        description: "Telefone do fornecedor."
+
+      - name: contact_name
+        description: "Nome do contato principal."
+
+      - name: is_active
+        description: "Indica se o fornecedor está ativo."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_technical_member
+        description: "Indica se o registro é um membro técnico."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]

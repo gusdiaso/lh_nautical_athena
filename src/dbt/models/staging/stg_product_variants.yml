@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: stg_product_variants
+    description: "Variações dos produtos."
+    columns:
+      - name: product_variant_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: sku
+        data_tests:
+          - not_null
+          - unique

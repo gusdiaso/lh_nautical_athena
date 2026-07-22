@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: stg_stock_movements
+    description: "Movimentações de estoque."
+    columns:
+      - name: stock_movement_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: movement_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - sale_out
+                  - purchase_in
+                  - return_in
+                  - return_out

@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: int_suppliers
+    description: "Fornecedores com padronização de campos textuais."
+
+    columns:
+      - name: supplier_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: legal_name
+        data_tests:
+          - not_null
+
+      - name: country
+        data_tests:
+          - not_null
+
+      - name: tax_id_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - CNPJ
+                  - VAT
+
+      - name: is_active
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false

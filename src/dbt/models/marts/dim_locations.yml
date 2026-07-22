@@ -1,0 +1,75 @@
+version: 2
+
+models:
+  - name: dim_locations
+    description: >
+      Dimensão conformada de lojas, armazéns e demais localizações físicas,
+      acrescida de um membro técnico para localização não informada.
+    columns:
+      - name: sk_location
+        description: "Chave substituta da localização."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: nk_location_id
+        description: "Identificador natural da localização."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: location_name
+        description: "Nome da localização."
+        data_tests:
+          - not_null
+
+      - name: location_type
+        description: "Tipo da localização."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - store
+                  - warehouse
+                  - nao_informado
+
+      - name: postal_code
+        description: "CEP da localização."
+
+      - name: street
+        description: "Logradouro."
+
+      - name: number
+        description: "Número do endereço."
+
+      - name: complement
+        description: "Complemento."
+
+      - name: district
+        description: "Bairro."
+
+      - name: city
+        description: "Cidade."
+
+      - name: state
+        description: "Estado."
+
+      - name: country
+        description: "País."
+
+      - name: is_active
+        description: "Indica se a localização está ativa."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_technical_member
+        description: "Indica se o registro é um membro técnico."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]

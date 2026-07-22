@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: int_orders
+    description: "Pedidos de venda padronizados."
+    columns:
+      - name: order_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: order_number
+        data_tests:
+          - not_null
+
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+
+      - name: salesperson_id
+        data_tests:
+          - relationships:
+              to: ref('stg_employees')
+              field: employee_id
+
+      - name: location_id
+        data_tests:
+          - relationships:
+              to: ref('stg_locations')
+              field: location_id

@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: int_payments
+    description: "Pagamentos padronizados."
+    columns:
+      - name: payment_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('int_orders')
+              field: order_id

@@ -88,16 +88,16 @@ select
     , currency
     , er.exchange_rate_sell
     , subtotal
-    , original_total
-    , placed_at
-    , expected_delivery_at
     , case
         when ranked.currency = 'BRL' then ranked.original_total
         else round(ranked.original_total * er.average_exchange_rate, 2)
     end as total_brl
+    , placed_at
+    , expected_delivery_at
 from ranked
 left join exchange_rate_ranges as er
     on
         ranked.currency = er.currency_code
         and cast(ranked.placed_at as date) >= er.valid_from
         and cast(ranked.placed_at as date) < er.valid_to
+order by purchase_order_id;

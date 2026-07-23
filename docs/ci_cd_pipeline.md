@@ -18,6 +18,7 @@ Para garantir a segurança e seguir as melhores práticas de governança, separa
 
 Todos os recursos de produção são executados sob a identidade da Service Principal definida em `databricks.yml`.
 
+- **Nome da Entidade:** `sp-prod-lh-nautical`
 - **Autenticação:** OAuth Machine-to-Machine (M2M).
 - **Segurança:** A entidade possui apenas privilégios necessários para executar jobs e acessar o catálogo de produção.
 

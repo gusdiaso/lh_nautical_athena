@@ -5,15 +5,27 @@ with source as (
 
 )
 
+, purchase_order_items as (
+
+    select
+        purchase_order_item_id
+        , line_total
+        , unit_cost
+    from {{ ref('stg_purchase_order_items') }}
+
+)
+
 , base as (
 
     select
-        goods_receipt_item_id
-        , goods_receipt_id
-        , purchase_order_item_id
-        , quantity_received
-    from source
-    where goods_receipt_item_id is not null
+        gri.goods_receipt_item_id
+        , gri.goods_receipt_id
+        , gri.purchase_order_item_id
+        , round(cast(poi.line_total as decimal(18, 4)) / nullif(cast(poi.unit_cost as decimal(18, 4)), 0), 2) as quantity_received
+    from source gri
+    inner join purchase_order_items poi
+        on gri.purchase_order_item_id = poi.purchase_order_item_id
+    where gri.goods_receipt_item_id is not null
 
 )
 

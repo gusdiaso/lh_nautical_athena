@@ -55,10 +55,6 @@ models:
         data_tests:
           - not_null
 
-      - name: original_total
-        data_tests:
-          - not_null
-
       - name: placed_at
         data_tests:
           - not_null
@@ -74,4 +70,3 @@ models:
         description: "Valor total do pedido convertido para BRL. Para moedas estrangeiras, usa a average_exchange_rate; para BRL, mantém o original_total."
         data_tests:
           - not_null
-

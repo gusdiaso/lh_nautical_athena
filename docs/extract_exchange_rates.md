@@ -5,7 +5,7 @@
 Pipeline que extrai cotacoes de moedas (PTAX) do Banco Central do Brasil para a camada **Bronze** no Databricks.
 
 **Fonte:** API PTAX do Banco Central
-**Modo de carga:** Incremental (apenas novos registros)
+**Modo de carga:** Incremental por padrao, com suporte a `full` para reprocessamento
 
 ## Fluxo dos Dados
 

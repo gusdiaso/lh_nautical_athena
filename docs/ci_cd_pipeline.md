@@ -11,15 +11,16 @@ Para garantir a segurança e seguir as melhores práticas de governança, separa
 - **O Entregador (Bitbucket Pipelines):** Atua do lado de fora do Databricks. Sua função é monitorar a branch principal, capturar o código atualizado, autenticar-se no Databricks via API e realizar o deploy da infraestrutura e dos códigos.
 - **O Trabalhador (Service Principal):** É a entidade robô (`sp-prod-lh-nautical`) que existe dentro do Databricks. Ela se torna a proprietária (Owner) de todos os Jobs e Workflows em produção e é quem de fato executa o processamento dos dados.
 
+
 ---
 
 ## 2. A Service Principal de Produção
 
-Todos os recursos de produção são executados sob a identidade da Service Principal configurada no workspace.
+Todos os recursos de produção são executados sob a identidade da Service Principal definida em `databricks.yml`.
 
 - **Nome da Entidade:** `sp-prod-lh-nautical`
 - **Autenticação:** OAuth Machine-to-Machine (M2M).
-- **Segurança:** A entidade possui apenas privilégios de Workspace e Databricks SQL. Seguindo o princípio do menor privilégio, ela **não possui acesso de administrador (Admin)**.
+- **Segurança:** A entidade possui apenas privilégios necessários para executar jobs e acessar o catálogo de produção.
 
 ---
 
@@ -63,7 +64,7 @@ pipelines:
 ```
 
 4.2. databricks.yml (O Bundle)
-Define a infraestrutura como código (IaC). O bloco run_as é crítico, pois garante que os recursos criados no Databricks pertençam à Service Principal e não a quem iniciou o commit.
+Define a infraestrutura como código (IaC). O bloco `run_as` é crítico, pois garante que os recursos criados no Databricks pertençam à Service Principal e não a quem iniciou o commit.
 
 ### 4.2. `databricks.yml` (O Bundle)
 

@@ -2,11 +2,21 @@
 
 ## Visão Geral
 
-O projeto dbt se conecta ao Databricks Unity Catalog e organiza os dados em 3 camadas:
+O projeto dbt se conecta ao Databricks Unity Catalog e atua como a camada de modelagem do data warehouse.
+
+No nosso desenho, as camadas físicas do warehouse são:
 
 ```
-Bronze (dados brutos) → Staging → Intermediate → Marts (Gold)
+Bronze → Silver → Gold
 ```
+
+As camadas de modelagem do dbt são:
+
+```
+Staging → Intermediate → Marts
+```
+
+Elas organizam, validam e enriquecem os dados antes de alimentar principalmente Silver e Gold.
 
 ---
 
@@ -49,9 +59,9 @@ models:
 ```
 
 **Por que staging é view e intermediate é table?**
-- **Staging** → view porque é apenas uma cópia organizada dos dados brutos. Não precisa de performance, só de organização.
-- **Intermediate** → table porque aplica limpeza, dedup e validação. Precisa de performance para consultas.
-- **Marts** → table porque são tabelas finais para consumo de BI/analistas.
+- **Staging** → view porque organiza os dados brutos sem materializar transformações pesadas.
+- **Intermediate** → table porque consolida limpeza, deduplicação e validação com melhor desempenho.
+- **Marts** → table porque entrega o modelo analítico final para consumo de BI e análises.
 
 ### 3. `generate_schema_name.sql` — Macro
 
@@ -78,7 +88,7 @@ Não precisa de `catalog` porque herda do target ativo.
 
 ```
 profiles.yml          →  catalog: dev_lh_nautical
-dbt_project.yml       →  +schema: silver
+dbt_project.yml       →  +schema: silver / gold
 macro                 →  usa só o schema (não concatena)
                         = dev_lh_nautical.silver.stg_*
 ```

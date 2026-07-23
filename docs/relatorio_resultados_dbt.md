@@ -39,7 +39,7 @@ Essas alterações introduziram padronização de surrogate keys e testes de rel
 
 Foram adicionados testes de qualidade e integridade em:
 
-- `src/dbt/models/staging/staging.yml`
+- `src/dbt/models/staging/*.yml`
 
 Principais inclusões:
 
@@ -60,7 +60,7 @@ As tabelas mais reforçadas foram:
 
 Foram adicionados testes em:
 
-- `src/dbt/models/intermediate/intermediate.yml`
+- `src/dbt/models/intermediate/*.yml`
 
 Principais inclusões:
 
@@ -99,11 +99,11 @@ Durante a execução, foram identificados e corrigidos problemas de mapeamento d
 - `stg_order_items` usava nomes antigos em testes (`quantity`, `line_total`), enquanto o modelo expõe `quantity_ordered` e `original_line_total`.
 - `stg_purchase_orders` expõe `original_total`, não `total`.
 
-Essas inconsistências foram ajustadas em `src/dbt/models/staging/staging.yml` antes da validação final.
+Essas inconsistências foram ajustadas nos YAMLs dos models de staging correspondentes antes da validação final.
 
 ## Observações Técnicas
 
-- Foi observado um aviso de depreciação do dbt em testes genéricos com argumentos em formato antigo em `intermediate.yml`.
+- Foi observado um aviso de depreciação do dbt em testes genéricos com argumentos em formato antigo nos YAMLs de intermediate.
 - O aviso não impediu a execução, mas indica que, em uma próxima etapa, é recomendável padronizar esses testes para a sintaxe mais nova com `arguments`.
 
 ## Pendências Fora do Escopo Atual
@@ -112,13 +112,13 @@ Alguns pontos dependem de modelos ou decisões de outros desenvolvedores:
 
 - substituição definitiva de qualquer placeholder temporal em `marts`
 - revisão de `marts` que dependem de tabelas ainda não consolidadas por outros responsáveis
-- eventual padronização dos testes genéricos em `intermediate.yml` para eliminar o warning de depreciação
+- eventual padronização dos testes genéricos nos YAMLs de intermediate para eliminar o warning de depreciação
 
 ## Arquivos Modificados Nesta Frente
 
 - `src/dbt/macros/sk_from_keys.sql`
-- `src/dbt/models/staging/staging.yml`
-- `src/dbt/models/intermediate/intermediate.yml`
+- `src/dbt/models/staging/*.yml`
+- `src/dbt/models/intermediate/*.yml`
 - `src/dbt/models/marts/dim_customers.sql`
 - `src/dbt/models/marts/fact_orders.sql`
 - `src/dbt/models/marts/fact_payments.sql`

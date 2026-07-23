@@ -1,73 +1,84 @@
-# Camada Marts - Guia de Leitura
+# Camada Marts
 
 ## Objetivo
 
-A camada Marts concentra os modelos analíticos finais do projeto LH Nautical. Ela foi desenhada para consumo por BI, análises exploratórias e validação operacional. A camada é construída a partir dos intermediates, que por sua vez são derivados das fontes de dados.
+A camada Marts entrega o modelo analítico final do projeto LH Nautical. Ela consolida dimensões e fatos prontos para BI, exploração e validação operacional.
 
-## Escopo
+## Visão Geral
 
-Este conjunto contém os seguintes modelos:
+A implementação atual possui 12 models no schema `gold`:
 
 - `dim_date`
-- `dim_brands`
-- `dim_categories`
 - `dim_customers`
 - `dim_employees`
-- `fact_orders`
+- `dim_locations`
+- `dim_products`
+- `dim_suppliers`
+- `fact_order_items`
 - `fact_payments`
-- `fact_goods_receipts`
-- `fact_product_suppliers`
+- `fact_purchase_order_items`
+- `fact_goods_receipt_items`
+- `fact_stock_movements`
+- `fact_return_items`
 
-## Como Ler o Modelo
+## Arquitetura
 
-As dimensões descrevem o contexto das análises e usam chaves substitutas com prefixo `sk_`. As fatos carregam os eventos de negócio e mantêm o menor grão útil para análise.
+```mermaid
+flowchart LR
+  I[Intermediate Tables] --> D[Dimensions]
+  I --> F[Facts]
+  D --> BI[BI / Analytics]
+  F --> BI
+```
 
-Nem todo atributo descritivo segue o padrão `sk_`/`nk_`. Campos de domínio vindos da origem, como `brand_name` e `category_name`, preservam a nomenclatura funcional para facilitar leitura humana e rastreabilidade com o dado original.
+## Fluxo
 
-- `dim_date` organiza a leitura temporal e permite agrupar por dia, mês, ano e fim de semana.
-- `dim_brands`, `dim_categories`, `dim_customers` e `dim_employees` servem como eixo descritivo das análises.
-- `fact_orders` é o ponto de partida para pedidos de venda.
-- `fact_payments` vincula pagamentos aos pedidos.
-- `fact_goods_receipts` representa os recebimentos de mercadoria.
-- `fact_product_suppliers` documenta o relacionamento entre produto e fornecedor.
+1. Os models `dim_*` e `fact_*` leem a camada `int_*`.
+2. As dimensões recebem chaves substitutas com prefixo `sk_`.
+3. As fatos preservam o grão transacional e ligam os eventos de negócio às dimensões.
+4. Os testes genéricos e singulares reforçam o contrato do modelo.
 
-## Decisões De Projeto
+## Componentes
 
-### Dimensão Calendário
-
-A dimensão calendário foi incluída para facilitar filtros, agrupamentos e análises temporais sem depender de funções de data espalhadas pelos dashboards.
-
-### Chaves Substitutas
-
-As dimensões usam `sk_*` para padronizar o relacionamento com as fatos. Isso evita acoplamento com identificadores naturais e simplifica evoluções futuras.
-
-### Granularidade
-
-O desenho foi mantido no nível mais próximo do evento disponível nos intermediates atuais. Quando o modelo de negócio tiver uma tabela de detalhe mais rica, a fato correspondente pode ser refinada sem quebrar a estrutura base.
+- `src/dbt/models/marts/*.sql`: implementação dos marts.
+- `src/dbt/models/marts/*.yml`: contratos de colunas e testes genéricos.
+- `src/dbt/tests/*.sql`: testes singulares de consistência e regras de negócio.
 
 ## Dependências
 
-As marts do Danilo consomem diretamente os intermediates já validados:
+- Camada Intermediate atualizada.
+- `dbt_project.yml` com `marts` materializado como `table` no schema `gold`.
+- Macros `generate_schema_name` e `sk_from_keys` quando aplicáveis.
 
-- `int_brands`
-- `int_categories`
-- `int_customers`
-- `int_employees`
-- `int_orders`
-- `int_payments`
-- `int_goods_receipts`
-- `int_product_suppliers`
-
-## Como Validar
-
-Para validar a camada localmente, use:
+## Configuração
 
 ```bash
-c:/Users/Usuario/grupo_5/.venv/Scripts/python.exe -m dbt.cli.main compile --select marts
+source .env
+dbt run --select marts
+dbt test --select marts
 ```
 
-Para checagem de qualidade após a geração dos modelos, rode também os testes do dbt no ambiente do projeto.
+## Exemplos
+
+```sql
+WITH source AS (
+    SELECT *
+    FROM {{ ref('int_customers') }}
+)
+SELECT
+    customer_id AS nk_customer_id
+    , legal_name
+FROM source
+```
 
 ## Observações
 
-Este documento é uma visão prática para leitura humana. A documentação técnica complementar fica nas descrições dos modelos e colunas do dbt, nos arquivos `src/dbt/models/marts/*.yml`.
+- Não existe um arquivo consolidado `marts.yml`; cada model tem seu próprio contrato YAML.
+- A camada segue um star schema com 6 dimensões e 6 fatos.
+
+## Referências
+
+- [Star Schema](star_schema.md)
+- [Estratégia de testes](marts_tests.md)
+- [Camada Intermediate](intermediate.md)
+- [README do projeto](../README.md)

@@ -9,7 +9,8 @@ Esta documentação detalha a arquitetura e o funcionamento da nossa esteira de 
 Para garantir a segurança e seguir as melhores práticas de governança, separamos as responsabilidades do deploy em duas frentes:
 
 - **O Entregador (Bitbucket Pipelines):** Atua do lado de fora do Databricks. Sua função é monitorar a branch principal, capturar o código atualizado, autenticar-se no Databricks via API e realizar o deploy da infraestrutura e dos códigos.
-- **O Trabalhador (Service Principal):** É a entidade configurada no `databricks.yml` para executar os recursos de produção. Ela se torna a proprietária (Owner) dos Jobs e Workflows em produção e é quem de fato executa o processamento dos dados.
+- **O Trabalhador (Service Principal):** É a entidade robô (`sp-prod-lh-nautical`) que existe dentro do Databricks. Ela se torna a proprietária (Owner) de todos os Jobs e Workflows em produção e é quem de fato executa o processamento dos dados.
+
 
 ---
 

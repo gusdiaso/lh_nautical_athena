@@ -4,11 +4,15 @@
 
 O **LH Nautical** é um pipeline de dados completo construído no ecossistema **Databricks**, seguindo a **Arquitetura Medalhão** (Bronze → Silver → Gold). O projeto extrai dados de um ERP SQL Server (24 tabelas de domínio náutico/comercial) e cotações de moedas USD/EUR da API do Banco Central, salvando tudo como tabelas **Delta Lake** no Unity Catalog.
 
-### Solução Atual (Bronze + Silver)
+### Solução Atual do Data Warehouse
 
+- **Bronze**: camada bruta do warehouse, alimentada por extrações do SQL Server e da API BCB
+- **Silver**: camada intermediária do warehouse, alimentada pela modelagem do dbt
+- **Gold**: camada analítica final do warehouse, também alimentada pela modelagem do dbt
+- **Staging / Intermediate / Marts**: camadas de modelagem que organizam, validam e enriquecem os dados antes de alimentar Silver e Gold
 - **Ingestão SQL Server → Bronze**: Extração via JDBC de 24 tabelas (clientes, produtos, vendas, estoque, compras, etc.) com carga completa (full overwrite)
 - **Ingestão API BCB → Bronze**: Extração incremental de cotações PTAX (USD/EUR) via HTTP com merge/upsert
-- **Transformação dbt → Silver**: Staging (views) e Intermediate (tables) com limpeza, padronização e testes
+- **Modelagem dbt**: Staging (views), Intermediate (tables) e Marts (tables) com limpeza, padronização, validação e regras analíticas
 - **Infraestrutura como Código**: Databricks Asset Bundles (DAB) para declarar jobs e permissões
 - **CI/CD**: Pipeline automatizado via Bitbucket Pipelines (deploy em produção)
 - **Retry Automático**: Tratamento de falhas de conexão com tenacity (3 tentativas, backoff exponencial)
@@ -49,10 +53,10 @@ O projeto dbt se conecta ao Databricks Unity Catalog e organiza os dados em cama
 
 | Camada | Catálogo | Schema | Materialização |
 |--------|----------|--------|----------------|
-| Bronze | `dev_lh_nautical` / `prod_lh_nautical` | `bronze` | (fonte) |
-| Staging | `dev_lh_nautical` / `prod_lh_nautical` | `silver` | view |
-| Intermediate | `dev_lh_nautical` / `prod_lh_nautical` | `silver` | table |
-| Marts | `dev_lh_nautical` / `prod_lh_nautical` | `gold` | table |
+| Bronze | `dev_lh_nautical` / `prod_lh_nautical` | `bronze` | camada física de dados brutos |
+| Staging | `dev_lh_nautical` / `prod_lh_nautical` | `silver` | camada de modelagem em views |
+| Intermediate | `dev_lh_nautical` / `prod_lh_nautical` | `silver` | camada de modelagem em tables |
+| Marts | `dev_lh_nautical` / `prod_lh_nautical` | `gold` | camada de modelagem analítica em tables |
 
 ---
 
@@ -259,15 +263,15 @@ SQL Server (ERP)                API PTAX (BCB)
                            ▼ ─── dbt
                    ┌─────────────────┐
                    │     SILVER      │
-                   │  intermediate   │
-                   │    (table)      │
+                   │ staging/int.    │
+                   │    (dbt)        │
                    └────────┬────────┘
                             │
                             ▼ ─── dbt
                    ┌─────────────────┐
                    │      GOLD       │
-                   │    marts        │
-                   │    (table)      │
+                   │     marts       │
+                   │    (dbt)        │
                    └────────┬────────┘
                             │
                             ├── → Dashboards

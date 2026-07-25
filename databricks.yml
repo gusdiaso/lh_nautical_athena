@@ -12,6 +12,9 @@ include:
 sync:
   include:
     - dbt_project.yml
+    - profiles.yml
+    - packages.yml
+    - package-lock.yml
     - src/dbt/**
     - src/*/*.py
 

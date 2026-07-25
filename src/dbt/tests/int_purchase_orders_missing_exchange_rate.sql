@@ -2,7 +2,6 @@ select
     purchase_order_id
     , po_number
     , currency
-    , original_total
     , total_brl
     , placed_at
 from {{ ref('int_purchase_orders') }}

@@ -1,3 +1,5 @@
+-- Verifica que todo produto possui uma unidade de medida preenchida.
+-- Falha quando unit_of_measure é nulo ou vazio, evitando produtos sem referência de medida.
 select
     product_id
     , product_name

@@ -1,3 +1,5 @@
+-- Verifica que order_status é consistente com as flags booleanas de estado do pedido.
+-- Falha quando o status textual não corresponde às flags ativas, evitando classificações conflitantes de pedido.
 select
     nk_order_item_id as order_item_id
     , order_status

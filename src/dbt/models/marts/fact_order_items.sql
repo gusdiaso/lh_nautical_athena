@@ -164,13 +164,7 @@ with order_items as (
         , products.cost_price as standard_unit_cost
         , enriched_order_items.placed_at
         , cast(1 as integer) as order_item_count
-        , md5(
-            concat_ws(
-                '||'
-                , 'order_item'
-                , cast(enriched_order_items.order_item_id as string)
-            )
-        ) as sk_order_item
+        , {{ sk_from_keys(["'order_item'", 'enriched_order_items.order_item_id']) }} as sk_order_item
         , coalesce(
             products.sk_product
             , md5('product||nao_informado')
@@ -271,4 +265,4 @@ with order_items as (
     from joined
 )
 
-select * from final;
+select * from final

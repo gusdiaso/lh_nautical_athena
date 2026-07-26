@@ -1,3 +1,5 @@
+-- Verifica que os cálculos de desconto, custo e lucro bruto dos itens de pedido são consistentes.
+-- Falha quando há divergência entre valores calculados ou valores negativos inesperados, evitando demonstrativos financeiros incorretos.
 select
     nk_order_item_id as order_item_id
     , nk_order_id as order_id

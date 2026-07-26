@@ -27,9 +27,6 @@ models:
       - name: sku
         description: "Código SKU da variante."
 
-      - name: barcode_ean
-        description: "Código de barras EAN."
-
       - name: product_name
         description: "Nome do produto."
         data_tests:

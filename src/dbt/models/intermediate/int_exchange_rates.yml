@@ -2,14 +2,16 @@ version: 2
 
 models:
   - name: int_exchange_rates
-    description: "Cotações cambiais com taxa média e spread."
+    description: Cotações de câmbio padronizadas e enriquecidas.
 
     columns:
       - name: exchange_date
+        description: Data de referência da cotação.
         data_tests:
           - not_null
 
       - name: currency_code
+        description: Código da moeda (ISO 4217).
         data_tests:
           - not_null
           - accepted_values:
@@ -19,9 +21,21 @@ models:
                   - EUR
 
       - name: average_exchange_rate
+        description: Taxa de câmbio média do período (compra + venda) / 2.
         data_tests:
           - not_null
 
       - name: exchange_rate_spread
+        description: Diferença entre taxa de compra e venda.
+        data_tests:
+          - not_null
+
+      - name: exchange_rate_buy
+        description: Taxa de câmbio (compra) aplicada na conversão para BRL.
+        data_tests:
+          - not_null
+
+      - name: exchange_rate_sell
+        description: Taxa de câmbio (venda) aplicada na conversão para BRL.
         data_tests:
           - not_null

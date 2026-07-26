@@ -104,12 +104,6 @@ models:
                   - completed
                   - cancelled
 
-      - name: original_reason
-        description: "Motivo original registrado no ERP."
-
-      - name: reason_normalized
-        description: "Motivo textual normalizado."
-
       - name: return_reason_group
         description: "Grupo analítico padronizado do motivo."
         data_tests:

@@ -1,3 +1,5 @@
+-- Verifica que valores de atributos de variantes não contêm placeholders, dados de teste ou grafias incorretas conhecidas.
+-- Falha quando attribute_value é um valor inválido ou contém erros de digitação, evitando dados sujos e classificações incorretas de produto.
 select
     product_variant_id
     , attribute_id

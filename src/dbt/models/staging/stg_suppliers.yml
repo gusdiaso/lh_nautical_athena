@@ -1,10 +1,30 @@
 version: 2
-
 models:
   - name: stg_suppliers
-    description: "Fornecedores."
+    description: Fornecedores cadastrados.
     columns:
+      - name: contact_name
+        description: Nome do contato comercial.
+      - name: country
+        description: País do fornecedor.
+      - name: email
+        description: E-mail de contato do fornecedor.
+      - name: is_active
+        description: Indicador se o fornecedor está ativo.
+      - name: legal_name
+        description: Razão social do fornecedor.
+      - name: phone
+        description: Telefone do fornecedor.
       - name: supplier_id
+        description: Identificador único do fornecedor (PK).
         data_tests:
           - not_null
           - unique
+      - name: tax_id
+        description: CNPJ ou documento fiscal equivalente.
+        data_tests:
+          - not_null
+      - name: tax_id_type
+        description: Tipo de documento tributário.
+      - name: trade_name
+        description: Nome fantasia do fornecedor.

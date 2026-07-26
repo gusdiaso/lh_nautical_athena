@@ -20,10 +20,8 @@ with stock_movements as (
         , reference_table
         , reference_id
         , employee_id
-        , notes
         , occurred_at
         , movement_direction
-        , absolute_quantity
         , is_legacy_migration
     from {{ ref('int_stock_movements') }}
 )
@@ -38,19 +36,15 @@ with stock_movements as (
         , reference_table
         , reference_id
         , employee_id
-        , notes
         , occurred_at
         , movement_direction
-        , absolute_quantity
         , is_legacy_migration
         , case
             when employee_id is not null
                 then employee_id
             when is_legacy_migration
                 then -1
-            when
-                movement_type = 'sale_out'
-                and notes is null
+            when movement_type = 'sale_out'
                 then -2
             else -3
         end as resolved_employee_id
@@ -94,18 +88,10 @@ with stock_movements as (
         , resolved_movements.movement_type
         , resolved_movements.movement_direction
         , resolved_movements.quantity
-        , resolved_movements.absolute_quantity
-        , resolved_movements.notes
         , resolved_movements.occurred_at
         , resolved_movements.is_legacy_migration
         , cast(1 as integer) as movement_count
-        , md5(
-            concat_ws(
-                '||'
-                , 'stock_movement'
-                , cast(resolved_movements.stock_movement_id as string)
-            )
-        ) as sk_stock_movement
+        , {{ sk_from_keys(["'stock_movement'", 'resolved_movements.stock_movement_id']) }} as sk_stock_movement
         , coalesce(
             products.sk_product
             , md5('product||nao_informado')
@@ -152,8 +138,6 @@ with stock_movements as (
         , movement_type
         , movement_direction
         , quantity
-        , absolute_quantity
-        , notes
         , occurred_at
         , is_legacy_migration
         , is_inbound

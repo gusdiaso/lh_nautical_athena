@@ -1,3 +1,5 @@
+-- Verifica que o custo unitário dos itens de pedido de compra não é negativo.
+-- Falha quando unit_cost é negativo, evitando custos de aquisição inconsistentes.
 select
     purchase_order_item_id
     , purchase_order_id

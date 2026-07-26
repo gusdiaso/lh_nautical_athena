@@ -1,3 +1,5 @@
+-- Verifica a consistência dos valores em BRL (conversão cambial) e da flag de atraso na entrega esperada.
+-- Falha quando há divergência na conversão de moeda ou quando a flag is_expected_delivery_overdue não reflete a data atual, evitando relatórios financeiros e de prazos incorretos.
 select
     nk_purchase_order_item_id as purchase_order_item_id
     , currency

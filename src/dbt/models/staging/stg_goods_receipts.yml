@@ -1,10 +1,29 @@
 version: 2
-
 models:
   - name: stg_goods_receipts
-    description: "Recebimentos de mercadorias."
+    description: Recebimentos físicos de mercadorias.
     columns:
       - name: goods_receipt_id
+        description: Identificador único do recebimento (PK).
         data_tests:
           - not_null
           - unique
+      - name: notes
+        description: Observações sobre o recebimento.
+      - name: purchase_order_id
+        description: Referência ao pedido de compra (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_purchase_orders')
+                field: purchase_order_id
+      - name: received_at
+        description: Data/hora do recebimento.
+      - name: received_by_employee_id
+        description: Referência ao conferente (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_employees')
+                field: employee_id

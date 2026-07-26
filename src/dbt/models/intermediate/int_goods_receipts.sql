@@ -35,7 +35,6 @@ select
     , purchase_order_id
     , received_by_employee_id
     , received_at
-    , notes
 
 from deduplicated
 where record_rank = 1

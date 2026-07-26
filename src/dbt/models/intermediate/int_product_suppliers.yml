@@ -1,24 +1,53 @@
 version: 2
-
 models:
   - name: int_product_suppliers
-    description: "Relacionamento produto-fornecedor padronizado."
+    description: Fornecedores por produto deduplicados e padronizados.
     columns:
+      - name: is_preferred
+        description: Indicador de fornecedor preferencial.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: last_quoted_cost
+        description: Último custo informado pelo fornecedor.
+        data_tests:
+          - not_null
+
+      - name: lead_time_days
+        description: Prazo estimado de entrega em dias.
+        data_tests:
+          - not_null
+
+      - name: product_variant_id
+        description: Referência à variante do produto (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_product_variants')
+                field: product_variant_id
+
       - name: sk_product_supplier
+        description: Chave do fornecedor do produto.
         data_tests:
           - not_null
           - unique
 
-      - name: product_variant_id
-        data_tests:
-          - not_null
-          - relationships:
-              to: ref('stg_product_variants')
-              field: product_variant_id
-
       - name: supplier_id
+        description: Referência ao fornecedor (FK).
         data_tests:
           - not_null
           - relationships:
-              to: ref('stg_suppliers')
-              field: supplier_id
+              arguments:
+                to: ref('stg_suppliers')
+                field: supplier_id
+
+      - name: supplier_sku
+        description: Código do produto na perspectiva do fornecedor.
+        data_tests:
+          - not_null

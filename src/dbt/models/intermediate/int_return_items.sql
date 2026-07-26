@@ -36,9 +36,6 @@ with source as (
         , action
         , exchange_variant_id
         , unit_refund_amount
-        , action = 'exchange' as is_exchange
-        , action = 'refund' as is_refund
-        , exchange_variant_id is not null as has_exchange_product
         , case
             when action = 'refund'
                 then round(
@@ -47,6 +44,8 @@ with source as (
                 )
             else 0.00
         end as total_line_refund_amount
+        , action = 'exchange' as is_exchange
+        , action = 'refund' as is_refund
     from deduplicated
     where record_rank = 1
 )
@@ -62,7 +61,6 @@ with source as (
         , unit_refund_amount
         , is_exchange
         , is_refund
-        , has_exchange_product
         , total_line_refund_amount
     from classified
 )

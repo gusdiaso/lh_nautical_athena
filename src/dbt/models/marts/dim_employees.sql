@@ -76,13 +76,7 @@ with employees as (
         , termination_date
         , is_active
         , false as is_technical_member
-        , md5(
-            concat_ws(
-                '||'
-                , 'employee'
-                , cast(employee_id as string)
-            )
-        ) as sk_employee
+        , {{ sk_from_keys(["'employee'", 'employee_id']) }} as sk_employee
     from employees
 )
 
@@ -118,4 +112,4 @@ with employees as (
     from employees_dimension
 )
 
-select * from final;
+select * from final

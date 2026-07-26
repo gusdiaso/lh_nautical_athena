@@ -1,3 +1,5 @@
+-- Verifica que pedidos em moeda estrangeira já realizados possuem conversão para BRL.
+-- Falha quando total_brl é nulo para pedidos não em BRL com data passada, evitando valores sem conversão cambial.
 select
     purchase_order_id
     , po_number

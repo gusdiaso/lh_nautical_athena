@@ -30,7 +30,6 @@ with goods_receipt_items as (
         , purchase_order_id
         , received_by_employee_id
         , received_at
-        , notes
     from {{ ref('int_goods_receipts') }}
 )
 
@@ -78,7 +77,6 @@ with goods_receipt_items as (
         , purchase_orders.placed_at
         , purchase_orders.expected_delivery_at
         , goods_receipts.received_at
-        , goods_receipts.notes
         , sum(goods_receipt_items.quantity_received) over (
             partition by goods_receipt_items.purchase_order_item_id
             order by
@@ -161,15 +159,8 @@ with goods_receipt_items as (
         , receipt_base.placed_at
         , receipt_base.expected_delivery_at
         , receipt_base.received_at
-        , receipt_base.notes
         , cast(1 as integer) as goods_receipt_item_count
-        , md5(
-            concat_ws(
-                '||'
-                , 'goods_receipt_item'
-                , cast(receipt_base.goods_receipt_item_id as string)
-            )
-        ) as sk_goods_receipt_item
+        , {{ sk_from_keys(["'goods_receipt_item'", 'receipt_base.goods_receipt_item_id']) }} as sk_goods_receipt_item
         , coalesce(
             products.sk_product
             , md5('product||nao_informado')
@@ -284,9 +275,8 @@ with goods_receipt_items as (
         , received_at
         , delivery_variance_days
         , is_late_receipt
-        , notes
         , goods_receipt_item_count
     from joined
 )
 
-select * from final;
+select * from final

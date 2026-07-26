@@ -2,15 +2,60 @@ version: 2
 
 models:
   - name: int_returns
-    description: "Padronização analítica dos registros de devoluções."
+    description: Devoluções deduplicadas e padronizadas.
 
     columns:
       - name: return_id
+        description: Identificador único da devolução (PK).
         data_tests:
           - not_null
           - unique
 
+      - name: return_number
+        description: Número do protocolo de devolução.
+        data_tests:
+          - not_null
+
+      - name: order_id
+        description: Referência ao pedido original (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_orders')
+                field: order_id
+
+      - name: customer_id
+        description: Referência ao cliente (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_customers')
+                field: customer_id
+
+      - name: received_at_location_id
+        description: Referência ao local de recebimento (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_locations')
+                field: location_id
+
+      - name: status
+        description: Status da devolução.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - open
+                  - completed
+                  - cancelled
+
       - name: return_reason_group
+        description: Grupo do motivo da devolução.
         data_tests:
           - not_null
           - accepted_values:
@@ -25,6 +70,17 @@ models:
                   - nao_informado
                   - outros
 
+      - name: total_refund_amount
+        description: Valor total a ser reembolsado.
+        data_tests:
+          - not_null
+
       - name: has_refund_amount
+        description: Indica se possui valor de reembolso.
+        data_tests:
+          - not_null
+
+      - name: created_at
+        description: Data/hora de criação da devolução.
         data_tests:
           - not_null

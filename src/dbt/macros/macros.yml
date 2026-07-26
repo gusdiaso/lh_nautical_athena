@@ -1,0 +1,46 @@
+version: 2
+
+macros:
+  - name: generate_schema_name
+    description: |
+      Evita que o dbt concatene o schema do profile com o schema customizado definido
+      em `+schema` no `dbt_project.yml`. Usa diretamente o schema informado na
+      configuração do modelo, garantindo que staging, intermediate e marts sejam
+      materializados exatamente nos schemas `silver` e `gold` conforme definido
+      no projeto, independentemente do schema configurado no profile de conexão.
+    arguments:
+      - name: custom_schema_name
+        type: string
+        description: >
+          Nome do schema customizado definido no `dbt_project.yml` via `+schema`.
+          Quando `none`, usa o schema padrão do target.
+      - name: node
+        type: object
+        description: >
+          Objeto do nó atual do dbt (model, seed, snapshot, etc.). Fornecido
+          automaticamente pelo dbt — não deve ser passado manualmente.
+
+  - name: sk_from_keys
+    description: |
+      Gera uma surrogate key (chave substituta) a partir de uma ou mais colunas
+      usando `md5(concat_ws('||', col1, col2, ...))`.       Centraliza a geração de
+      chaves `sk_*` nas 5 dimensões e 5 fatos, garantindo consistência entre
+      todos os modelos marts.
+    arguments:
+      - name: columns
+        type: list of strings
+        description: >
+          Lista de nomes de colunas (como strings) cujos valores serão
+          concatenados com `||` e hashizados com MD5. A ordem importa para
+          garantir a unicidade da chave.
+
+  - name: clean_cep
+    description: |
+      Remove caracteres não numéricos de uma coluna de CEP e formata o resultado
+      no padrão `XXXXX-XXX`.
+    arguments:
+      - name: column_name
+        type: string
+        description: >
+          Nome da coluna (expressão SQL) que contém o CEP a ser limpo e
+          formatado. Deve ser passado como string ou referência direta à coluna.

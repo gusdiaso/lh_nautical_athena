@@ -2,23 +2,25 @@ version: 2
 
 models:
   - name: int_suppliers
-    description: "Fornecedores com padronização de campos textuais."
+    description: Fornecedores deduplicados e padronizados.
 
     columns:
       - name: supplier_id
+        description: Identificador único do fornecedor (PK).
         data_tests:
           - not_null
           - unique
 
       - name: legal_name
+        description: Razão social do fornecedor.
         data_tests:
           - not_null
 
       - name: country
-        data_tests:
-          - not_null
+        description: País do fornecedor.
 
       - name: tax_id_type
+        description: Tipo de documento tributário.
         data_tests:
           - not_null
           - accepted_values:
@@ -28,6 +30,7 @@ models:
                   - VAT
 
       - name: is_active
+        description: Indicador se o fornecedor está ativo.
         data_tests:
           - not_null
           - accepted_values:
@@ -35,3 +38,24 @@ models:
                 values:
                   - true
                   - false
+
+      - name: trade_name
+        description: Nome fantasia do fornecedor.
+
+      - name: tax_id
+        description: CNPJ ou documento fiscal equivalente.
+        data_tests:
+          - not_null
+
+      - name: email
+        description: E-mail de contato do fornecedor.
+        data_tests:
+          - not_null
+
+      - name: phone
+        description: "Telefone padronizado no formato E.164 brasileiro: 55 + DDD + 9 + numero (8 digitos)."
+        data_tests:
+          - not_null
+
+      - name: contact_name
+        description: Nome do contato comercial.

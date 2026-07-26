@@ -38,8 +38,6 @@ with return_items as (
         , customer_id
         , received_at_location_id
         , status
-        , original_reason
-        , reason_normalized
         , return_reason_group
         , has_refund_amount
         , created_at
@@ -90,8 +88,6 @@ with return_items as (
         , dates.sk_date
         , returns.return_number
         , returns.status as return_status
-        , returns.original_reason
-        , returns.reason_normalized
         , returns.return_reason_group
         , return_items.action
         , return_items.quantity_returned
@@ -102,13 +98,7 @@ with return_items as (
         , returns.has_refund_amount as return_has_refund_amount
         , returns.created_at as returned_at
         , cast(1 as integer) as returned_item_count
-        , md5(
-            concat_ws(
-                '||'
-                , 'return_item'
-                , cast(return_items.return_item_id as string)
-            )
-        ) as sk_return_item
+        , {{ sk_from_keys(["'return_item'", 'return_items.return_item_id']) }} as sk_return_item
         , coalesce(
             returned_products.sk_product
             , md5('product||nao_informado')
@@ -163,8 +153,6 @@ with return_items as (
         , sk_date
         , return_number
         , return_status
-        , original_reason
-        , reason_normalized
         , return_reason_group
         , action
         , quantity_returned
@@ -178,4 +166,4 @@ with return_items as (
     from joined
 )
 
-select * from final;
+select * from final

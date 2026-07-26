@@ -1,18 +1,34 @@
 version: 2
-
 models:
   - name: stg_product_suppliers
-    description: "Relacionamento entre produtos variantes e fornecedores."
+    description: Relação entre variantes de produto e fornecedores.
     columns:
+      - name: is_preferred
+        description: Indicador de fornecedor preferencial.
+      - name: last_quoted_cost
+        description: Último custo informado pelo fornecedor.
+      - name: lead_time_days
+        description: Prazo estimado de entrega em dias.
       - name: sk_product_supplier
+        description: Chave do fornecedor do produto.
         data_tests:
           - not_null
           - unique
-
       - name: product_variant_id
+        description: Referência à variante do produto (FK).
         data_tests:
           - not_null
-
+          - relationships:
+              arguments:
+                to: ref('stg_product_variants')
+                field: product_variant_id
       - name: supplier_id
+        description: Referência ao fornecedor (FK).
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_suppliers')
+                field: supplier_id
+      - name: supplier_sku
+        description: Código do produto na perspectiva do fornecedor.

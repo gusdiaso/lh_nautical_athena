@@ -89,14 +89,6 @@ models:
         data_tests:
           - not_null
 
-      - name: absolute_quantity
-        description: "Magnitude absoluta da movimentação."
-        data_tests:
-          - not_null
-
-      - name: notes
-        description: "Observações operacionais."
-
       - name: occurred_at
         description: "Data e hora registrada para a movimentação."
         data_tests:

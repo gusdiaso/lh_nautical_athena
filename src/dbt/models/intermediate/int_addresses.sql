@@ -3,7 +3,7 @@ with source as (
         address_id
         , customer_id
         , address_type
-        , postal_code
+        , {{ clean_cep('postal_code') }} as postal_code
         , street
         , number
         , complement
@@ -21,7 +21,7 @@ with source as (
         , customer_id
         , address_type
         , is_primary
-        , regexp_replace(postal_code, '[^0-9]', '') as postal_code
+        , postal_code
         , trim(street) as street
         , trim(number) as number
         , case

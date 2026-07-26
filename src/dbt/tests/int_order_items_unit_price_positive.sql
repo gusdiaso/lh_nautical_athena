@@ -1,3 +1,5 @@
+-- Verifica que o preço unitário dos itens de pedido é positivo.
+-- Falha quando unit_price é zero ou negativo, evitando vendas com preço inválido.
 select
     order_item_id
     , order_id

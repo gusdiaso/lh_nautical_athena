@@ -95,16 +95,7 @@ with purchase_order_items as (
         , purchase_orders.placed_at
         , purchase_orders.expected_delivery_at
         , cast(1 as integer) as purchase_order_item_count
-        , md5(
-            concat_ws(
-                '||'
-                , 'purchase_order_item'
-                , cast(
-                    purchase_order_items.purchase_order_item_id
-                    as string
-                )
-            )
-        ) as sk_purchase_order_item
+        , {{ sk_from_keys(["'purchase_order_item'", 'purchase_order_items.purchase_order_item_id']) }} as sk_purchase_order_item
         , coalesce(
             products.sk_product
             , md5('product||nao_informado')
@@ -201,4 +192,4 @@ with purchase_order_items as (
     from joined
 )
 
-select * from final;
+select * from final

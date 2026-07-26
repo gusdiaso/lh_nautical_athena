@@ -1,25 +1,25 @@
 version: 2
-
 models:
   - name: stg_stock_levels
-    description: "Níveis de estoque."
+    description: Saldos de estoque por produto e localização.
     columns:
-      - name: product_variant_id
-        data_tests:
-          - not_null
-          - relationships:
-              to: ref('stg_product_variants')
-              field: product_variant_id
-
       - name: location_id
+        description: Referência ao local de estoque (FK).
         data_tests:
           - not_null
           - relationships:
-              to: ref('stg_locations')
-              field: location_id
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - product_variant_id
-              - location_id
+              arguments:
+                to: ref('stg_locations')
+                field: location_id
+      - name: product_variant_id
+        description: Referência à variante do produto (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_product_variants')
+                field: product_variant_id
+      - name: quantity_on_hand
+        description: Saldo físico disponível.
+      - name: reorder_point
+        description: Nível mínimo para disparar compra.

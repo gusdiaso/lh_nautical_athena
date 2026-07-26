@@ -15,7 +15,6 @@ with product_variants as (
         product_variant_id
         , product_id
         , sku
-        , barcode_ean
         , sale_price
         , cost_price
         , weight_kg
@@ -65,7 +64,6 @@ with product_variants as (
         cast(-1 as bigint) as nk_product_variant_id
         , cast(-1 as bigint) as nk_product_id
         , cast(null as string) as sku
-        , cast(null as string) as barcode_ean
         , 'Produto não informado' as product_name
         , cast(null as string) as description
         , cast(null as bigint) as nk_brand_id
@@ -98,7 +96,6 @@ with product_variants as (
         product_variants.product_variant_id as nk_product_variant_id
         , product_variants.product_id as nk_product_id
         , product_variants.sku
-        , product_variants.barcode_ean
         , products.product_name
         , products.description
         , products.brand_id as nk_brand_id
@@ -119,13 +116,7 @@ with product_variants as (
         , products.is_active as is_product_active
         , product_variants.is_active as is_variant_active
         , false as is_technical_member
-        , md5(
-            concat_ws(
-                '||'
-                , 'product'
-                , cast(product_variants.product_variant_id as string)
-            )
-        ) as sk_product
+        , {{ sk_from_keys(["'product'", 'product_variants.product_variant_id']) }} as sk_product
         , coalesce(
             brands.brand_name
             , 'Marca não informada'
@@ -157,7 +148,6 @@ with product_variants as (
         , nk_product_variant_id
         , nk_product_id
         , sku
-        , barcode_ean
         , product_name
         , description
         , nk_brand_id
@@ -191,7 +181,6 @@ with product_variants as (
         , nk_product_variant_id
         , nk_product_id
         , sku
-        , barcode_ean
         , product_name
         , description
         , nk_brand_id

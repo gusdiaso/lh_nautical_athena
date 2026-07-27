@@ -1,8 +1,10 @@
 import argparse
+import os
 import sys
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+_ingestion_dir = os.path.join(os.getcwd(), "src", "ingestion")
+if _ingestion_dir not in sys.path:
+    sys.path.insert(0, _ingestion_dir)
 
 from config import TABLES, DEFAULT_CATALOG, DEFAULT_SCHEMA
 from utils import build_spark_session, table_exists

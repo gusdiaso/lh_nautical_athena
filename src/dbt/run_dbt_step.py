@@ -23,7 +23,8 @@ def main():
     args = parse_args()
     cmd = STEPS[args.step] + ["--target", args.target]
     result = subprocess.run(cmd, capture_output=False, text=True)
-    sys.exit(result.returncode)
+    if result.returncode != 0:
+        sys.exit(result.returncode)
 
 
 if __name__ == "__main__":

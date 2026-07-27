@@ -1,4 +1,5 @@
 import argparse
+import os
 import subprocess
 import sys
 
@@ -23,8 +24,7 @@ def main():
     args = parse_args()
     cmd = STEPS[args.step] + ["--target", args.target]
     result = subprocess.run(cmd, capture_output=False, text=True)
-    if result.returncode != 0:
-        sys.exit(result.returncode)
+    os._exit(result.returncode)
 
 
 if __name__ == "__main__":

@@ -154,12 +154,12 @@ Cada model tem seu teste. Se algum teste falhar, o dbt para a execucao e mostra 
 
 ### Estrutura Atual
 
-| Camada | Catalogo | Schema | Status |
-|--------|----------|--------|--------|
-| Bronze | `dev_lh_nautical` / `prod_lh_nautical` | `bronze` | Implementado |
-| Staging | `dev_lh_nautical` / `prod_lh_nautical` | `silver` | Implementado |
-| Intermediate | `dev_lh_nautical` / `prod_lh_nautical` | `silver` | Implementado |
-| Marts | `dev_lh_nautical` / `prod_lh_nautical` | `gold` | Implementado |
+| Camada | Catalogo | Schema | Materialização | Status |
+|--------|----------|--------|---------------|--------|
+| Bronze | `dev_lh_nautical` / `prod_lh_nautical` | `bronze` | Delta Lake (externo) | Implementado |
+| Staging | — | — | ephemeral (CTE) | Implementado |
+| Intermediate | `dev_lh_nautical` / `prod_lh_nautical` | `silver` | table | Implementado |
+| Marts | `dev_lh_nautical` / `prod_lh_nautical` | `gold` | table | Implementado |
 
 ### Tabelas Bronze Existentes (24 tabelas)
 

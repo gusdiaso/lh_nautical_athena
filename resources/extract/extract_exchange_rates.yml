@@ -1,9 +1,9 @@
 # Variáveis reutilizáveis do job
 variables:
   catalog:
-    description: 'Catálogo no Unity Catalog'
+    description: "Catálogo no Unity Catalog"
   schema:
-    description: 'Schema de destino no Unity Catalog'
+    description: "Schema de destino no Unity Catalog"
     default: bronze
 
 # Valores por ambiente
@@ -17,24 +17,25 @@ targets:
     variables:
       catalog: prod_lh_nautical
       schema: bronze
+    resources:
+      jobs:
+        extract_exchange_rates:
+          email_notifications:
+            on_failure:
+              - lh-team-athena-bb-aaaavi2j2f5jb7k23os5chjvuu@indiciumai.slack.com
 
 # Job de extração para a camada Bronze
 resources:
   jobs:
     extract_exchange_rates:
       name: extract_exchange_rates
-      description: 'Job diário que ingere cotações PTAX do Banco Central para a camada Bronze.'
+      description: "Job diário que ingere cotações PTAX do Banco Central para a camada Bronze."
       max_concurrent_runs: 1
-
-      schedule:
-        quartz_cron_expression: '0 0 18 * * ?'
-        timezone_id: 'America/Sao_Paulo'
-        pause_status: UNPAUSED
 
       environments:
         - environment_key: default
           spec:
-            environment_version: '2'
+            environment_version: "2"
             dependencies:
               - requests
               - pandas
@@ -51,6 +52,7 @@ resources:
               - --schema
               - ${var.schema}
               - --start-date
-              - '2019-07-01'
+              - "2019-07-01"
               - --load-mode
               - incremental
+          max_retries: 1

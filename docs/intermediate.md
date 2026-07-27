@@ -10,6 +10,8 @@ A implementação atual possui 24 models `int_*`, todos em `src/dbt/models/inter
 
 Esses models consomem a camada Staging e servem de base para a camada Marts e para os testes singulares em `src/dbt/tests/`.
 
+**Nota:** A tabela `fiscal_invoices` (extraída na Bronze) não possui modelo intermediate, pois não integra o modelo dimensional atual.
+
 ## Arquitetura
 
 ```mermaid

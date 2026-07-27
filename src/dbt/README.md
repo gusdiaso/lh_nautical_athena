@@ -8,7 +8,7 @@ Documentação específica do projeto dbt para transformação Bronze → Silver
 
 | Camada | Diretório | Materialização | Schema | Descrição |
 |--------|-----------|----------------|--------|-----------|
-| **Staging** | `models/staging/` | `view` | `silver` | Cópia organizada da Bronze (renomeia, tipa) |
+| **Staging** | `models/staging/` | `ephemeral` | — | Cópia organizada da Bronze (renomeia, tipa) como CTE |
 | **Intermediate** | `models/intermediate/` | `table` | `silver` | Limpeza, dedup, validação, enriquecimento |
 | **Marts** | `models/marts/` | `table` | `gold` | Modelo dimensional (dimensões + fatos) |
 
@@ -33,9 +33,9 @@ src/dbt/
 │   ├── int_returns_has_refund_amount.sql
 │   ├── int_product_variants_metrics_consistency.sql
 │   └── int_exchange_rates_consistency.sql
-├── analyses/                # Análises ad-hoc (não no DAG)
-├── seeds/                   # CSVs versionados (dimensões pequenas)
-└── snapshots/               # SCD Type 2 (histórico de mudanças)
+├── analyses/                # Análises ad-hoc (não no DAG) — vazio (futuro)
+├── seeds/                   # CSVs versionados (futuro)
+└── snapshots/               # SCD Type 2 (futuro)
 ```
 
 ---
@@ -166,13 +166,12 @@ Definidas em `models/staging/sources.yml`:
 ```yaml
 sources:
   - name: bronze
-    catalog: "{{ target.catalog }}"
     schema: bronze
     tables:
       - name: customers
       - name: orders
       - name: order_items
-      # ... outras 21 tabelas
+      # ... mais 21 tabelas (total: 24)
 ```
 
 **Uso nos models:**
@@ -241,14 +240,7 @@ WHERE customer_id IS NULL
 
 ## Seeds (CSVs Versionados)
 
-Para dimensões pequenas que não vêm do ERP:
-
-```
-seeds/
-├── currency_codes.csv      # Códigos ISO de moedas
-├── country_codes.csv       # Códigos ISO de países
-└── tax_regimes.csv         # Regimes tributários
-```
+Atualmente não há seeds implementadas. O diretório `seeds/` está reservado para futuras dimensões de referência (ex: códigos ISO de moedas, países, regimes tributários).
 
 ```bash
 dbt seed        # Carrega todos
@@ -259,22 +251,7 @@ dbt seed --select currency_codes  # Carrega específico
 
 ## Snapshots (SCD Type 2)
 
-Para rastrear histórico de mudanças em dimensões:
-
-```sql
--- snapshots/scd_customers.sql
-{% snapshot scd_customers %}
-    {{
-        config(
-            target_schema='silver',
-            unique_key='customer_id',
-            strategy='check',
-            check_cols=['email', 'phone', 'is_active'],
-        )
-    }}
-    SELECT * FROM {{ ref('int_customers') }}
-{% endsnapshot %}
-```
+Atualmente não há snapshots implementadas. O diretório `snapshots/` está reservado para futura implementação de SCD Type 2 em dimensões que precisem de histórico de mudanças.
 
 ```bash
 dbt snapshot
@@ -317,16 +294,9 @@ models:
 
 ## Variáveis (vars)
 
-No `dbt_project.yml` ou via CLI:
-
-```yaml
-vars:
-  start_date: '2019-01-01'
-  default_exchange_rate: 1.0
-```
+Atualmente não há variáveis globais definidas no `dbt_project.yml`. Podem ser passadas via CLI quando necessário:
 
 ```bash
-# Via CLI
 dbt run --vars '{start_date: "2024-01-01"}'
 ```
 
@@ -369,26 +339,13 @@ dbt run --select stg_customers --log-level DEBUG
 
 ### Dicas para Databricks
 
-1. **Use `table` para Intermediate/Marts** — views no Staging apenas
+1. **Use `table` para Intermediate/Marts** — ephemeral no Staging apenas
 2. **Particione fatos grandes** por data (`partition_by` no config)
 3. **Z-Order** nas tabelas Delta para colunas de join/filtro frequentes
 4. **Evite `SELECT *`** — liste colunas explicitamente
-5. **Use `incremental`** para fatos grandes (ex: `fact_order_items`)
+5. **Considere `incremental`** futuramente para fatos grandes se houver necessidade de performance
 
-```yaml
-# Exemplo: model incremental particionado
-models:
-  lh_nautical:
-    marts:
-      fact_order_items:
-        +materialized: incremental
-        +incremental
-        +incremental_strategy: merge
-        +unique_key: order_item_id
-        +partition_by:
-          - field: order_date
-            data_type: DATE
-```
+Atualmente todos os modelos marts são materializados como `table` (full refresh a cada execução). Para fatos com volume muito alto, uma evolução futura seria migrar para `incremental`:
 
 ---
 
@@ -398,13 +355,15 @@ O pipeline roda no **Bitbucket Pipelines**. Veja [`docs/ci_cd_pipeline.md`](../d
 
 ### O que roda no CI
 
+O pipeline atual no Bitbucket Pipelines executa apenas o deploy dos jobs de extração:
+
 | Stage | Comando |
 |-------|---------|
-| Lint SQL | `sqlfluff lint src/dbt/` |
-| Parse | `dbt parse` |
-| Compile | `dbt compile` |
-| Testes unitários | `pytest tests/` |
-| dbt test (amostra) | `dbt test --select tag:ci` |
+| Deploy | `databricks bundle deploy -t prod` |
+| Extração SQL Server | `databricks bundle run extract_lh_nautical --target prod` |
+| Extração Exchange Rates | `databricks bundle run extract_exchange_rates --target prod` |
+
+A transformação dbt (Silver e Gold) é orquestrada pelo job `orchestrator_transform` no Databricks, agendado para as 23:00 BRT.
 
 ---
 

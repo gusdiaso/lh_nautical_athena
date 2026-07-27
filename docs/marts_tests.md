@@ -18,6 +18,7 @@ A validação atual está distribuída em dois níveis:
 - Models marts: 12
 - Testes singulares: 36
 - Unit tests: 0
+- Testes genéricos (YAML): ~209 (distribuídos entre staging, intermediate e marts)
 
 Os testes genéricos cobrem chaves, nulidade, valores aceitos e relacionamentos. Como os contratos ficam ao lado de cada model, não existe um arquivo consolidado `marts.yml` no repositório.
 

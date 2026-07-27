@@ -22,3 +22,7 @@ scratch/**
 .vscode/__builtins__.pyi
 tests/secrets.py
 .user.yml
+# DuckDB local development
+*.duckdb
+*.duckdb.wal
+local/**

@@ -116,16 +116,16 @@ extract_lh_nautical.yml
 
 ## Lista de Tabelas
 
-| Categoria    | Tabelas                                                                    |
-| ------------ | -------------------------------------------------------------------------- |
-| Referencia   | categories, brands, locations, attributes, employees                       |
-| Clientes     | customers, addresses                                                       |
-| Fornecedores | suppliers                                                                  |
-| Produtos     | products, product_variants, variant_attribute_values, product_suppliers    |
-| Compras      | purchase_orders, purchase_order_items, goods_receipts, goods_receipt_items |
-| Vendas       | orders, order_items, payments, fiscal_invoices                             |
-| Devolucoes   | returns, return_items                                                      |
-| Estoque      | stock_levels, stock_movements                                              |
+| Categoria    | Tabelas                                                                    | Modelo dbt |
+| ------------ | -------------------------------------------------------------------------- | ---------- |
+| Referencia   | categories, brands, locations, attributes, employees                       | ✅ Sim     |
+| Clientes     | customers, addresses                                                       | ✅ Sim     |
+| Fornecedores | suppliers                                                                  | ✅ Sim     |
+| Produtos     | products, product_variants, variant_attribute_values, product_suppliers    | ✅ Sim     |
+| Compras      | purchase_orders, purchase_order_items, goods_receipts, goods_receipt_items | ✅ Sim     |
+| Vendas       | orders, order_items, payments, **fiscal_invoices**                         | ⚠️ fiscal_invoices não possui modelo dbt |
+| Devolucoes   | returns, return_items                                                      | ✅ Sim     |
+| Estoque      | stock_levels, stock_movements                                              | ✅ Sim     |
 
 ## Retry Automatico
 
@@ -158,9 +158,8 @@ pip install -r requirements.txt
 
 | Dependencia          | Versao      | Uso                           |
 | -------------------- | ----------- | ----------------------------- |
-| `pyspark`            | >=3.4,<4.0  | Sessao Spark                  |
-| `delta-spark`        | >=3.0,<4.0  | Formato Delta Lake            |
-| `databricks-connect` | >=15.0      | Conexao externa ao Databricks |
+| `pyspark`            | —           | Sessao Spark (fornecido pelo Databricks Runtime) |
+| `delta-spark`        | —           | Formato Delta Lake (fornecido pelo Databricks Runtime) |
 | `tenacity`           | >=8.2,<10.0 | Retry automatico              |
 
 ---

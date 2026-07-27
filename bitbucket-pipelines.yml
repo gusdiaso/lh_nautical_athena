@@ -12,4 +12,4 @@ pipelines:
 
             - databricks bundle deploy -t prod
 
-            - databricks bundle run orchestrator_transform --target prod
+            - databricks bundle run dbt_transform --target prod

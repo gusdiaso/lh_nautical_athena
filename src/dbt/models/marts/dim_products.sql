@@ -55,6 +55,7 @@ with product_variants as (
         category_id
         , category_name
         , slug
+        , parent_category_id
         , is_active
     from {{ ref('int_categories') }}
 )
@@ -73,6 +74,7 @@ with product_variants as (
         , cast(null as bigint) as nk_category_id
         , 'Categoria não informada' as category_name
         , cast(null as string) as category_slug
+        , cast(null as bigint) as nk_parent_category_id
         , false as is_category_active
         , cast(null as string) as ncm_code
         , cast(null as string) as unit_of_measure
@@ -102,6 +104,7 @@ with product_variants as (
         , brands.country as brand_country
         , products.category_id as nk_category_id
         , categories.slug as category_slug
+        , categories.parent_category_id as nk_parent_category_id
         , products.ncm_code
         , products.unit_of_measure
         , product_variants.sale_price
@@ -157,6 +160,7 @@ with product_variants as (
         , nk_category_id
         , category_name
         , category_slug
+        , nk_parent_category_id
         , is_category_active
         , ncm_code
         , unit_of_measure
@@ -190,6 +194,7 @@ with product_variants as (
         , nk_category_id
         , category_name
         , category_slug
+        , nk_parent_category_id
         , is_category_active
         , ncm_code
         , unit_of_measure

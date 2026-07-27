@@ -41,6 +41,3 @@ models:
 
       - name: attribute_value
         description: Valor do atributo (limpo).
-
-      - name: original_value
-        description: Valor original.

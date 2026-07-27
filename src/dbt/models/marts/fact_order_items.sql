@@ -112,6 +112,10 @@ with order_items as (
         sk_product
         , nk_product_variant_id
         , cost_price
+        , gross_margin_amount
+        , gross_margin_percentage
+        , total_tax_rate
+        , is_profitable
     from {{ ref('dim_products') }}
 )
 
@@ -162,6 +166,10 @@ with order_items as (
         , enriched_order_items.total_tax_amount
         , enriched_order_items.total_with_taxes
         , products.cost_price as standard_unit_cost
+        , products.gross_margin_amount
+        , products.gross_margin_percentage
+        , products.total_tax_rate
+        , products.is_profitable
         , enriched_order_items.placed_at
         , cast(1 as integer) as order_item_count
         , {{ sk_from_keys(["'order_item'", 'enriched_order_items.order_item_id']) }} as sk_order_item
@@ -254,6 +262,10 @@ with order_items as (
         , total_tax_amount
         , total_with_taxes
         , standard_unit_cost
+        , gross_margin_amount
+        , gross_margin_percentage
+        , total_tax_rate
+        , is_profitable
         , estimated_cost_of_goods_sold
         , estimated_gross_profit
         , placed_at

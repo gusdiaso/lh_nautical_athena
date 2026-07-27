@@ -127,6 +127,14 @@ with goods_receipt_items as (
     from {{ ref('dim_employees') }}
 )
 
+, product_suppliers as (
+    select
+        product_variant_id
+        , supplier_id
+        , supplier_sku
+    from {{ ref('int_product_suppliers') }}
+)
+
 , dates as (
     select
         sk_date
@@ -151,6 +159,7 @@ with goods_receipt_items as (
         , receipt_base.purchase_order_status
         , receipt_base.currency
         , receipt_base.exchange_rate_sell
+        , {{ default_supplier_sku('product_suppliers.supplier_sku', 'receipt_base.supplier_id', 'receipt_base.product_variant_id') }} as supplier_sku
         , receipt_base.quantity_ordered
         , receipt_base.quantity_received
         , receipt_base.cumulative_quantity_received
@@ -229,6 +238,12 @@ with goods_receipt_items as (
         on
             coalesce(receipt_base.received_by_employee_id, -3)
             = employees.nk_employee_id
+    left join product_suppliers
+        on
+            receipt_base.product_variant_id
+            = product_suppliers.product_variant_id
+            and receipt_base.supplier_id
+            = product_suppliers.supplier_id
     left join dates as receipt_dates
         on
             cast(receipt_base.received_at as date)
@@ -261,6 +276,7 @@ with goods_receipt_items as (
         , purchase_order_status
         , currency
         , exchange_rate_sell
+        , supplier_sku
         , quantity_ordered
         , quantity_received
         , cumulative_quantity_received

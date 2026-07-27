@@ -4,7 +4,6 @@ select
     product_variant_id
     , attribute_id
     , attribute_name
-    , original_value
     , attribute_value
 from {{ ref('int_variant_attribute_values') }}
 where

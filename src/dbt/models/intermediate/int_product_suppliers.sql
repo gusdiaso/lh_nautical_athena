@@ -20,17 +20,7 @@ with source as (
                 , cast(supplier_id as string)
             )
         ) as sk_product_supplier
-        , case
-            when supplier_sku is null
-                or upper(trim(supplier_sku)) in ('TBD', '?', 'SEM-CODIGO', '')
-            then concat(
-                'SUP-',
-                lpad(cast(supplier_id as string), 3, '0'),
-                '-',
-                lpad(cast(product_variant_id as string), 5, '0')
-            )
-            else trim(supplier_sku)
-          end as supplier_sku
+        , {{ default_supplier_sku('supplier_sku', 'supplier_id', 'product_variant_id') }} as supplier_sku
     from source
     where
         product_variant_id is not null

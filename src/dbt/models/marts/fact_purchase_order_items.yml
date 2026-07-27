@@ -109,6 +109,11 @@ models:
       - name: exchange_rate_sell
         description: "Taxa cambial associada ao pedido."
 
+      - name: supplier_sku
+        description: "SKU do fornecedor para o produto."
+        data_tests:
+          - not_null
+
       - name: quantity_ordered
         description: "Quantidade comprada."
         data_tests:

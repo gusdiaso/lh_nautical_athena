@@ -6,13 +6,17 @@ Documentar o fluxo recomendado para executar as transformações dbt depois que 
 
 ## Visão Geral
 
-O fluxo atual é:
+O fluxo atual (via Orchestrator do Databricks) é:
 
-1. `databricks bundle deploy -t prod`
-2. `databricks bundle run extract_lh_nautical --target prod`
-3. `databricks bundle run extract_exchange_rates --target prod`
-4. `dbt run` para Staging, Intermediate e Marts
-5. `dbt test` para validar a carga transformada
+1. `extract_lh_nautical` — 24 tabelas do SQL Server → Bronze
+2. `extract_exchange_rates` — cotações PTAX → Bronze
+3. `validate_extraction` — verifica se todas as tabelas foram carregadas
+4. `apply_bronze_masks` — aplica column masking nas tabelas Bronze
+5. `dbt deps` — instala dependências
+6. `dbt run --select intermediate` — materializa Silver
+7. `dbt test --select intermediate` — testa Silver
+8. `dbt run --select marts` — materializa Gold
+9. `dbt test --select marts` — testa Gold
 
 ## Arquitetura
 

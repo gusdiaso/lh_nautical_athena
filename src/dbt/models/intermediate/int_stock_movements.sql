@@ -19,11 +19,10 @@ with source as (
         , product_variant_id
         , location_id
         , movement_type
-        , quantity
+        , round(quantity, 2) as quantity
         , reference_table
         , reference_id
         , employee_id
-        , notes
         , occurred_at
         , case
             when movement_type in ('purchase_in', 'return_in')
@@ -32,14 +31,11 @@ with source as (
                 then 'saida'
             else 'nao_classificado'
         end as movement_direction
-        , abs(quantity) as absolute_quantity
         , coalesce(
             lower(coalesce(notes, ''))
             like '%opening balance%system migration%'
             , false
         ) as is_legacy_migration
-        , cast(occurred_at as date) > current_date()
-            as is_future_movement
     from source
 )
 

@@ -1,42 +1,36 @@
 version: 2
-
 models:
   - name: stg_purchase_order_items
-    description: "Itens dos pedidos de compra."
+    description: Itens dos pedidos de compra.
     columns:
+      - name: line_total
+        description: Valor total do item (custo × quantidade).
+        data_tests:
+          - not_null
+      - name: product_variant_id
+        description: Referência à variante do produto (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_product_variants')
+                field: product_variant_id
+      - name: purchase_order_id
+        description: Referência ao pedido de compra (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_purchase_orders')
+                field: purchase_order_id
       - name: purchase_order_item_id
+        description: Identificador único do item no pedido de compra (PK).
         data_tests:
           - not_null
           - unique
-
-      - name: purchase_order_id
-        data_tests:
-          - not_null
-
-      - name: product_variant_id
-        data_tests:
-          - not_null
-
       - name: quantity_ordered
+        description: Quantidade demandada.
         data_tests:
           - not_null
-
       - name: unit_cost
+        description: Custo unitário negociado.
         data_tests:
           - not_null
-
-      - name: line_total
-        data_tests:
-          - not_null
-
-      - name: purchase_order_id
-        data_tests:
-          - relationships:
-              to: ref('stg_purchase_orders')
-              field: purchase_order_id
-
-      - name: product_variant_id
-        data_tests:
-          - relationships:
-              to: ref('stg_product_variants')
-              field: product_variant_id

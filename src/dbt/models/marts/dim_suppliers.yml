@@ -39,7 +39,7 @@ models:
         description: "E-mail do fornecedor."
 
       - name: phone
-        description: "Telefone do fornecedor."
+        description: "Telefone do fornecedor padronizado no formato 55DDNNNNNNNN."
 
       - name: contact_name
         description: "Nome do contato principal."

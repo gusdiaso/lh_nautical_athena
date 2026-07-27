@@ -1,3 +1,5 @@
+-- Verifica que a flag has_refund_amount é consistente com o total_refund_amount e que este não é negativo.
+-- Falha quando a flag não reflete o valor de reembolso ou quando o valor é negativo, evitando sinalização incorreta de reembolso.
 select
     return_id
     , total_refund_amount

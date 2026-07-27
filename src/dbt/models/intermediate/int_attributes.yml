@@ -1,20 +1,19 @@
 version: 2
-
 models:
   - name: int_attributes
-    description: "Atributos customizáveis padronizados com limpeza de campos textuais."
-
+    description: Atributos dos produtos, deduplicados e padronizados.
     columns:
       - name: attribute_id
+        description: Identificador único do atributo (PK).
         data_tests:
           - not_null
           - unique
-
       - name: attribute_name
+        description: "Nome descritivo do atributo (exemplo: Tamanho, Cor)."
         data_tests:
           - not_null
-
       - name: data_type
+        description: "Tipo de dado do atributo: texto, número ou booleano."
         data_tests:
           - not_null
           - accepted_values:

@@ -6,7 +6,6 @@ with returns as (
         , customer_id
         , received_at_location_id
         , status
-        , original_reason
         , reason_normalized
         , total_refund_amount
         , created_at
@@ -20,7 +19,6 @@ with returns as (
         , order_id
         , customer_id
         , received_at_location_id
-        , original_reason
         , reason_normalized
         , total_refund_amount
         , created_at
@@ -66,8 +64,6 @@ with returns as (
         , customer_id
         , received_at_location_id
         , status
-        , original_reason
-        , reason_normalized
         , return_reason_group
         , total_refund_amount
         , has_refund_amount

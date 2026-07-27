@@ -1,0 +1,124 @@
+variables:
+  dbt_target:
+    description: "Target do dbt (dev/prod)"
+    default: dev
+
+targets:
+  dev:
+    variables:
+      dbt_target: dev
+  prod:
+    variables:
+      dbt_target: prod
+    resources:
+      jobs:
+        dbt_transform:
+          email_notifications:
+            on_failure:
+              - lh-team-athena-bb-aaaavi2j2f5jb7k23os5chjvuu@indiciumai.slack.com
+
+resources:
+  jobs:
+    dbt_transform:
+      name: dbt_transform
+      description: >
+        Pipeline de transformacao dbt completa.
+        Executa APOS extracao (bronze) — acionado pelo orchestrator_transform
+        ou manualmente para reprocessamento.
+        Fluxo: deps → intermediate (run + test) → marts (run + test).
+        Staging e ephemeral (CTE) — e compilado junto com intermediate.
+
+      max_concurrent_runs: 1
+
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "2"
+            dependencies:
+              - dbt-databricks==1.12.1
+              - tenacity
+
+      tasks:
+        - task_key: deps
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/dbt/run_dbt_step.py
+            parameters:
+              - --step
+              - deps
+              - --target
+              - ${var.dbt_target}
+          timeout_seconds: 300
+          max_retries: 1
+
+        - task_key: intermediate_run
+          environment_key: default
+          depends_on:
+            - task_key: deps
+          spark_python_task:
+            python_file: ../../src/dbt/run_dbt_step.py
+            parameters:
+              - --step
+              - intermediate_run
+              - --target
+              - ${var.dbt_target}
+          timeout_seconds: 3600
+          max_retries: 1
+
+        - task_key: intermediate_test
+          environment_key: default
+          depends_on:
+            - task_key: intermediate_run
+          spark_python_task:
+            python_file: ../../src/dbt/run_dbt_step.py
+            parameters:
+              - --step
+              - intermediate_test
+              - --target
+              - ${var.dbt_target}
+          timeout_seconds: 1800
+          max_retries: 1
+
+        - task_key: marts_run
+          environment_key: default
+          depends_on:
+            - task_key: intermediate_test
+          spark_python_task:
+            python_file: ../../src/dbt/run_dbt_step.py
+            parameters:
+              - --step
+              - marts_run
+              - --target
+              - ${var.dbt_target}
+          timeout_seconds: 3600
+          max_retries: 1
+
+        - task_key: marts_test
+          environment_key: default
+          depends_on:
+            - task_key: marts_run
+          spark_python_task:
+            python_file: ../../src/dbt/run_dbt_step.py
+            parameters:
+              - --step
+              - marts_test
+              - --target
+              - ${var.dbt_target}
+          timeout_seconds: 3600
+          max_retries: 1
+
+        - task_key: apply_masks
+          environment_key: default
+          description: "Aplica column masking nas tabelas Silver e Gold"
+          depends_on:
+            - task_key: marts_test
+          spark_python_task:
+            python_file: ../../src/dbt/run_dbt_step.py
+            parameters:
+              - --step
+              - apply_masks
+              - --target
+              - ${var.dbt_target}
+          timeout_seconds: 300
+          max_retries: 1
+

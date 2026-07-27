@@ -68,6 +68,14 @@ with purchase_order_items as (
     from {{ ref('dim_employees') }}
 )
 
+, product_suppliers as (
+    select
+        product_variant_id
+        , supplier_id
+        , supplier_sku
+    from {{ ref('int_product_suppliers') }}
+)
+
 , dates as (
     select
         sk_date
@@ -95,16 +103,7 @@ with purchase_order_items as (
         , purchase_orders.placed_at
         , purchase_orders.expected_delivery_at
         , cast(1 as integer) as purchase_order_item_count
-        , md5(
-            concat_ws(
-                '||'
-                , 'purchase_order_item'
-                , cast(
-                    purchase_order_items.purchase_order_item_id
-                    as string
-                )
-            )
-        ) as sk_purchase_order_item
+        , {{ sk_from_keys(["'purchase_order_item'", 'purchase_order_items.purchase_order_item_id']) }} as sk_purchase_order_item
         , coalesce(
             products.sk_product
             , md5('product||nao_informado')
@@ -141,6 +140,7 @@ with purchase_order_items as (
                     , 2
                 )
         end as line_total_brl
+        , {{ default_supplier_sku('product_suppliers.supplier_sku', 'purchase_orders.supplier_id', 'purchase_order_items.product_variant_id') }} as supplier_sku
         , purchase_orders.expected_delivery_at
         < current_date() as is_expected_delivery_overdue
     from purchase_order_items
@@ -164,6 +164,12 @@ with purchase_order_items as (
         on
             coalesce(purchase_orders.buyer_id, -3)
             = employees.nk_employee_id
+    left join product_suppliers
+        on
+            purchase_order_items.product_variant_id
+            = product_suppliers.product_variant_id
+            and purchase_orders.supplier_id
+            = product_suppliers.supplier_id
     left join dates as order_dates
         on
             cast(purchase_orders.placed_at as date)
@@ -194,6 +200,7 @@ with purchase_order_items as (
         , line_total_original_currency
         , unit_cost_brl
         , line_total_brl
+        , supplier_sku
         , placed_at
         , expected_delivery_at
         , is_expected_delivery_overdue
@@ -201,4 +208,4 @@ with purchase_order_items as (
     from joined
 )
 
-select * from final;
+select * from final

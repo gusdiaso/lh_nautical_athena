@@ -28,10 +28,10 @@ Essa macro centraliza a geração de chaves substitutas com `md5(concat_ws(...))
 Antes da decisão de limitar a validação a `staging` e `intermediate`, foram aplicadas refatorações pontuais em marts sob responsabilidade do Danilo:
 
 - `src/dbt/models/marts/dim_customers.sql`
-- `src/dbt/models/marts/fact_orders.sql`
 - `src/dbt/models/marts/fact_payments.sql`
-- `src/dbt/models/marts/fact_goods_receipts.sql`
 - `src/dbt/tests/test_product_suppliers_sk_date_not_placeholder.sql`
+
+> **Nota:** Os arquivos `fact_orders.sql` e `fact_goods_receipts.sql` mencionados originalmente foram renomeados/consolidados para `fact_order_items.sql` e `fact_goods_receipt_items.sql` durante a padronização do modelo dimensional.
 
 Essas alterações introduziram padronização de surrogate keys e testes de relacionamento, mas a camada `marts` não foi validada nesta rodada final por decisão do escopo.
 
@@ -120,10 +120,10 @@ Alguns pontos dependem de modelos ou decisões de outros desenvolvedores:
 - `src/dbt/models/staging/*.yml`
 - `src/dbt/models/intermediate/*.yml`
 - `src/dbt/models/marts/dim_customers.sql`
-- `src/dbt/models/marts/fact_orders.sql`
 - `src/dbt/models/marts/fact_payments.sql`
-- `src/dbt/models/marts/fact_goods_receipts.sql`
 - `src/dbt/tests/test_product_suppliers_sk_date_not_placeholder.sql`
+
+> **Nota:** Os arquivos `fact_orders.sql` e `fact_goods_receipts.sql` foram renomeados durante a padronização do modelo dimensional para `fact_order_items.sql` e `fact_goods_receipt_items.sql`.
 
 ## Conclusão
 

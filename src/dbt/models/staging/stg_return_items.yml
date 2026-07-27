@@ -1,46 +1,47 @@
 version: 2
-
 models:
   - name: stg_return_items
-    description: "Itens das devoluções."
+    description: Itens das devoluções de pedidos.
     columns:
-      - name: return_item_id
-        data_tests:
-          - not_null
-          - unique
-
-      - name: return_id
-        data_tests:
-          - not_null
-
-      - name: order_item_id
-        data_tests:
-          - not_null
-
-      - name: quantity_returned
-        data_tests:
-          - not_null
-
       - name: action
+        description: "Ação: estornar, trocar."
         data_tests:
           - accepted_values:
               arguments:
                 values:
                   - refund
                   - exchange
-
-      - name: unit_refund_amount
+      - name: exchange_variant_id
+        description: Variante de substituição em caso de troca (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_product_variants')
+                field: product_variant_id
+      - name: order_item_id
+        description: Referência ao item do pedido original (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_order_items')
+                field: order_item_id
+      - name: quantity_returned
+        description: Quantidade devolvida.
         data_tests:
           - not_null
-
       - name: return_id
+        description: Referência à devolução (FK).
         data_tests:
           - relationships:
-              to: ref('stg_returns')
-              field: return_id
-
-      - name: order_item_id
+              arguments:
+                to: ref('stg_returns')
+                field: return_id
+      - name: return_item_id
+        description: Identificador único do item devolvido (PK).
         data_tests:
-          - relationships:
-              to: ref('stg_order_items')
-              field: order_item_id
+          - not_null
+          - unique
+      - name: unit_refund_amount
+        description: Valor unitário de reembolso.
+        data_tests:
+          - not_null

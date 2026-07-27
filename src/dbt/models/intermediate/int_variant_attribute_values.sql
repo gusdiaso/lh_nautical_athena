@@ -104,7 +104,6 @@ with variant_attribute_values as (
         , attribute_id
         , attribute_name
         , attribute_data_type
-        , original_value
         , attribute_value
     from deduplicated
     where record_rank = 1

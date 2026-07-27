@@ -1,19 +1,19 @@
 version: 2
-
 models:
   - name: stg_attributes
-    description: "Atributos customizáveis dos produtos."
+    description: Atributos customizáveis dos produtos.
     columns:
       - name: attribute_id
+        description: Identificador único do atributo (PK).
         data_tests:
           - not_null
           - unique
-
       - name: attribute_name
+        description: "Nome descritivo do atributo (exemplo: Tamanho, Cor)."
         data_tests:
           - not_null
-
       - name: data_type
+        description: "Tipo de dado do atributo: texto, número ou booleano."
         data_tests:
           - accepted_values:
               arguments:

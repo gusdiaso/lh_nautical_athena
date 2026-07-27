@@ -1,3 +1,5 @@
+-- Verifica que todo atributo possui um tipo de dado definido.
+-- Falha quando data_type é nulo ou vazio, evitando atributos sem classificação de tipo.
 select
     attribute_id
     , attribute_name

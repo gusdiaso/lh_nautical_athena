@@ -1,33 +1,70 @@
 version: 2
-
 models:
   - name: int_orders
-    description: "Pedidos de venda padronizados."
+    description: Pedidos de venda deduplicados e padronizados.
     columns:
+      - name: channel
+        description: Canal da venda (loja física, e-commerce).
+        data_tests:
+          - not_null
+
+      - name: customer_id
+        description: Referência ao comprador (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+
+      - name: discount_amount
+        description: Valor do desconto concedido.
+        data_tests:
+          - not_null
+
+      - name: location_id
+        description: Referência à filial de origem (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_locations')
+                field: location_id
+
       - name: order_id
+        description: Identificador único do pedido (PK).
         data_tests:
           - not_null
           - unique
 
       - name: order_number
+        description: Número oficial do pedido exibido ao cliente.
         data_tests:
           - not_null
+          - unique
 
-      - name: customer_id
-        data_tests:
-          - not_null
-          - relationships:
-              to: ref('stg_customers')
-              field: customer_id
+      - name: placed_at
+        description: Data/hora em que o pedido foi finalizado.
 
       - name: salesperson_id
+        description: Referência ao vendedor (FK).
         data_tests:
           - relationships:
-              to: ref('stg_employees')
-              field: employee_id
+              arguments:
+                to: ref('stg_employees')
+                field: employee_id
 
-      - name: location_id
+      - name: status
+        description: Status do pedido no fluxo de vida.
         data_tests:
-          - relationships:
-              to: ref('stg_locations')
-              field: location_id
+          - not_null
+
+      - name: subtotal
+        description: Soma bruta dos valores dos produtos.
+        data_tests:
+          - not_null
+
+      - name: total
+        description: Valor líquido final a cobrar do cliente.
+        data_tests:
+          - not_null

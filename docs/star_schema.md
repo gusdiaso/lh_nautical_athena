@@ -105,12 +105,11 @@ Dimensão de lojas, armazéns e localizações conformadas.
 Dimensão de produtos no grão de variante comercial.
 
 | Coluna | Descrição |
-|---|---|
+|---|---|---|
 | `sk_product` | Chave substituta da variante de produto. |
 | `nk_product_variant_id` | Identificador natural da variante. |
 | `nk_product_id` | Identificador natural do produto pai. |
 | `sku` | Código SKU da variante. |
-| `barcode_ean` | Código de barras EAN. |
 | `product_name` | Nome do produto. |
 | `description` | Descrição do produto. |
 | `nk_brand_id` | Identificador natural da marca. |

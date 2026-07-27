@@ -1,3 +1,5 @@
+-- Verifica que movement_direction está alinhado com as flags is_inbound e is_outbound.
+-- Falha quando há inconsistência entre a direção textual e as flags booleanas, evitando classificações incorretas de movimentação.
 select
     nk_stock_movement_id as stock_movement_id
     , movement_direction

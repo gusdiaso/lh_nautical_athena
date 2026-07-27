@@ -10,6 +10,8 @@ seed-paths: ["seeds"]
 macro-paths: ["src/dbt/macros"]
 snapshot-paths: ["snapshots"]
 
+docs-paths: ["docs"]
+
 clean-targets:
   - "target"
   - "dbt_packages"
@@ -18,8 +20,7 @@ models:
   lh_nautical:
 
     staging:
-      +schema: silver
-      +materialized: view
+      +materialized: ephemeral
 
     intermediate:
       +schema: silver

@@ -27,9 +27,6 @@ models:
       - name: sku
         description: "Código SKU da variante."
 
-      - name: barcode_ean
-        description: "Código de barras EAN."
-
       - name: product_name
         description: "Nome do produto."
         data_tests:
@@ -67,6 +64,9 @@ models:
 
       - name: category_slug
         description: "Slug da categoria."
+
+      - name: nk_parent_category_id
+        description: "Identificador natural da categoria pai (hierarquia de categorias)."
 
       - name: is_category_active
         description: "Indica se a categoria está ativa."

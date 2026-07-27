@@ -1,14 +1,27 @@
 version: 2
-
 models:
   - name: int_categories
-    description: "Categorias padronizadas."
+    description: Categorias de produtos com hierarquia corrigida.
     columns:
       - name: category_id
+        description: Identificador único da categoria (PK).
         data_tests:
           - not_null
           - unique
-
       - name: category_name
+        description: Nome amigável da categoria.
+        data_tests:
+          - not_null
+
+      - name: is_active
+        description: Indicador se a categoria está visível e utilizável.
+        data_tests:
+          - not_null
+
+      - name: parent_category_id
+        description: Referência à categoria superior (auto-relacionamento, FK).
+
+      - name: slug
+        description: Versão textual amigável para URL.
         data_tests:
           - not_null

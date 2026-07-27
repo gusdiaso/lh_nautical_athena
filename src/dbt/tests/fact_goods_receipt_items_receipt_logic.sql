@@ -1,3 +1,5 @@
+-- Verifica a consistência dos valores recebidos, conversão cambial, flags de recebimento e prazo de entrega.
+-- Falha quando há divergência no valor recebido, quantidade restante, flags incorretas ou variação de prazo errada, evitando relatórios de recebimento incorretos.
 select
     nk_goods_receipt_item_id as goods_receipt_item_id
     , currency

@@ -19,7 +19,8 @@ TASK_TEMPLATE = """\
               - --catalog
               - ${{var.catalog}}
               - --schema
-              - ${{var.schema}}"""
+              - ${{var.schema}}
+          max_retries: 1"""
 
 # Template completo do YAML
 YAML_TEMPLATE = """\
@@ -47,6 +48,12 @@ targets:
     variables:
       catalog: prod_lh_nautical
       schema: bronze
+    resources:
+      jobs:
+        extract_lh_nautical:
+          email_notifications:
+            on_failure:
+              - lh-team-athena-bb-aaaavi2j2f5jb7k23os5chjvuu@indiciumai.slack.com
 
 # Job de extração para a camada Bronze
 resources:
@@ -55,11 +62,6 @@ resources:
       name: extract_lh_nautical
       description: 'Job que executa uma task para cada tabela e grava os dados no formato Delta.'
       max_concurrent_runs: 1
-
-      schedule:
-        quartz_cron_expression: '0 0 0,18 * * ?'
-        timezone_id: 'America/Sao_Paulo'
-        pause_status: UNPAUSED
 
       environments:
         - environment_key: default

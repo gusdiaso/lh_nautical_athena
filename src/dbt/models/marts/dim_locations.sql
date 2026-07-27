@@ -55,13 +55,7 @@ with locations as (
         , country
         , is_active
         , false as is_technical_member
-        , md5(
-            concat_ws(
-                '||'
-                , 'location'
-                , cast(location_id as string)
-            )
-        ) as sk_location
+        , {{ sk_from_keys(["'location'", 'location_id']) }} as sk_location
     from locations
 )
 

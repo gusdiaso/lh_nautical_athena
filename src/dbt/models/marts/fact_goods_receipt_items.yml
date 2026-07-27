@@ -114,6 +114,11 @@ models:
       - name: exchange_rate_sell
         description: "Taxa cambial associada ao pedido."
 
+      - name: supplier_sku
+        description: "SKU do fornecedor para o produto."
+        data_tests:
+          - not_null
+
       - name: quantity_ordered
         description: "Quantidade originalmente comprada."
         data_tests:
@@ -187,9 +192,6 @@ models:
         description: "Indica recebimento posterior à data prevista."
         data_tests:
           - not_null
-
-      - name: notes
-        description: "Observações operacionais do recebimento."
 
       - name: goods_receipt_item_count
         description: "Contador aditivo de itens recebidos."

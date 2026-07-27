@@ -1,3 +1,5 @@
+-- Verifica que todo atributo possui um nome preenchido.
+-- Falha quando attribute_name é nulo ou vazio, evitando registros sem identificação.
 select
     attribute_id
     , attribute_name

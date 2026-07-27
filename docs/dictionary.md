@@ -363,6 +363,22 @@
 
 ---
 
+## Câmbio (API BCB)
+
+### `exchange_rates`
+
+**Descrição:** Tabela alimentada pela API PTAX do Banco Central do Brasil com as cotações de compra e venda de moedas estrangeiras (USD e EUR) em relação ao Real (BRL), atualizada diariamente.
+**Colunas:**
+
+- **`id`**: Identificador único do registro (Chave Primária - PK).
+- **`currency`**: Código ISO da moeda estrangeira (ex: USD, EUR).
+- **`exchange_rate_buy`**: Taxa de câmbio de compra (BRL por unidade da moeda).
+- **`exchange_rate_sell`**: Taxa de câmbio de venda (BRL por unidade da moeda).
+- **`data_reference`**: Data de referência da cotação PTAX.
+- **`created_at`**: Timestamp de inserção do registro.
+
+---
+
 ## Colaboradores
 
 ### `employees`
@@ -381,6 +397,12 @@
 - **`is_active`**: Indicador booleano que reflete se tem ou não acesso ao sistema hoje em dia.
 - **`created_at`**: Data de criação do acesso interno.
 - **`updated_at`**: Modificação de dados cadastrais de funcionários.
+
+---
+
+> **Notas:**
+> - A tabela `fiscal_invoices` é extraída na camada Bronze via SQL Server, mas não possui modelo correspondente no dbt (não integra o modelo dimensional atual).
+> - A tabela `exchange_rates` é proveniente da API PTAX do Banco Central (não do SQL Server), com dados incrementais de cotações USD e EUR. Está incluída no dbt (`stg_exchange_rates` → `int_exchange_rates` → `fact_purchase_order_items`).
 
 ---
 

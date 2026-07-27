@@ -2,22 +2,47 @@ version: 2
 
 models:
   - name: int_stock_levels
-    description: "Níveis de estoque com identificação de produtos sem saldo."
+    description: Saldos de estoque deduplicados e padronizados.
 
     columns:
       - name: product_variant_id
+        description: Referência à variante do produto (FK).
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('int_product_variants')
+                field: product_variant_id
 
       - name: location_id
+        description: Referência ao local de estoque (FK).
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('int_locations')
+                field: location_id
 
       - name: quantity_on_hand
+        description: Saldo físico disponível.
         data_tests:
           - not_null
 
-      - name: is_out_of_stock
+      - name: reorder_point
+        description: Nível mínimo para disparar compra. Calculado como ceil(demanda_média_diária_90d * lead_time_days), mínimo 1. Se sem vendas, fallback p/ lead_time=7.
+
+      - name: is_critical_stock
+        description: Indica estoque em situação crítica (quantity_on_hand <= 0 ou abaixo do reorder_point).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_fractional_item
+        description: Indica se unit_of_measure é UN ou PC e quantity_on_hand não é inteiro (possível inconsistência).
         data_tests:
           - not_null
           - accepted_values:

@@ -74,13 +74,7 @@ with payments as (
         , orders.placed_at
         , payments.paid_at
         , cast(1 as integer) as payment_count
-        , md5(
-            concat_ws(
-                '||'
-                , 'payment'
-                , cast(payments.payment_id as string)
-            )
-        ) as sk_payment
+        , {{ sk_from_keys(["'payment'", 'payments.payment_id']) }} as sk_payment
         , coalesce(
             customers.sk_customer
             , md5('customer||nao_informado')
@@ -145,4 +139,4 @@ with payments as (
     from joined
 )
 
-select * from final;
+select * from final

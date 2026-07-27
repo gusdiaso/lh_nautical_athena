@@ -24,6 +24,18 @@ Arquivo: `src/dbt/macros/clean_cep.sql`
 
 Remove caracteres não numéricos de CEPs e normaliza o valor para uso analítico.
 
+### `apply_column_masks`
+
+Arquivo: `src/dbt/macros/apply_column_masks.sql`
+
+Executada via `dbt run-operation apply_column_masks` (step `apply_masks` no job `dbt_transform`). Aplica column masking nas tabelas Silver (`int_customers`, `int_employees`, `int_suppliers`) e Gold (`dim_customers`, `dim_employees`, `dim_suppliers`) usando as funções de máscara definidas no schema `gold`.
+
+### `default_supplier_sku`
+
+Arquivo: `src/dbt/macros/default_supplier_sku.sql`
+
+Normaliza o `supplier_sku` aplicando `trim` e substituindo valores nulos ou placeholders (`'TBD'`, `'?'`, `'SEM-CODIGO'`, `''`) por um identificador no formato `SUP-{supplier_id}-{product_variant_id}`. Usada na `int_product_suppliers` e nas fatos de compra e recebimento.
+
 ## Dependências
 
 - `packages.yml` declara `dbt-labs/dbt_utils`.
@@ -40,7 +52,7 @@ dbt compile --select marts
 
 ## Observações
 
-- Não há outras macros versionadas no repositório além das três acima.
+- As cinco macros do projeto estão documentadas neste arquivo e em `src/dbt/macros/macros.yml`.
 - A documentação antiga de macros futuras foi removida para manter o guia alinhado ao código atual.
 
 ## Referências

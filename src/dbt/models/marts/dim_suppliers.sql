@@ -52,13 +52,7 @@ with suppliers as (
         , contact_name
         , is_active
         , false as is_technical_member
-        , md5(
-            concat_ws(
-                '||'
-                , 'supplier'
-                , cast(supplier_id as string)
-            )
-        ) as sk_supplier
+        , {{ sk_from_keys(["'supplier'", 'supplier_id']) }} as sk_supplier
     from suppliers
 )
 
@@ -96,4 +90,4 @@ with suppliers as (
     from suppliers_dimension
 )
 
-select * from final;
+select * from final

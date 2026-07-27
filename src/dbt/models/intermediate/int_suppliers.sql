@@ -7,25 +7,41 @@ with source as (
         , tax_id
         , tax_id_type
         , email
-        , phone
+        , trim(phone) as phone
         , contact_name
         , is_active
     from {{ ref('stg_suppliers') }}
 )
 
-, final as (
+, cleaned as (
     select
         supplier_id
+        , legal_name
+        , trade_name
         , country
         , tax_id
         , tax_id_type
-        , email
+        , contact_name
         , phone
+        , email
         , is_active
-        , trim(legal_name) as legal_name
-        , trim(trade_name) as trade_name
-        , trim(contact_name) as contact_name
+        , trim(regexp_replace(phone, '^(55)?0?', '')) as digits
     from source
 )
 
-select * from final
+select
+    supplier_id
+    , legal_name
+    , trade_name
+    , country
+    , tax_id
+    , tax_id_type
+    , email
+    , contact_name
+    , is_active
+    , case
+        when length(digits) >= 10
+            then concat('55', substring(digits, 1, 2), '9', substring(digits, 3))
+        else phone
+    end as phone
+from cleaned

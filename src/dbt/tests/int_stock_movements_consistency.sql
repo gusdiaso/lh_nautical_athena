@@ -3,14 +3,10 @@ select
     , movement_type
     , quantity
     , movement_direction
-    , absolute_quantity
     , is_legacy_migration
-    , notes
 from {{ ref('int_stock_movements') }}
 where
-    absolute_quantity <> abs(quantity)
-
-    or (
+    (
         movement_type in ('purchase_in', 'return_in')
         and movement_direction <> 'entrada'
     )
@@ -28,10 +24,4 @@ where
     or (
         movement_direction = 'saida'
         and quantity >= 0
-    )
-
-    or (
-        lower(coalesce(notes, ''))
-        like '%opening balance%system migration%'
-        and is_legacy_migration = false
     )

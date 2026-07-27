@@ -11,7 +11,21 @@ with source as (
         brand_id
         , is_active
         , trim(brand_name) as brand_name
-        , upper(trim(country)) as country
+        , case trim(brand_name)
+            when 'Yamaha Marine' then 'JP'
+            when 'Mercury Marine' then 'US'
+            when 'Suzuki Marine' then 'JP'
+            when 'Honda Marine' then 'JP'
+            when 'Garmin' then 'US'
+            when 'Raymarine' then 'GB'
+            when 'Lowrance' then 'US'
+            when 'Simrad' then 'NO'
+            when 'Volvo Penta' then 'SE'
+            when 'MaxSea' then 'FR'
+            when 'BR Náutica' then 'BR'
+            when 'Marisul' then 'BR'
+            else upper(trim(country))
+        end as country
     from source
     where brand_id is not null
 

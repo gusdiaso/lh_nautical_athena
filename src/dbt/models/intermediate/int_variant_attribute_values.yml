@@ -2,22 +2,34 @@ version: 2
 
 models:
   - name: int_variant_attribute_values
-    description: "Valores dos atributos das variantes, limpos e padronizados."
+    description: Valores dos atributos por variante deduplicados e padronizados.
 
     columns:
       - name: product_variant_id
+        description: Referência à variante do produto (FK).
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('int_product_variants')
+                field: product_variant_id
 
       - name: attribute_id
+        description: Referência ao atributo (FK).
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('int_attributes')
+                field: attribute_id
 
       - name: attribute_name
+        description: Nome do atributo.
         data_tests:
           - not_null
 
       - name: attribute_data_type
+        description: Tipo de dado do atributo.
         data_tests:
           - not_null
           - accepted_values:
@@ -26,3 +38,6 @@ models:
                   - text
                   - number
                   - boolean
+
+      - name: attribute_value
+        description: Valor do atributo (limpo).

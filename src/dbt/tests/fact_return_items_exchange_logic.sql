@@ -1,3 +1,5 @@
+-- Verifica que a ação (refund/exchange) é consistente com as flags e o produto de troca, e que returned_item_count é sempre 1.
+-- Falha quando há contradição entre ação e flags ou produto de troca ausente/indevido, evitando lógica de devolução incorreta.
 select
     nk_return_item_id as return_item_id
     , action

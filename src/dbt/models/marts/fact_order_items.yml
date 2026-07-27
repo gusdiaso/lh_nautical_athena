@@ -149,6 +149,27 @@ models:
       - name: standard_unit_cost
         description: "Custo cadastral padrão da variante."
 
+      - name: gross_margin_amount
+        description: "Margem bruta cadastral em valor (sale_price - cost_price)."
+
+      - name: gross_margin_percentage
+        description: "Margem bruta cadastral percentual da variante."
+        data_tests:
+          - not_null
+
+      - name: total_tax_rate
+        description: "Soma das alíquotas de ICMS e IPI da variante."
+        data_tests:
+          - not_null
+
+      - name: is_profitable
+        description: "Indica se o preço cadastral da variante é superior ao custo cadastral."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
       - name: estimated_cost_of_goods_sold
         description: "Custo estimado da mercadoria vendida."
 

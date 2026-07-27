@@ -30,7 +30,6 @@ with goods_receipt_items as (
         , purchase_order_id
         , received_by_employee_id
         , received_at
-        , notes
     from {{ ref('int_goods_receipts') }}
 )
 
@@ -78,7 +77,6 @@ with goods_receipt_items as (
         , purchase_orders.placed_at
         , purchase_orders.expected_delivery_at
         , goods_receipts.received_at
-        , goods_receipts.notes
         , sum(goods_receipt_items.quantity_received) over (
             partition by goods_receipt_items.purchase_order_item_id
             order by
@@ -129,6 +127,14 @@ with goods_receipt_items as (
     from {{ ref('dim_employees') }}
 )
 
+, product_suppliers as (
+    select
+        product_variant_id
+        , supplier_id
+        , supplier_sku
+    from {{ ref('int_product_suppliers') }}
+)
+
 , dates as (
     select
         sk_date
@@ -153,6 +159,7 @@ with goods_receipt_items as (
         , receipt_base.purchase_order_status
         , receipt_base.currency
         , receipt_base.exchange_rate_sell
+        , {{ default_supplier_sku('product_suppliers.supplier_sku', 'receipt_base.supplier_id', 'receipt_base.product_variant_id') }} as supplier_sku
         , receipt_base.quantity_ordered
         , receipt_base.quantity_received
         , receipt_base.cumulative_quantity_received
@@ -161,15 +168,8 @@ with goods_receipt_items as (
         , receipt_base.placed_at
         , receipt_base.expected_delivery_at
         , receipt_base.received_at
-        , receipt_base.notes
         , cast(1 as integer) as goods_receipt_item_count
-        , md5(
-            concat_ws(
-                '||'
-                , 'goods_receipt_item'
-                , cast(receipt_base.goods_receipt_item_id as string)
-            )
-        ) as sk_goods_receipt_item
+        , {{ sk_from_keys(["'goods_receipt_item'", 'receipt_base.goods_receipt_item_id']) }} as sk_goods_receipt_item
         , coalesce(
             products.sk_product
             , md5('product||nao_informado')
@@ -238,6 +238,12 @@ with goods_receipt_items as (
         on
             coalesce(receipt_base.received_by_employee_id, -3)
             = employees.nk_employee_id
+    left join product_suppliers
+        on
+            receipt_base.product_variant_id
+            = product_suppliers.product_variant_id
+            and receipt_base.supplier_id
+            = product_suppliers.supplier_id
     left join dates as receipt_dates
         on
             cast(receipt_base.received_at as date)
@@ -270,6 +276,7 @@ with goods_receipt_items as (
         , purchase_order_status
         , currency
         , exchange_rate_sell
+        , supplier_sku
         , quantity_ordered
         , quantity_received
         , cumulative_quantity_received
@@ -284,9 +291,8 @@ with goods_receipt_items as (
         , received_at
         , delivery_variance_days
         , is_late_receipt
-        , notes
         , goods_receipt_item_count
     from joined
 )
 
-select * from final;
+select * from final

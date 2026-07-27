@@ -9,7 +9,6 @@ select
     product_variant_id
     , product_id
     , sku
-    , barcode_ean
     , sale_price
     , cost_price
     , weight_kg

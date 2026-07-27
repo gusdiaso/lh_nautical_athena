@@ -20,7 +20,7 @@ with source as (
                 , cast(supplier_id as string)
             )
         ) as sk_product_supplier
-        , trim(supplier_sku) as supplier_sku
+        , {{ default_supplier_sku('supplier_sku', 'supplier_id', 'product_variant_id') }} as supplier_sku
     from source
     where
         product_variant_id is not null

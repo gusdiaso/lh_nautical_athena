@@ -46,8 +46,7 @@ Define **o que** criar para cada camada do projeto.
 models:
   lh_nautical:
     staging:
-      +schema: silver        # cria em dev_lh_nautical.silver
-      +materialized: view    # cria como VIEW
+      +materialized: ephemeral  # não cria objeto no banco — vira CTE nos modelos downstream
 
     intermediate:
       +schema: silver        # cria em dev_lh_nautical.silver
@@ -57,18 +56,18 @@ models:
       +schema: gold          # cria em dev_lh_nautical.gold
       +materialized: table   # cria como TABLE
 ```
+**Por que staging é ephemeral e intermediate é table?**
 
-**Por que staging é view e intermediate é table?**
-- **Staging** → view porque organiza os dados brutos sem materializar transformações pesadas.
-- **Intermediate** → table porque consolida limpeza, deduplicação e validação com melhor desempenho.
+- **Staging** → `ephemeral` porque organiza os dados brutos sem criar objetos no banco; o SQL é injetado como CTE nos modelos Intermediate, eliminando a necessidade de gerenciar schemas para staging.
+- **Intermediate** → `table` no schema `silver` porque consolida limpeza, deduplicação e validação com melhor desempenho.
 - **Marts** → table porque entrega o modelo analítico final para consumo de BI e análises.
 
 ### 3. `generate_schema_name.sql` — Macro
 
 Sem essa macro, o dbt concatenaria: `bronze_silver` (schema do profile + schema customizado).
-Com ela, usa só o schema definido em `+schema`: `silver`.
+Com ela, usa só o schema definido em `+schema`.
 
-Resultado final: `dev_lh_nautical.silver.stg_stock_movements`
+Resultado final: `dev_lh_nautical.silver.int_stock_movements`
 
 ### 4. `sources.yml` — Fontes de Dados
 
@@ -90,7 +89,7 @@ Não precisa de `catalog` porque herda do target ativo.
 profiles.yml          →  catalog: dev_lh_nautical
 dbt_project.yml       →  +schema: silver / gold
 macro                 →  usa só o schema (não concatena)
-                        = dev_lh_nautical.silver.stg_*
+                        = dev_lh_nautical.silver.int_*
 ```
 
 ---

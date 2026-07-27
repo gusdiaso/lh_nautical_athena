@@ -1,3 +1,5 @@
+-- Verifica a consistência dos cálculos de margem bruta, taxa total de imposto e flag de rentabilidade.
+-- Falha quando há divergência nas fórmulas financeiras ou flag is_profitable incoerente, evitando métricas de produto distorcidas.
 select
     product_variant_id
     , sale_price

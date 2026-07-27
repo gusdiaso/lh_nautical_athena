@@ -112,8 +112,8 @@ pip install -r requirements.txt
 
 | Dependencia   | Versao      | Uso                  |
 | ------------- | ----------- | -------------------- |
-| `pyspark`     | >=3.4,<4.0  | Sessao Spark         |
-| `delta-spark` | >=3.0,<4.0  | Formato Delta Lake   |
+| `pyspark`     | —           | Sessao Spark (fornecido pelo Databricks Runtime) |
+| `delta-spark` | —           | Formato Delta Lake (fornecido pelo Databricks Runtime) |
 | `requests`    | >=2.31,<3.0 | Requisicoes HTTP     |
 | `pandas`      | >=2.0,<3.0  | Manipulacao de dados |
 | `tenacity`    | >=8.2,<10.0 | Retry automatico     |

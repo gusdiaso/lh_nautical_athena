@@ -1,41 +1,58 @@
 version: 2
-
 models:
   - name: int_purchase_orders
-    description: "Pedidos de compra padronizados com flags de entrega e moeda."
-
+    description: Pedidos de compra deduplicados e padronizados.
     columns:
-      - name: purchase_order_id
+      - name: buyer_id
+        description: Referência ao comprador responsável (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_employees')
+                field: employee_id
+
+      - name: currency
+        description: Moeda do pedido (ISO 4217).
+        data_tests:
+          - not_null
+
+      - name: destination_location_id
+        description: Referência ao local de entrega (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_locations')
+                field: location_id
+
+      - name: exchange_rate_sell
+        description: Taxa de câmbio (venda) aplicada na conversão para BRL.
+
+      - name: expected_delivery_at
+        description: Prazo máximo de entrega pactuado.
+        data_tests:
+          - not_null
+
+      - name: placed_at
+        description: Data de fechamento do pedido.
+        data_tests:
+          - not_null
+
+      - name: po_number
+        description: Número do pedido de compra.
         data_tests:
           - not_null
           - unique
 
-      - name: po_number
+      - name: purchase_order_id
+        description: Identificador único do pedido de compra (PK).
         data_tests:
           - not_null
-
-      - name: supplier_id
-        data_tests:
-          - not_null
-          - relationships:
-              to: ref('int_suppliers')
-              field: supplier_id
-
-      - name: buyer_id
-        data_tests:
-          - not_null
-          - relationships:
-              to: ref('int_employees')
-              field: employee_id
-
-      - name: destination_location_id
-        data_tests:
-          - not_null
-          - relationships:
-              to: ref('int_locations')
-              field: location_id
+          - unique
 
       - name: status
+        description: Status do pedido de compra.
         data_tests:
           - not_null
           - accepted_values:
@@ -46,27 +63,19 @@ models:
                   - received
                   - partially_received
                   - sent
-
-      - name: currency
-        data_tests:
-          - not_null
-
       - name: subtotal
+        description: Soma dos valores dos itens.
         data_tests:
           - not_null
-
-      - name: placed_at
+      - name: supplier_id
+        description: Referência ao fornecedor (FK).
         data_tests:
           - not_null
-
-      - name: expected_delivery_at
-        data_tests: []
-
-      - name: exchange_rate_sell
-        description: "Taxa de câmbio de venda (PTAX) na data do pedido, ou NULL se a moeda for BRL ou data sem cotação."
-        data_tests: []
-
+          - relationships:
+              arguments:
+                to: ref('int_suppliers')
+                field: supplier_id
       - name: total_brl
-        description: "Valor total do pedido convertido para BRL. Para moedas estrangeiras, usa a average_exchange_rate; para BRL, mantém o original_total."
+        description: Valor total do pedido convertido para BRL (moeda base).
         data_tests:
           - not_null

@@ -1,10 +1,27 @@
 version: 2
-
 models:
   - name: stg_payments
-    description: "Pagamentos dos pedidos."
+    description: Transações de pagamento dos pedidos.
     columns:
+      - name: amount
+        description: Valor da transação.
+      - name: installments
+        description: Número de parcelas.
+      - name: method
+        description: Forma de pagamento (cartão, PIX, boleto).
+      - name: order_id
+        description: Referência ao pedido (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+      - name: paid_at
+        description: Data/hora da confirmação do pagamento.
       - name: payment_id
+        description: Identificador único da transação de pagamento (PK).
         data_tests:
           - not_null
           - unique
+      - name: status
+        description: Situação da cobrança (pendente, aprovado, estornado).

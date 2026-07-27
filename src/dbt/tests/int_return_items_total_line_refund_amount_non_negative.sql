@@ -1,3 +1,5 @@
+-- Verifica que o valor total de reembolso por linha de item de retorno não é negativo.
+-- Falha quando total_line_refund_amount é negativo, evitando valores de reembolso inconsistentes.
 select
     return_item_id
     , return_id

@@ -1,3 +1,5 @@
+-- Verifica que a alíquota de IPI não é negativa.
+-- Falha quando ipi_rate é negativo, evitando alíquotas de imposto inconsistentes.
 select
     order_item_id
     , order_id

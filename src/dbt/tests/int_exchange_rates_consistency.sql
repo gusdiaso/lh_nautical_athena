@@ -1,3 +1,5 @@
+-- Verifica que as taxas de câmbio são positivas, a taxa de compra não excede a de venda, e o spread não é negativo.
+-- Falha quando há valores inválidos nas taxas, evitando cálculos financeiros incorretos em conversões monetárias.
 select
     exchange_date
     , currency_code

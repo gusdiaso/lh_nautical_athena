@@ -2,33 +2,40 @@ version: 2
 
 models:
   - name: int_return_items
-    description: "Itens de devolução com classificação de ação e cálculo de reembolso por linha."
+    description: Itens das devoluções deduplicados e padronizados.
 
     columns:
       - name: return_item_id
+        description: Identificador único do item devolvido (PK).
         data_tests:
           - not_null
           - unique
 
       - name: return_id
+        description: Referência à devolução (FK).
         data_tests:
           - not_null
           - relationships:
-              to: ref('int_returns')
-              field: return_id
+              arguments:
+                to: ref('int_returns')
+                field: return_id
 
       - name: order_item_id
+        description: Referência ao item do pedido original (FK).
         data_tests:
           - not_null
           - relationships:
-              to: ref('int_order_items')
-              field: order_item_id
+              arguments:
+                to: ref('int_order_items')
+                field: order_item_id
 
       - name: quantity_returned
+        description: Quantidade devolvida.
         data_tests:
           - not_null
 
       - name: action
+        description: "Ação: estornar, trocar, descartar."
         data_tests:
           - not_null
           - accepted_values:
@@ -38,13 +45,29 @@ models:
                   - exchange
 
       - name: is_exchange
+        description: Indica se é troca.
         data_tests:
           - not_null
 
       - name: is_refund
+        description: Indica se é reembolso.
         data_tests:
           - not_null
 
       - name: total_line_refund_amount
+        description: Valor total de reembolso da linha.
         data_tests:
           - not_null
+
+      - name: unit_refund_amount
+        description: Valor unitário de reembolso.
+        data_tests:
+          - not_null
+
+      - name: exchange_variant_id
+        description: Variante de substituição em caso de troca (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('int_product_variants')
+                field: product_variant_id

@@ -1,3 +1,5 @@
+-- Verifica que o total com impostos dos itens de pedido é positivo.
+-- Falha quando total_with_taxes é zero ou negativo, evitando valores finais de venda inválidos.
 select
     order_item_id
     , order_id

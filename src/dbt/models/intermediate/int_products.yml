@@ -1,42 +1,31 @@
 version: 2
-
 models:
   - name: int_products
-    description: "Produtos padronizados com flags de qualidade (registros incompletos e descrições ausentes)."
-
+    description: Produtos deduplicados e padronizados.
     columns:
-      - name: product_id
-        data_tests:
-          - not_null
-          - unique
-
-      - name: product_name
-        data_tests:
-          - not_null
-
       - name: brand_id
+        description: Referência à marca (FK).
         data_tests:
           - not_null
           - relationships:
-              to: ref('int_brands')
-              field: brand_id
+              arguments:
+                to: ref('int_brands')
+                field: brand_id
 
       - name: category_id
+        description: Referência à categoria (FK).
         data_tests:
           - not_null
           - relationships:
-              to: ref('int_categories')
-              field: category_id
+              arguments:
+                to: ref('int_categories')
+                field: category_id
 
-      - name: ncm_code
-        data_tests:
-          - not_null
-
-      - name: unit_of_measure
-        data_tests:
-          - not_null
+      - name: description
+        description: Descrição e especificações do produto.
 
       - name: is_active
+        description: Indicador se o produto está ativo no catálogo.
         data_tests:
           - accepted_values:
               arguments:
@@ -44,3 +33,23 @@ models:
                   - true
                   - false
 
+      - name: ncm_code
+        description: NCM — Nomenclatura Comum do Mercosul.
+        data_tests:
+          - not_null
+
+      - name: product_id
+        description: Identificador único do produto (PK).
+        data_tests:
+          - not_null
+          - unique
+
+      - name: product_name
+        description: Nome público do produto.
+        data_tests:
+          - not_null
+
+      - name: unit_of_measure
+        description: Unidade de medida (un, pc, m, l).
+        data_tests:
+          - not_null

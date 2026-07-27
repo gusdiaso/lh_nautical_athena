@@ -1,3 +1,5 @@
+-- Verifica que a data de término não é anterior à data de contratação e que funcionários ativos não possuem data de término.
+-- Falha quando há data de término anterior à contratação ou funcionário ativo com data de término, evitando inconsistências no histórico de funcionários.
 select
     nk_employee_id as employee_id
     , full_name

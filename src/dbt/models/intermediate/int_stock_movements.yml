@@ -2,15 +2,35 @@ version: 2
 
 models:
   - name: int_stock_movements
-    description: "Movimentações de estoque com direção, quantidade absoluta e identificação de migração."
+    description: Movimentações de estoque deduplicadas e padronizadas.
 
     columns:
       - name: stock_movement_id
+        description: Identificador único da movimentação (PK).
         data_tests:
           - not_null
           - unique
 
+      - name: product_variant_id
+        description: Referência à variante do produto (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_product_variants')
+                field: product_variant_id
+
+      - name: location_id
+        description: Referência ao estoque afetado (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_locations')
+                field: location_id
+
       - name: movement_direction
+        description: Direção da movimentação.
         data_tests:
           - not_null
           - accepted_values:
@@ -20,10 +40,31 @@ models:
                   - saida
                   - nao_classificado
 
-      - name: absolute_quantity
+      - name: is_legacy_migration
+        description: Indica se é migração legada.
         data_tests:
           - not_null
 
-      - name: is_legacy_migration
+      - name: movement_type
+        description: "Natureza: entrada, saída, transferência, ajuste."
         data_tests:
           - not_null
+
+      - name: quantity
+        description: Quantidade movimentada.
+        data_tests:
+          - not_null
+
+      - name: occurred_at
+        description: Data/hora da movimentação física.
+        data_tests:
+          - not_null
+
+      - name: employee_id
+        description: Referência ao responsável (FK).
+
+      - name: reference_id
+        description: ID na tabela de origem.
+
+      - name: reference_table
+        description: Tabela de origem do movimento.

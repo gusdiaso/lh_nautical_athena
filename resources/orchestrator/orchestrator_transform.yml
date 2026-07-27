@@ -1,0 +1,98 @@
+variables:
+  dbt_target:
+    default: dev
+  catalog:
+    default: dev_lh_nautical
+
+targets:
+  dev:
+    variables:
+      dbt_target: dev
+      catalog: dev_lh_nautical
+
+  prod:
+    variables:
+      dbt_target: prod
+      catalog: prod_lh_nautical
+    resources:
+      jobs:
+        orchestrator_transform:
+          email_notifications:
+            on_failure:
+              - lh-team-athena-bb-aaaavi2j2f5jb7k23os5chjvuu@indiciumai.slack.com
+              - gustavo.dias@indicium.ai
+
+resources:
+  jobs:
+    orchestrator_transform:
+      name: orchestrator_transform
+      description: >
+        Orquestrador principal do pipeline de dados.
+        Executa a extracao da LH Nautical e do Exchange Rates em paralelo
+        e, apos ambos finalizarem, dispara o job de transformacao dbt.
+        Responsavel por coordenar o fluxo completo: bronze → silver → gold.
+
+      max_concurrent_runs: 1
+
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "2"
+
+      schedule:
+        quartz_cron_expression: "0 0 23 * * ?"
+        timezone_id: "America/Sao_Paulo"
+        pause_status: UNPAUSED
+
+      notification_settings:
+        no_alert_for_canceled_runs: true
+        no_alert_for_skipped_runs: true
+
+      tasks:
+        - task_key: extract_lh_nautical
+          description: "Extrai todas as 24 tabelas do SQL Server para a camada Bronze"
+          run_job_task:
+            job_id: ${resources.jobs.extract_lh_nautical.id}
+
+        - task_key: extract_exchange_rates
+          description: "Extrai cotacoes PTAX (USD, EUR) do Banco Central para a camada Bronze"
+          run_job_task:
+            job_id: ${resources.jobs.extract_exchange_rates.id}
+
+        - task_key: validate_extraction
+          environment_key: default
+          description: >
+            Verifica se todas as tabelas Bronze foram carregadas
+            corretamente antes de iniciar a transformacao
+          depends_on:
+            - task_key: extract_lh_nautical
+            - task_key: extract_exchange_rates
+          spark_python_task:
+            python_file: ../../src/ingestion/validate_extraction.py
+            parameters:
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - bronze
+          max_retries: 1
+
+        - task_key: apply_bronze_masks
+          environment_key: default
+          description: "Aplica column masking nas tabelas Bronze após a extração"
+          depends_on:
+            - task_key: validate_extraction
+          spark_python_task:
+            python_file: ../../resources/security/apply_bronze_masks.py
+            parameters:
+              - --catalog
+              - ${var.catalog}
+          max_retries: 1
+
+        - task_key: dbt_transform
+          description: >
+            Executa a pipeline dbt completa: intermediate (run + test) ->
+            marts (run + test). Staging e ephemeral (CTE incluso no intermediate).
+          depends_on:
+            - task_key: apply_bronze_masks
+          run_job_task:
+            job_id: ${resources.jobs.dbt_transform.id}

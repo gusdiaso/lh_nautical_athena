@@ -100,4 +100,4 @@ left join exchange_rate_ranges as er
         ranked.currency = er.currency_code
         and cast(ranked.placed_at as date) >= er.valid_from
         and cast(ranked.placed_at as date) < er.valid_to
-order by purchase_order_id;
+order by purchase_order_id

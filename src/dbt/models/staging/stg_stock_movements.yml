@@ -1,15 +1,25 @@
 version: 2
-
 models:
   - name: stg_stock_movements
-    description: "Movimentações de estoque."
+    description: Movimentações de entrada e saída de estoque.
     columns:
-      - name: stock_movement_id
+      - name: employee_id
+        description: Referência ao responsável (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_employees')
+                field: employee_id
+      - name: location_id
+        description: Referência ao estoque afetado (FK).
         data_tests:
           - not_null
-          - unique
-
+          - relationships:
+              arguments:
+                to: ref('stg_locations')
+                field: location_id
       - name: movement_type
+        description: "Natureza: entrada, saída, transferência, ajuste."
         data_tests:
           - accepted_values:
               arguments:
@@ -18,3 +28,26 @@ models:
                   - purchase_in
                   - return_in
                   - return_out
+      - name: notes
+        description: Observações sobre a movimentação.
+      - name: occurred_at
+        description: Data/hora da movimentação física.
+      - name: product_variant_id
+        description: Referência à variante do produto (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_product_variants')
+                field: product_variant_id
+      - name: quantity
+        description: Quantidade movimentada.
+      - name: reference_id
+        description: ID na tabela de origem.
+      - name: reference_table
+        description: Tabela de origem do movimento.
+      - name: stock_movement_id
+        description: Identificador único da movimentação (PK).
+        data_tests:
+          - not_null
+          - unique

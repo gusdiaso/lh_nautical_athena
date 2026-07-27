@@ -111,3 +111,5 @@ git push origin <branch>
 ```
 
 4. Assim que abrir o PR e ele for mergeado com a main, o Bitbucket Pipelines detecta a alteração, inicia a máquina virtual, autentica via OAuth e realiza o bundle deploy. Em poucos minutos, a alteração estará disponível e pronta para uso no Workspace do Databricks.
+
+> **Nota:** O pipeline atual faz deploy do bundle e executa o job `orchestrator_transform` na produção, que coordena extração, validação, column masking e transformação dbt de forma sequencial, com agendamento para as 23:00 BRT.

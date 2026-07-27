@@ -1,14 +1,56 @@
 version: 2
-
 models:
   - name: int_employees
-    description: "Funcionários padronizados."
+    description: Funcionários da empresa, deduplicados e padronizados.
     columns:
-      - name: employee_id
+      - name: cpf
+        description: Cadastro de Pessoa Física (CPF).
         data_tests:
           - not_null
           - unique
 
-      - name: full_name
+      - name: email
+        description: E-mail corporativo do colaborador.
         data_tests:
           - not_null
+          - unique
+
+      - name: employee_id
+        description: Identificador único do funcionário (PK).
+        data_tests:
+          - not_null
+          - unique
+      - name: full_name
+        description: Nome completo do colaborador.
+        data_tests:
+          - not_null
+
+      - name: hire_date
+        description: Data de contratação.
+        data_tests:
+          - not_null
+
+      - name: is_active
+        description: Indicador se o colaborador está ativo.
+        data_tests:
+          - not_null
+
+      - name: primary_location_id
+        description: Referência à unidade padrão do funcionário (FK).
+        data_tests:
+          - not_null
+
+      - name: role
+        description: Cargo ou função desempenhada.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - manager
+                  - stockist
+                  - buyer
+                  - salesperson
+                  - admin
+
+      - name: termination_date
+        description: Data de desligamento (se aplicável).

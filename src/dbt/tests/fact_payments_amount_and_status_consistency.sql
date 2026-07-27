@@ -1,3 +1,5 @@
+-- Verifica que payment_status é consistente com os valores monetários e as flags booleanas de estado.
+-- Falha quando há contradição entre status textual, valores pagos/reembolsados e flags, evitando classificações de pagamento incorretas.
 select
     nk_payment_id as payment_id
     , payment_status

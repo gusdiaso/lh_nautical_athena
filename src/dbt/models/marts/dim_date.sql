@@ -160,4 +160,4 @@ with event_dates as (
     from dates
 )
 
-select * from final;
+select * from final

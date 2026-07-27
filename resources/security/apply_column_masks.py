@@ -18,35 +18,37 @@ import sys
 try:
     from databricks import sql
 except ImportError:
-    print("databricks-sql-connector not installed. Run: pip install databricks-sql-connector")
+    print("databricks-sdk not installed. Run: pip install databricks-sdk")
     sys.exit(1)
 
 
-MASKS = """
+def _build_masks(catalog: str, group: str) -> str:
+    return f"""
 CREATE OR REPLACE FUNCTION {catalog}.gold.mask_full(value STRING)
   RETURN CASE
-    WHEN is_member('lh_nautical_dev') THEN value
+    WHEN is_member('{group}') THEN value
     ELSE '***MASKED***'
   END;
 
 CREATE OR REPLACE FUNCTION {catalog}.gold.mask_cpf(value STRING)
   RETURN CASE
-    WHEN is_member('lh_nautical_dev') THEN value
+    WHEN is_member('{group}') THEN value
     ELSE '***MASKED***'
   END;
 
 CREATE OR REPLACE FUNCTION {catalog}.gold.mask_email(value STRING)
   RETURN CASE
-    WHEN is_member('lh_nautical_dev') THEN value
+    WHEN is_member('{group}') THEN value
     ELSE '***MASKED***'
   END;
 
 CREATE OR REPLACE FUNCTION {catalog}.gold.mask_phone(value STRING)
   RETURN CASE
-    WHEN is_member('lh_nautical_dev') THEN value
+    WHEN is_member('{group}') THEN value
     ELSE '***MASKED***'
   END;
 """
+
 
 BRONZE_ALTER = """
 ALTER TABLE {catalog}.bronze.customers ALTER COLUMN tax_id SET MASK {catalog}.gold.mask_full;
@@ -113,8 +115,14 @@ def get_catalog(env: str) -> str:
     return "prod_lh_nautical" if env == "prod" else "dev_lh_nautical"
 
 
+def get_group(env: str) -> str:
+    return "lh_nautical_prod" if env == "prod" else "lh_nautical_dev"
+
+
 def execute_sql(statements: str, catalog: str, http_path: str, token: str):
     sql_text = statements.format(catalog=catalog)
+    failed: list[str] = []
+
     with sql.connect(
         server_hostname=os.environ["DATABRICKS_HOST"],
         http_path=http_path,
@@ -123,10 +131,21 @@ def execute_sql(statements: str, catalog: str, http_path: str, token: str):
         with connection.cursor() as cursor:
             for statement in sql_text.strip().split(";"):
                 stmt = statement.strip()
-                if stmt:
-                    print(f"Executing: {stmt[:80]}...")
+                if not stmt:
+                    continue
+                print(f"Executing: {stmt[:80]}...")
+                try:
                     cursor.execute(stmt)
                     print("  Done.")
+                except Exception as e:
+                    print(f"  FAILED: {e}")
+                    failed.append(stmt[:120])
+
+    if failed:
+        print(f"\n{len(failed)} statement(s) failed:")
+        for s in failed:
+            print(f"  - {s}")
+        sys.exit(1)
 
 
 def main():
@@ -136,6 +155,7 @@ def main():
     args = parser.parse_args()
 
     catalog = get_catalog(args.env)
+    group = get_group(args.env)
     http_path = os.environ.get("DBT_HTTP_PATH")
     token = os.environ.get("DBT_DATABRICKS_TOKEN" if args.env == "dev" else "DBT_DATABRICKS_TOKEN_PROD")
 
@@ -144,11 +164,12 @@ def main():
         sys.exit(1)
 
     print(f"Target: {catalog} ({args.env})")
+    print(f"Group:  {group}")
     print(f"Action: {args.action}")
 
     if args.action == "apply":
         print("Creating mask functions...")
-        execute_sql(MASKS, catalog, http_path, token)
+        execute_sql(_build_masks(catalog, group), http_path, token)
 
         print("Applying masks on Bronze...")
         execute_sql(BRONZE_ALTER, catalog, http_path, token)

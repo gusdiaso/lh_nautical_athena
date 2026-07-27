@@ -1,0 +1,25 @@
+version: 2
+models:
+  - name: stg_categories
+    description: Categorias de produtos.
+    columns:
+      - name: category_id
+        description: Identificador único da categoria (PK).
+        data_tests:
+          - not_null
+          - unique
+      - name: category_name
+        description: Nome amigável da categoria.
+        data_tests:
+          - not_null
+      - name: is_active
+        description: Indicador se a categoria está visível e utilizável.
+      - name: parent_category_id
+        description: Referência à categoria superior (auto-relacionamento, FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_categories')
+                field: category_id
+      - name: slug
+        description: Versão textual amigável para URL.

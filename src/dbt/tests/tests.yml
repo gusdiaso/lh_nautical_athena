@@ -1,0 +1,217 @@
+version: 2
+
+data_tests:
+  - name: dim_employees_hire_and_termination_dates
+    description: >
+      Verifica que a data de término não é anterior à data de contratação
+      e que funcionários ativos não possuem data de término.
+    model: ref('dim_employees')
+
+  - name: fact_goods_receipt_items_receipt_logic
+    description: >
+      Verifica a consistência dos valores recebidos, conversão cambial,
+      flags de recebimento (is_fully_received, is_partial_receipt, is_late_receipt)
+      e prazo de entrega.
+    model: ref('fact_goods_receipt_items')
+
+  - name: fact_order_items_amount_consistency
+    description: >
+      Verifica que os cálculos de desconto, custo e lucro bruto dos itens
+      de pedido são consistentes (gross - discount = net, custo estimado, lucro estimado).
+    model: ref('fact_order_items')
+
+  - name: fact_order_items_status_flags
+    description: >
+      Verifica que order_status é consistente com as flags booleanas
+      de estado do pedido (is_cancelled, is_paid, is_confirmed, is_draft).
+    model: ref('fact_order_items')
+
+  - name: fact_payments_amount_and_status_consistency
+    description: >
+      Verifica que payment_status é consistente com os valores monetários
+      e as flags booleanas de estado (is_paid, is_refunded, is_pending, is_cancelled).
+    model: ref('fact_payments')
+
+  - name: fact_purchase_order_items_currency_and_overdue_consistency
+    description: >
+      Verifica a consistência dos valores em BRL (conversão cambial)
+      e da flag is_expected_delivery_overdue com relação à data atual.
+    model: ref('fact_purchase_order_items')
+
+  - name: fact_return_items_exchange_logic
+    description: >
+      Verifica que a ação (refund/exchange) é consistente com as flags
+      e o produto de troca, e que returned_item_count é sempre 1.
+    model: ref('fact_return_items')
+
+  - name: fact_stock_movements_direction_consistency
+    description: >
+      Verifica que movement_direction está alinhado com as flags
+      is_inbound e is_outbound.
+    model: ref('fact_stock_movements')
+
+  - name: int_addresses_postal_code_format
+    description: >
+      Verifica que todo CEP está no formato XXXXX-XXX (8 dígitos + hífen).
+    model: ref('int_addresses')
+
+  - name: int_attributes_attribute_name_not_empty
+    description: >
+      Verifica que todo atributo possui um nome (attribute_name)
+      preenchido (não nulo ou vazio).
+    model: ref('int_attributes')
+
+  - name: int_attributes_data_type_not_empty
+    description: >
+      Verifica que todo atributo possui um tipo de dado (data_type)
+      definido (não nulo ou vazio).
+    model: ref('int_attributes')
+
+  - name: int_exchange_rates_consistency
+    description: >
+      Verifica que as taxas de câmbio são positivas, a taxa de compra
+      não excede a de venda, e o spread não é negativo.
+    model: ref('int_exchange_rates')
+
+  - name: int_goods_receipt_items_quantity_positive
+    description: >
+      Verifica que a quantidade recebida (quantity_received)
+      em recebimentos de mercadoria é positiva (maior que zero).
+    model: ref('int_goods_receipt_items')
+
+  - name: int_locations_city_not_empty
+    description: >
+      Verifica que toda localização possui uma cidade (city)
+      preenchida (não nula ou vazia).
+    model: ref('int_locations')
+
+  - name: int_locations_country_not_empty
+    description: >
+      Verifica que toda localização possui um país (country)
+      preenchido (não nulo ou vazio).
+    model: ref('int_locations')
+
+  - name: int_order_items_icms_rate_non_negative
+    description: >
+      Verifica que a alíquota de ICMS (icms_rate) não é negativa.
+    model: ref('int_order_items')
+
+  - name: int_order_items_ipi_rate_non_negative
+    description: >
+      Verifica que a alíquota de IPI (ipi_rate) não é negativa.
+    model: ref('int_order_items')
+
+  - name: int_order_items_quantity_positive
+    description: >
+      Verifica que a quantidade pedida (quantity_ordered)
+      nos itens de pedido é positiva (maior que zero).
+    model: ref('int_order_items')
+
+  - name: int_order_items_total_with_taxes_positive
+    description: >
+      Verifica que o total com impostos (total_with_taxes)
+      dos itens de pedido é positivo (maior que zero).
+    model: ref('int_order_items')
+
+  - name: int_order_items_unit_price_positive
+    description: >
+      Verifica que o preço unitário (unit_price) dos itens
+      de pedido é positivo (maior que zero).
+    model: ref('int_order_items')
+
+  - name: int_product_variants_metrics_consistency
+    description: >
+      Verifica a consistência dos cálculos de margem bruta
+      (valor e percentual), taxa total de imposto e flag is_profitable.
+    model: ref('int_product_variants')
+
+  - name: int_products_unit_of_measure_not_empty
+    description: >
+      Verifica que todo produto possui uma unidade de medida
+      (unit_of_measure) preenchida (não nula ou vazia).
+    model: ref('int_products')
+
+  - name: int_purchase_order_items_line_total_non_negative
+    description: >
+      Verifica que o total da linha (line_total) dos itens
+      de pedido de compra não é negativo.
+    model: ref('int_purchase_order_items')
+
+  - name: int_purchase_order_items_quantity_positive
+    description: >
+      Verifica que a quantidade pedida (quantity_ordered)
+      nos itens de pedido de compra é positiva (maior que zero).
+    model: ref('int_purchase_order_items')
+
+  - name: int_purchase_order_items_unit_cost_non_negative
+    description: >
+      Verifica que o custo unitário (unit_cost) dos itens
+      de pedido de compra não é negativo.
+    model: ref('int_purchase_order_items')
+
+  - name: int_purchase_orders_expected_delivery_after_placed
+    description: >
+      Verifica que a data de entrega esperada (expected_delivery_at)
+      é posterior à data de emissão do pedido (placed_at).
+    model: ref('int_purchase_orders')
+
+  - name: int_purchase_orders_missing_exchange_rate
+    description: >
+      Verifica que pedidos em moeda estrangeira já realizados
+      possuem conversão para BRL (total_brl não nulo).
+    model: ref('int_purchase_orders')
+
+  - name: int_purchase_orders_subtotal_non_negative
+    description: >
+      Verifica que o subtotal (subtotal) dos pedidos de compra
+      não é negativo.
+    model: ref('int_purchase_orders')
+
+  - name: int_purchase_orders_total_brl_positive
+    description: >
+      Verifica que o total em BRL (total_brl) dos pedidos
+      de compra é positivo (maior que zero).
+    model: ref('int_purchase_orders')
+
+  - name: int_return_items_quantity_positive
+    description: >
+      Verifica que a quantidade devolvida (quantity_returned)
+      nos itens de retorno é positiva (maior que zero).
+    model: ref('int_return_items')
+
+  - name: int_return_items_total_line_refund_amount_non_negative
+    description: >
+      Verifica que o valor total de reembolso por linha
+      (total_line_refund_amount) não é negativo.
+    model: ref('int_return_items')
+
+  - name: int_return_items_unit_refund_amount_non_negative
+    description: >
+      Verifica que o valor unitário de reembolso
+      (unit_refund_amount) dos itens de retorno não é negativo.
+    model: ref('int_return_items')
+
+  - name: int_returns_has_refund_amount
+    description: >
+      Verifica que a flag has_refund_amount é consistente
+      com total_refund_amount e que este não é negativo.
+    model: ref('int_returns')
+
+  - name: int_stock_levels_critical_stock_flag
+    description: >
+      Verifica que a flag is_critical_stock é verdadeira
+      quando quantity_on_hand está zerado, negativo ou abaixo do reorder_point.
+    model: ref('int_stock_levels')
+
+  - name: int_stock_movements_consistency
+    description: >
+      Verifica que o tipo de movimento (movement_type) corresponde
+      à direção correta (entrada/saída) e que a quantidade
+      tem o sinal adequado à direção.
+    model: ref('int_stock_movements')
+
+  - name: int_variant_attribute_values_consistency
+    description: >
+      Verifica que valores de atributos de variantes não contêm
+      placeholders, dados de teste ou grafias incorretas conhecidas.
+    model: ref('int_variant_attribute_values')

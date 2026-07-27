@@ -1,0 +1,46 @@
+version: 2
+models:
+  - name: stg_products
+    description: Produtos cadastrados (modelo pai).
+    columns:
+      - name: brand_id
+        description: Referência à marca (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_brands')
+                field: brand_id
+      - name: category_id
+        description: Referência à categoria (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_categories')
+                field: category_id
+      - name: description
+        description: Descrição e especificações do produto.
+      - name: is_active
+        description: Indicador se o produto está ativo no catálogo.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+      - name: ncm_code
+        description: NCM — Nomenclatura Comum do Mercosul.
+        data_tests:
+          - not_null
+      - name: product_id
+        description: Identificador único do produto (PK).
+        data_tests:
+          - not_null
+          - unique
+      - name: product_name
+        description: Nome público do produto.
+        data_tests:
+          - not_null
+      - name: unit_of_measure
+        description: Unidade de medida (un, pc, m, l).
+        data_tests:
+          - not_null

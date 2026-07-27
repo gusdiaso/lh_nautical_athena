@@ -1,0 +1,79 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: "Tabelas brutas da LH Nautical carregadas no Databricks."
+    schema: bronze
+
+    tables:
+      - name: categories
+        description: "Cadastro de categorias de produtos."
+
+      - name: brands
+        description: "Cadastro de marcas de produtos."
+
+      - name: employees
+        description: "Cadastro de colaboradores internos."
+
+      - name: customers
+        description: "Cadastro principal de clientes."
+
+      - name: orders
+        description: "Cabeçalho dos pedidos de venda."
+
+      - name: payments
+        description: "Transações financeiras vinculadas aos pedidos."
+
+      - name: goods_receipts
+        description: "Documentos de recebimento logístico de mercadorias."
+
+      - name: product_suppliers
+        description: "Relação entre variantes de produto e fornecedores."
+
+      - name: stock_movements
+        description: "Movimentações de entrada e saída de estoque."
+
+      - name: returns
+        description: "Registros de devoluções de pedidos."
+
+      - name: addresses
+        description: "Endereços cadastrados dos clientes."
+
+      - name: product_variants
+        description: "Variações e SKUs dos produtos."
+
+      - name: suppliers
+        description: "Cadastro de fornecedores."
+
+      - name: stock_levels
+        description: "Saldos de estoque por produto e localização."
+
+      - name: variant_attribute_values
+        description: "Valores dos atributos associados às variações de produtos."
+
+      - name: exchange_rates
+        description: "Cotações de moedas carregadas para conversão cambial."
+
+      - name: purchase_orders
+        description: "Cabeçalho de pedidos de compra emitidos aos fornecedores."
+
+      - name: order_items
+        description: "Itens detalhados dos pedidos de venda."
+
+      - name: return_items
+        description: "Itens individuais de processos de devolução."
+
+      - name: products
+        description: "Cadastro base dos produtos (modelo pai)."
+
+      - name: locations
+        description: "Espaços físicos/lógicos: lojas e centros de distribuição."
+
+      - name: purchase_order_items
+        description: "Itens detalhados dos pedidos de compra."
+
+      - name: goods_receipt_items
+        description: "Itens recebidos fisicamente nos recebimentos de mercadoria."
+
+      - name: attributes
+        description: "Atributos customizáveis dos produtos (cor, tamanho, etc)."

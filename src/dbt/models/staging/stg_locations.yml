@@ -1,0 +1,59 @@
+version: 2
+models:
+  - name: stg_locations
+    description: Filiais, lojas e centros de distribuição.
+    columns:
+      - name: city
+        description: Cidade do local.
+        data_tests:
+          - not_null
+      - name: complement
+        description: Complemento do endereço.
+      - name: country
+        description: País do local.
+        data_tests:
+          - not_null
+      - name: district
+        description: Bairro do local.
+      - name: is_active
+        description: Indicador se o local está operante.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+      - name: location_id
+        description: Identificador único do local (PK).
+        data_tests:
+          - not_null
+          - unique
+      - name: location_name
+        description: Nome da filial, loja ou depósito.
+        data_tests:
+          - not_null
+      - name: location_type
+        description: "Tipo de local: loja, armazém, centro de distribuição."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - store
+                  - warehouse
+      - name: number
+        description: Número predial do local.
+        data_tests:
+          - not_null
+      - name: postal_code
+        description: CEP da unidade.
+        data_tests:
+          - not_null
+      - name: state
+        description: Estado/UF do local.
+        data_tests:
+          - not_null
+      - name: street
+        description: Logradouro do local.
+        data_tests:
+          - not_null

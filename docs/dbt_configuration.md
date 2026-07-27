@@ -1,0 +1,137 @@
+# Configuração do dbt
+
+## Visão Geral
+
+O projeto dbt se conecta ao Databricks Unity Catalog e atua como a camada de modelagem do data warehouse.
+
+No nosso desenho, as camadas físicas do warehouse são:
+
+```
+Bronze → Silver → Gold
+```
+
+As camadas de modelagem do dbt são:
+
+```
+Staging → Intermediate → Marts
+```
+
+Elas organizam, validam e enriquecem os dados antes de alimentar principalmente Silver e Gold.
+
+---
+
+## Arquivos de Configuração
+
+### 1. `profiles.yml` — Conexão
+
+Define **como** o dbt conecta no Databricks.
+
+| Campo | O que faz |
+|---|---|
+| `catalog` | Qual catálogo usar (`dev_lh_nautical` ou `prod_lh_nautical`) |
+| `schema` | Schema padrão (sobrescrito pelo dbt_project.yml) |
+| `host` | Endpoint do workspace Databricks |
+| `http_path` | Caminho do SQL Warehouse (via variável de ambiente) |
+| `token` | Token de autenticação (via variável de ambiente) |
+
+**Targets:**
+- `dev` → usa `dev_lh_nautical` com seu token pessoal
+- `prod` → usa `prod_lh_nautical` com token da Service Principal
+
+### 2. `dbt_project.yml` — Regras por Camada
+
+Define **o que** criar para cada camada do projeto.
+
+```yaml
+models:
+  lh_nautical:
+    staging:
+      +materialized: ephemeral  # não cria objeto no banco — vira CTE nos modelos downstream
+
+    intermediate:
+      +schema: silver        # cria em dev_lh_nautical.silver
+      +materialized: table   # cria como TABLE
+
+    marts:
+      +schema: gold          # cria em dev_lh_nautical.gold
+      +materialized: table   # cria como TABLE
+```
+**Por que staging é ephemeral e intermediate é table?**
+
+- **Staging** → `ephemeral` porque organiza os dados brutos sem criar objetos no banco; o SQL é injetado como CTE nos modelos Intermediate, eliminando a necessidade de gerenciar schemas para staging.
+- **Intermediate** → `table` no schema `silver` porque consolida limpeza, deduplicação e validação com melhor desempenho.
+- **Marts** → table porque entrega o modelo analítico final para consumo de BI e análises.
+
+### 3. `generate_schema_name.sql` — Macro
+
+Sem essa macro, o dbt concatenaria: `bronze_silver` (schema do profile + schema customizado).
+Com ela, usa só o schema definido em `+schema`.
+
+Resultado final: `dev_lh_nautical.silver.int_stock_movements`
+
+### 4. `sources.yml` — Fontes de Dados
+
+Define de **onde** ler os dados brutos (Bronze).
+
+```yaml
+sources:
+  - name: bronze
+    schema: bronze    # lê de dev_lh_nautical.bronze.*
+```
+
+Não precisa de `catalog` porque herda do target ativo.
+
+---
+
+## Fluxo Completo
+
+```
+profiles.yml          →  catalog: dev_lh_nautical
+dbt_project.yml       →  +schema: silver / gold
+macro                 →  usa só o schema (não concatena)
+                        = dev_lh_nautical.silver.int_*
+```
+
+---
+
+## Variáveis de Ambiente
+
+O `.env` na raiz do projeto armazena credenciais (não versionado):
+
+```
+# Dev - seu token pessoal
+DBT_DATABRICKS_TOKEN=seu_token_aqui
+DBT_HTTP_PATH=sql/1.0/warehouses/xxxxx
+
+# Prod - token da Service Principal
+DBT_DATABRICKS_TOKEN_PROD=token_da_sp_aqui
+```
+
+Para usar no Git Bash:
+```bash
+source .env
+dbt debug
+```
+
+### Como gerar o token da Service Principal
+
+1. Databricks → **Admin Console** → **Service Principals**
+2. Clique na SP (`1d6b3e3c-c04d-41e0-9883-ae8d467adcaf`)
+3. **Secrets** → **Generate Secret**
+4. Copie o token e cole no `.env` como `DBT_DATABRICKS_TOKEN_PROD`
+
+---
+
+## Comandos Úteis
+
+```bash
+dbt debug                             # testa conexão (dev)
+dbt debug --target prod               # testa conexão (prod)
+dbt run                               # roda todos os models (dev)
+dbt run --target prod                 # roda todos os models (prod)
+dbt run --select staging              # roda só staging
+dbt run --select intermediate         # roda só intermediate
+dbt test                              # roda todos os testes
+dbt docs generate                     # gera documentação
+dbt docs serve                        # abre documentação no browser
+```

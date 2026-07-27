@@ -1,0 +1,36 @@
+version: 2
+models:
+  - name: stg_product_variants
+    description: Variações comerciais (SKUs) dos produtos.
+    columns:
+      - name: barcode_ean
+        description: Código de barras / EAN.
+      - name: cost_price
+        description: Custo padrão de aquisição ou produção.
+      - name: icms_rate
+        description: Alíquota padrão de ICMS.
+      - name: ipi_rate
+        description: Alíquota padrão de IPI.
+      - name: is_active
+        description: Indicador se a variante está ativa para venda.
+      - name: product_id
+        description: Referência ao produto pai (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_products')
+                field: product_id
+      - name: product_variant_id
+        description: Identificador único da variante (PK).
+        data_tests:
+          - not_null
+          - unique
+      - name: sale_price
+        description: Preço padrão de venda ao consumidor.
+      - name: sku
+        description: SKU — código único de identificação comercial.
+        data_tests:
+          - not_null
+          - unique
+      - name: weight_kg
+        description: Peso físico em quilogramas.

@@ -1,0 +1,51 @@
+version: 2
+models:
+  - name: stg_returns
+    description: Devoluções de pedidos realizadas por clientes.
+    columns:
+      - name: created_at
+        description: Registro da data/hora de criação.
+      - name: customer_id
+        description: Referência ao cliente (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: order_id
+        description: Referência ao pedido original (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+      - name: original_reason
+        description: Motivo original.
+      - name: reason_normalized
+        description: Motivo normalizado.
+      - name: received_at_location_id
+        description: Referência ao local de recebimento (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_locations')
+                field: location_id
+      - name: return_id
+        description: Identificador único da devolução (PK).
+        data_tests:
+          - not_null
+          - unique
+
+      - name: return_number
+        description: Número do protocolo de devolução.
+      - name: status
+        description: Status da devolução.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - cancelled
+                  - completed
+                  - open
+      - name: total_refund_amount
+        description: Valor total a ser reembolsado.

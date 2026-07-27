@@ -1,0 +1,23 @@
+version: 2
+models:
+  - name: stg_variant_attribute_values
+    description: Valores dos atributos associados às variações de produtos.
+    columns:
+      - name: attribute_id
+        description: Referência ao atributo (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_attributes')
+                field: attribute_id
+      - name: product_variant_id
+        description: Referência à variante do produto (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_product_variants')
+                field: product_variant_id
+      - name: value
+        description: "Valor do atributo para a variante (exemplo: GG, 220V)."

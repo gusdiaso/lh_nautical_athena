@@ -1,0 +1,58 @@
+version: 2
+models:
+  - name: int_payments
+    description: Pagamentos deduplicados e padronizados.
+    columns:
+      - name: amount
+        description: Valor da transação.
+        data_tests:
+          - not_null
+
+      - name: installments
+        description: Número de parcelas.
+        data_tests:
+          - not_null
+
+      - name: method
+        description: Forma de pagamento (cartão, PIX, boleto).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - bank_transfer
+                  - credit_card
+                  - pix
+                  - boleto
+                  - cash
+                  - debit_card
+
+      - name: order_id
+        description: Referência ao pedido (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_orders')
+                field: order_id
+
+      - name: paid_at
+        description: Data/hora da confirmação do pagamento.
+
+      - name: payment_id
+        description: Identificador único da transação de pagamento (PK).
+        data_tests:
+          - not_null
+          - unique
+
+      - name: status
+        description: Situação da cobrança (pendente, aprovado, estornado).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - refunded
+                  - pending
+                  - approved
+                  - refused

@@ -22,6 +22,12 @@ targets:
     variables:
       catalog: prod_lh_nautical
       schema: bronze
+    resources:
+      jobs:
+        extract_lh_nautical:
+          email_notifications:
+            on_failure:
+              - lh-team-athena-bb-aaaavi2j2f5jb7k23os5chjvuu@indiciumai.slack.com
 
 # Job de extração para a camada Bronze
 resources:
@@ -30,11 +36,6 @@ resources:
       name: extract_lh_nautical
       description: 'Job que executa uma task para cada tabela e grava os dados no formato Delta.'
       max_concurrent_runs: 1
-
-      schedule:
-        quartz_cron_expression: '0 0 0,18 * * ?'
-        timezone_id: 'America/Sao_Paulo'
-        pause_status: UNPAUSED
 
       environments:
         - environment_key: default
@@ -56,6 +57,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_brands
           environment_key: default
           spark_python_task:
@@ -67,6 +69,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_locations
           environment_key: default
           spark_python_task:
@@ -78,6 +81,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_attributes
           environment_key: default
           spark_python_task:
@@ -89,6 +93,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_employees
           environment_key: default
           spark_python_task:
@@ -100,6 +105,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_customers
           environment_key: default
           spark_python_task:
@@ -111,6 +117,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_addresses
           environment_key: default
           spark_python_task:
@@ -122,6 +129,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_suppliers
           environment_key: default
           spark_python_task:
@@ -133,6 +141,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_products
           environment_key: default
           spark_python_task:
@@ -144,6 +153,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_product_variants
           environment_key: default
           spark_python_task:
@@ -155,6 +165,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_variant_attribute_values
           environment_key: default
           spark_python_task:
@@ -166,6 +177,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_product_suppliers
           environment_key: default
           spark_python_task:
@@ -177,6 +189,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_purchase_orders
           environment_key: default
           spark_python_task:
@@ -188,6 +201,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_purchase_order_items
           environment_key: default
           spark_python_task:
@@ -199,6 +213,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_goods_receipts
           environment_key: default
           spark_python_task:
@@ -210,6 +225,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_goods_receipt_items
           environment_key: default
           spark_python_task:
@@ -221,6 +237,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_orders
           environment_key: default
           spark_python_task:
@@ -232,6 +249,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_order_items
           environment_key: default
           spark_python_task:
@@ -243,6 +261,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_payments
           environment_key: default
           spark_python_task:
@@ -254,6 +273,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_fiscal_invoices
           environment_key: default
           spark_python_task:
@@ -265,6 +285,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_returns
           environment_key: default
           spark_python_task:
@@ -276,6 +297,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_return_items
           environment_key: default
           spark_python_task:
@@ -287,6 +309,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_stock_levels
           environment_key: default
           spark_python_task:
@@ -298,6 +321,7 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1
         - task_key: extract_stock_movements
           environment_key: default
           spark_python_task:
@@ -309,3 +333,4 @@ resources:
               - ${var.catalog}
               - --schema
               - ${var.schema}
+          max_retries: 1

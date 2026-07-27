@@ -8,9 +8,14 @@ include:
   - resources/*.yml
   - resources/*/*.yml
 
-# Sincroniza os arquivos Python para o workspace
+# Sincroniza os arquivos do dbt e Python para o workspace
 sync:
   include:
+    - dbt_project.yml
+    - profiles.yml
+    - packages.yml
+    - package-lock.yml
+    - src/dbt/**
     - src/*/*.py
 
 # Permissões padrão do bundle

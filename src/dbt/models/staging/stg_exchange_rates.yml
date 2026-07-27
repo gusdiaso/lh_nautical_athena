@@ -1,0 +1,17 @@
+version: 2
+models:
+  - name: stg_exchange_rates
+    description: Cotações de câmbio para conversão de moedas.
+    columns:
+      - name: currency_code
+        description: Código da moeda (ISO 4217).
+        data_tests:
+          - not_null
+      - name: exchange_date
+        description: Data de referência da cotação.
+        data_tests:
+          - not_null
+      - name: exchange_rate_buy
+        description: Taxa de câmbio (compra) aplicada na conversão para BRL.
+      - name: exchange_rate_sell
+        description: Taxa de câmbio (venda) aplicada na conversão para BRL.

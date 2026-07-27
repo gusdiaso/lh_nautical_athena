@@ -1,0 +1,81 @@
+version: 2
+models:
+  - name: int_purchase_orders
+    description: Pedidos de compra deduplicados e padronizados.
+    columns:
+      - name: buyer_id
+        description: Referência ao comprador responsável (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_employees')
+                field: employee_id
+
+      - name: currency
+        description: Moeda do pedido (ISO 4217).
+        data_tests:
+          - not_null
+
+      - name: destination_location_id
+        description: Referência ao local de entrega (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_locations')
+                field: location_id
+
+      - name: exchange_rate_sell
+        description: Taxa de câmbio (venda) aplicada na conversão para BRL.
+
+      - name: expected_delivery_at
+        description: Prazo máximo de entrega pactuado.
+        data_tests:
+          - not_null
+
+      - name: placed_at
+        description: Data de fechamento do pedido.
+        data_tests:
+          - not_null
+
+      - name: po_number
+        description: Número do pedido de compra.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: purchase_order_id
+        description: Identificador único do pedido de compra (PK).
+        data_tests:
+          - not_null
+          - unique
+
+      - name: status
+        description: Status do pedido de compra.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - cancelled
+                  - draft
+                  - received
+                  - partially_received
+                  - sent
+      - name: subtotal
+        description: Soma dos valores dos itens.
+        data_tests:
+          - not_null
+      - name: supplier_id
+        description: Referência ao fornecedor (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_suppliers')
+                field: supplier_id
+      - name: total_brl
+        description: Valor total do pedido convertido para BRL (moeda base).
+        data_tests:
+          - not_null

@@ -1,0 +1,18 @@
+version: 2
+models:
+  - name: stg_brands
+    description: Marcas cadastradas no catálogo.
+    columns:
+      - name: brand_id
+        description: Identificador único da marca (PK).
+        data_tests:
+          - not_null
+          - unique
+      - name: brand_name
+        description: Nome da marca.
+        data_tests:
+          - not_null
+      - name: country
+        description: País de origem da marca.
+      - name: is_active
+        description: Indicador se a marca está ativa no catálogo.

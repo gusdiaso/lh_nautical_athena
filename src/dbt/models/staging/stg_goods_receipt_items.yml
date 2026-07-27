@@ -1,0 +1,28 @@
+version: 2
+models:
+  - name: stg_goods_receipt_items
+    description: Itens recebidos nos recebimentos de mercadoria.
+    columns:
+      - name: goods_receipt_id
+        description: Referência ao recebimento (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_goods_receipts')
+                field: goods_receipt_id
+      - name: goods_receipt_item_id
+        description: Identificador único do item recepcionado (PK).
+        data_tests:
+          - not_null
+          - unique
+      - name: purchase_order_item_id
+        description: Referência ao item do pedido de compra (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_purchase_order_items')
+                field: purchase_order_item_id
+      - name: quantity_received
+        description: Quantidade efetivamente recebida.
+        data_tests:
+          - not_null

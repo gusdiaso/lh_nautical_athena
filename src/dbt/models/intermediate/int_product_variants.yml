@@ -1,0 +1,75 @@
+version: 2
+models:
+  - name: int_product_variants
+    description: Variações de produtos deduplicadas e padronizadas.
+    columns:
+      - name: cost_price
+        description: Custo padrão de aquisição ou produção.
+        data_tests:
+          - not_null
+
+      - name: gross_margin_amount
+        description: Valor da margem bruta.
+        data_tests:
+          - not_null
+
+      - name: gross_margin_percentage
+        description: Percentual da margem bruta.
+        data_tests:
+          - not_null
+
+      - name: icms_rate
+        description: Alíquota padrão de ICMS.
+        data_tests:
+          - not_null
+
+      - name: ipi_rate
+        description: Alíquota padrão de IPI.
+        data_tests:
+          - not_null
+
+      - name: is_active
+        description: Indicador se a variante está ativa para venda.
+        data_tests:
+          - not_null
+
+      - name: is_profitable
+        description: Indica se é lucrativo.
+        data_tests:
+          - not_null
+
+      - name: product_id
+        description: Referência ao produto pai (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_products')
+                field: product_id
+
+      - name: product_variant_id
+        description: Identificador único da variante (PK).
+        data_tests:
+          - not_null
+          - unique
+
+      - name: sale_price
+        description: Preço padrão de venda ao consumidor.
+        data_tests:
+          - not_null
+
+      - name: sku
+        description: SKU — código único de identificação comercial.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: total_tax_rate
+        description: Alíquota total de tributos.
+        data_tests:
+          - not_null
+
+      - name: weight_kg
+        description: Peso físico em quilogramas.
+        data_tests:
+          - not_null

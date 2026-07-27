@@ -1,0 +1,46 @@
+version: 2
+models:
+  - name: int_customers
+    description: Clientes cadastrados, deduplicados e padronizados.
+    columns:
+      - name: customer_id
+        description: Identificador único do cliente (PK).
+        data_tests:
+          - not_null
+          - unique
+
+      - name: email
+        description: Endereço de e-mail do cliente.
+        data_tests:
+          - not_null
+
+      - name: is_active
+        description: Indicador de status da conta (ativo/inativo).
+        data_tests:
+          - not_null
+
+      - name: legal_name
+        description: Nome completo (PF) ou razão social (PJ).
+        data_tests:
+          - not_null
+
+      - name: person_type
+        description: "Tipo de pessoa: física (PF) ou jurídica (PJ)."
+        data_tests:
+          - not_null
+
+      - name: phone
+        description: Telefone de contato do cliente.
+        data_tests:
+          - not_null
+
+      - name: state_registration
+        description: Inscrição estadual para fins de tributação.
+
+      - name: tax_id
+        description: Documento de identificação fiscal (CPF/CNPJ).
+        data_tests:
+          - not_null
+
+      - name: trade_name
+        description: Nome fantasia (aplicável a PJ).

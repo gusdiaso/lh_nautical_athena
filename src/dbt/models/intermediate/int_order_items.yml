@@ -1,0 +1,73 @@
+version: 2
+models:
+  - name: int_order_items
+    description: Itens dos pedidos de venda deduplicados e padronizados.
+    columns:
+      - name: icms_amount
+        description: Valor do ICMS.
+        data_tests:
+          - not_null
+
+      - name: icms_rate
+        description: Alíquota de ICMS aplicada.
+        data_tests:
+          - not_null
+
+      - name: ipi_amount
+        description: Valor do IPI.
+        data_tests:
+          - not_null
+
+      - name: ipi_rate
+        description: Alíquota de IPI aplicada.
+        data_tests:
+          - not_null
+
+      - name: order_id
+        description: Referência ao cabeçalho do pedido (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_orders')
+                field: order_id
+
+      - name: order_item_id
+        description: Identificador único da linha do pedido (PK).
+        data_tests:
+          - not_null
+          - unique
+
+      - name: original_line_total
+        description: Valor total original da linha.
+        data_tests:
+          - not_null
+
+      - name: product_variant_id
+        description: Referência à variante do produto (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_product_variants')
+                field: product_variant_id
+
+      - name: quantity_ordered
+        description: Quantidade solicitada.
+        data_tests:
+          - not_null
+
+      - name: total_tax_amount
+        description: Valor total de tributos.
+        data_tests:
+          - not_null
+
+      - name: total_with_taxes
+        description: Total com tributos.
+        data_tests:
+          - not_null
+
+      - name: unit_price
+        description: Preço unitário no momento da venda.
+        data_tests:
+          - not_null

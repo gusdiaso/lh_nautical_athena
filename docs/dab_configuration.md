@@ -24,17 +24,29 @@
 ```
 lh_nautical/
 ├── databricks.yml                         # Configuracao principal do bundle
+├── dbt_project.yml                        # Incluido no sync do bundle
+├── profiles.yml                           # Perfis de conexao dbt
+├── packages.yml                           # Dependencias de pacotes dbt
 ├── resources/
-│   └── extract/
-│       ├── extract_lh_nautical.yml        # Job: SQL Server → Bronze
-│       ├── extract_exchange_rates.yml     # Job: API BCB → Bronze
-│       └── generate_dab_lh_nautical.py    # Gerador automatico do YAML
+│   ├── extract/
+│   │   ├── extract_lh_nautical.yml        # Job: SQL Server → Bronze
+│   │   ├── extract_exchange_rates.yml     # Job: API BCB → Bronze
+│   │   └── generate_dab_lh_nautical.py    # Gerador automatico do YAML
+│   ├── orchestrator/
+│   │   └── orchestrator_transform.yml     # Job: orquestrador principal
+│   ├── transform/
+│   │   └── dbt_transform.yml             # Job: transformacao dbt
+│   └── security/
+│       ├── apply_column_masks.py          # Script para aplicar masks
+│       └── apply_bronze_masks.py          # Script para masks na Bronze
 └── src/
-    └── ingestion/
-        ├── config.py                      # Constantes
-        ├── utils.py                       # Funcoes compartilhadas
-        ├── extract_lh_nautical.py         # Codigo: SQL Server
-        └── extract_exchange_rates.py      # Codigo: API BCB
+    ├── ingestion/
+    │   ├── config.py                      # Constantes
+    │   ├── utils.py                       # Funcoes compartilhadas
+    │   ├── extract_lh_nautical.py         # Codigo: SQL Server
+    │   └── extract_exchange_rates.py      # Codigo: API BCB
+    ├── dbt/                               # Modelos, macros e testes
+    └── ...
 ```
 
 ---
@@ -55,6 +67,8 @@ include:
 # Quais arquivos Python sincronizar
 sync:
   include:
+    - dbt_project.yml
+    - src/dbt/**
     - src/*/*.py
 
 # Quem pode acessar o bundle
@@ -118,17 +132,26 @@ Diz ao Databricks **quais arquivos YAML** ele deve ler para criar os jobs.
 - `resources/*.yml` = todos os YAMLs na pasta `resources/`
 - `resources/*/*.yml` = todos os YAMLs em subpastas de `resources/`
 
-### 3. sync (arquivos Python)
+### 3. sync (arquivos do projeto)
 
 ```yaml
 sync:
   include:
+    - dbt_project.yml
+    - profiles.yml
+    - packages.yml
+    - package-lock.yml
+    - src/dbt/**
     - src/*/*.py
 ```
 
-Diz ao Databricks **quais arquivos Python** ele deve enviar para o workspace.
+Diz ao Databricks **quais arquivos** ele deve enviar para o workspace.
 
-- `src/*/*.py` = todos os arquivos `.py` dentro de subpastas de `src/`
+- `dbt_project.yml` = configuração principal do dbt
+- `profiles.yml` = perfis de conexão do dbt
+- `packages.yml` e `package-lock.yml` = dependências de pacotes dbt
+- `src/dbt/**` = todos os modelos, macros e testes dbt
+- `src/*/*.py` = scripts Python de ingestão
 
 ### 4. permissions (permissoes)
 
@@ -203,7 +226,7 @@ targets:
       catalog: prod_lh_nautical
       schema: bronze
 
-# Configuracao do job
+  # Configuracao do job
 resources:
   jobs:
     extract_lh_nautical:
@@ -212,7 +235,7 @@ resources:
       max_concurrent_runs: 1
       
       schedule:
-        quartz_cron_expression: '0 0 18 * * ?'
+        quartz_cron_expression: '0 0 0,18 * * ?'
         timezone_id: 'America/Sao_Paulo'
         pause_status: UNPAUSED
       
@@ -220,7 +243,8 @@ resources:
         - environment_key: default
           spec:
             environment_version: '2'
-            dependencies: []
+            dependencies:
+              - tenacity
       
       # Uma task por tabela (24 tabelas)
       tasks:
@@ -371,7 +395,7 @@ resources:
 
 | Grupo               | dev         | prod        | O que pode fazer           |
 | ------------------- | ----------- | ----------- | -------------------------- |
-| `current_user`      | `CAN_MANAGE`| `CAN_MANAGE`| Tudo (admin)               |
+| `current_user`      | `CAN_MANAGE`| `CAN_MANAGE` | Tudo (admin)                |
 | `lh_nautical_dev`   | `CAN_MANAGE`| `CAN_VIEW`  | Gerenciar dev, ver prod    |
 | `lh_nautical_prod`  | `CAN_VIEW`  | `CAN_VIEW`  | Apenas visualizar          |
 

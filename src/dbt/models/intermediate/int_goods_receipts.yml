@@ -1,0 +1,29 @@
+version: 2
+models:
+  - name: int_goods_receipts
+    description: Recebimentos de mercadorias deduplicados e padronizados.
+    columns:
+      - name: goods_receipt_id
+        description: Identificador único do recebimento (PK).
+        data_tests:
+          - not_null
+          - unique
+
+      - name: purchase_order_id
+        description: Referência ao pedido de compra (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_purchase_orders')
+                field: purchase_order_id
+
+      - name: received_at
+        description: Data/hora do recebimento.
+        data_tests:
+          - not_null
+
+      - name: received_by_employee_id
+        description: Referência ao conferente (FK).
+        data_tests:
+          - not_null

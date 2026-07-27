@@ -363,6 +363,22 @@
 
 ---
 
+## Câmbio (API BCB)
+
+### `exchange_rates`
+
+**Descrição:** Tabela alimentada pela API PTAX do Banco Central do Brasil com as cotações de compra e venda de moedas estrangeiras (USD e EUR) em relação ao Real (BRL), atualizada diariamente.
+**Colunas:**
+
+- **`id`**: Identificador único do registro (Chave Primária - PK).
+- **`currency`**: Código ISO da moeda estrangeira (ex: USD, EUR).
+- **`exchange_rate_buy`**: Taxa de câmbio de compra (BRL por unidade da moeda).
+- **`exchange_rate_sell`**: Taxa de câmbio de venda (BRL por unidade da moeda).
+- **`data_reference`**: Data de referência da cotação PTAX.
+- **`created_at`**: Timestamp de inserção do registro.
+
+---
+
 ## Colaboradores
 
 ### `employees`
@@ -381,3 +397,67 @@
 - **`is_active`**: Indicador booleano que reflete se tem ou não acesso ao sistema hoje em dia.
 - **`created_at`**: Data de criação do acesso interno.
 - **`updated_at`**: Modificação de dados cadastrais de funcionários.
+
+---
+
+> **Notas:**
+> - A tabela `fiscal_invoices` é extraída na camada Bronze via SQL Server, mas não possui modelo correspondente no dbt (não integra o modelo dimensional atual).
+> - A tabela `exchange_rates` é proveniente da API PTAX do Banco Central (não do SQL Server), com dados incrementais de cotações USD e EUR. Está incluída no dbt (`stg_exchange_rates` → `int_exchange_rates` → `fact_purchase_order_items`).
+
+---
+
+## **Tamanho das tabelas**
+
+- **order_items**: 150,321 linhas
+- **stock_movements**: 117,427 linhas
+- **payments**: 54,635 linhas
+- **orders**: 50,000 linhas
+- **fiscal_invoices**: 35,079 linhas
+- **purchase_order_items**: 6,059 linhas
+- **stock_levels**: 6,054 linhas
+- **goods_receipt_items**: 4,733 linhas
+- **addresses**: 3,998 linhas
+- **variant_attribute_values**: 2,018 linhas
+- **purchase_orders**: 2,000 linhas
+- **customers**: 2,000 linhas
+- **goods_receipts**: 1,548 linhas
+- **product_suppliers**: 1,520 linhas
+- **return_items**: 1,409 linhas
+- **product_variants**: 1,009 linhas
+- **returns**: 1,000 linhas
+- **products**: 500 linhas
+- **suppliers**: 25 linhas
+- **employees**: 15 linhas
+- **categories**: 14 linhas
+- **brands**: 12 linhas
+- **attributes**: 8 linhas
+- **locations**: 6 linhas
+
+---
+
+## **Tamanho total por tabela (KB)**
+
+- **stock_movements**: 14,792 KB
+- **fiscal_invoices**: 13,320 KB
+- **order_items**: 8,712 KB
+- **orders**: 6,536 KB
+- **payments**: 5,576 KB
+- **addresses**: 712 KB
+- **customers**: 520 KB
+- **purchase_order_items**: 328 KB
+- **returns**: 328 KB
+- **stock_levels**: 328 KB
+- **purchase_orders**: 264 KB
+- **product_suppliers**: 264 KB
+- **product_variants**: 264 KB
+- **products**: 264 KB
+- **goods_receipt_items**: 200 KB
+- **goods_receipts**: 200 KB
+- **variant_attribute_values**: 200 KB
+- **return_items**: 136 KB
+- **employees**: 72 KB
+- **locations**: 72 KB
+- **attributes**: 72 KB
+- **brands**: 72 KB
+- **categories**: 72 KB
+- **suppliers**: 72 KB

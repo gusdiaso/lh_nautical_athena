@@ -1,0 +1,42 @@
+version: 2
+models:
+  - name: stg_addresses
+    description: Endereços cadastrais dos clientes.
+    columns:
+      - name: address_id
+        description: Identificador único do endereço (PK).
+        data_tests:
+          - not_null
+          - unique
+      - name: address_type
+        description: "Tipo do endereço: cobrança ou secundário."
+      - name: city
+        description: Cidade da localização do imóvel.
+      - name: complement
+        description: "Complemento: bloco, apartamento ou sala."
+      - name: country
+        description: País da localização do endereço.
+      - name: customer_id
+        description: Referência ao cliente proprietário do endereço (FK).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: district
+        description: Bairro onde o imóvel está localizado.
+      - name: is_primary
+        description: Indicador se este é o endereço principal do cliente.
+      - name: number
+        description: Número do imóvel no endereço.
+        data_tests:
+          - not_null
+      - name: postal_code
+        description: Código postal (CEP) da localidade.
+        data_tests:
+          - not_null
+      - name: state
+        description: Estado ou província da localização.
+      - name: street
+        description: Nome da rua, avenida ou logradouro.

@@ -1,0 +1,31 @@
+version: 2
+models:
+  - name: stg_employees
+    description: Colaboradores internos da empresa.
+    columns:
+      - name: cpf
+        description: Cadastro de Pessoa Física (CPF).
+      - name: email
+        description: E-mail corporativo do colaborador.
+      - name: employee_id
+        description: Identificador único do funcionário (PK).
+        data_tests:
+          - not_null
+          - unique
+      - name: full_name
+        description: Nome completo do colaborador.
+      - name: hire_date
+        description: Data de contratação.
+      - name: is_active
+        description: Indicador se o colaborador está ativo.
+      - name: primary_location_id
+        description: Referência à unidade padrão do funcionário (FK).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_locations')
+                field: location_id
+      - name: role
+        description: Cargo ou função desempenhada.
+      - name: termination_date
+        description: Data de desligamento (se aplicável).

@@ -2,17 +2,14 @@ image: ubuntu:22.04
 
 pipelines:
   branches:
-    main: # O pipeline só vai rodar quando o código for para a branch main
+    main:
       - step:
-          name: 'Deploy para Produção no Databricks'
+          name: "Deploy para Produção no Databricks"
           script:
-            # 1. Prepara a máquina do Bitbucket
             - apt-get update && apt-get install -y curl unzip
 
-            # 2. Instala a CLI oficial do Databricks
             - curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
 
-            # 3. Executa o deploy (A CLI vai puxar aquelas variáveis que você salvou no painel)
             - databricks bundle deploy -t prod
-            - databricks bundle run extract_lh_nautical --target prod
-            - databricks bundle run extract_exchange_rates --target prod
+
+            - databricks bundle run orchestrator_transform --target prod

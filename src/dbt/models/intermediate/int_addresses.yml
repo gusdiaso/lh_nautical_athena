@@ -1,0 +1,62 @@
+version: 2
+models:
+  - name: int_addresses
+    description: Endereços dos clientes, deduplicados e padronizados.
+    columns:
+      - name: address_id
+        description: Identificador único do endereço (PK).
+        data_tests:
+          - not_null
+          - unique
+      - name: address_type
+        description: "Tipo do endereço: cobrança ou secundário."
+        data_tests:
+          - not_null
+
+      - name: city
+        description: Cidade da localização do imóvel.
+        data_tests:
+          - not_null
+
+      - name: complement
+        description: "Complemento: bloco, apartamento ou sala."
+
+      - name: country
+        description: País da localização do endereço.
+        data_tests:
+          - not_null
+
+      - name: customer_id
+        description: Referência ao cliente proprietário do endereço (FK).
+        data_tests:
+          - not_null
+
+      - name: district
+        description: Bairro onde o imóvel está localizado.
+        data_tests:
+          - not_null
+
+      - name: is_primary
+        description: Indicador se este é o endereço principal do cliente.
+        data_tests:
+          - not_null
+
+      - name: number
+        description: Número do imóvel no endereço.
+        data_tests:
+          - not_null
+
+      - name: postal_code
+        description: Código postal (CEP) da localidade.
+        data_tests:
+          - not_null
+
+      - name: state
+        description: Estado ou província da localização.
+        data_tests:
+          - not_null
+
+      - name: street
+        description: Nome da rua, avenida ou logradouro.
+        data_tests:
+          - not_null

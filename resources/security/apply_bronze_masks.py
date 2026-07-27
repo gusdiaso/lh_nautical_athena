@@ -7,34 +7,35 @@ args = parser.parse_args()
 
 spark = SparkSession.builder.getOrCreate()
 catalog = args.catalog
+group = "lh_nautical_prod" if "prod" in catalog else "lh_nautical_dev"
 
-mask_functions = """
+mask_functions = f"""
 CREATE OR REPLACE FUNCTION {catalog}.gold.mask_full(value STRING)
   RETURN CASE
-    WHEN is_member('lh_nautical_dev') THEN value
+    WHEN is_member('{group}') THEN value
     ELSE '***MASKED***'
   END;
 
 CREATE OR REPLACE FUNCTION {catalog}.gold.mask_cpf(value STRING)
   RETURN CASE
-    WHEN is_member('lh_nautical_dev') THEN value
+    WHEN is_member('{group}') THEN value
     ELSE '***MASKED***'
   END;
 
 CREATE OR REPLACE FUNCTION {catalog}.gold.mask_email(value STRING)
   RETURN CASE
-    WHEN is_member('lh_nautical_dev') THEN value
+    WHEN is_member('{group}') THEN value
     ELSE '***MASKED***'
   END;
 
 CREATE OR REPLACE FUNCTION {catalog}.gold.mask_phone(value STRING)
   RETURN CASE
-    WHEN is_member('lh_nautical_dev') THEN value
+    WHEN is_member('{group}') THEN value
     ELSE '***MASKED***'
   END;
 """
 
-for stmt in mask_functions.format(catalog=catalog).strip().split(";"):
+for stmt in mask_functions.strip().split(";"):
     stmt = stmt.strip()
     if stmt:
         print(f"Creating mask function: {stmt[:80]}...")

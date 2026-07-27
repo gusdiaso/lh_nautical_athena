@@ -1,10 +1,13 @@
 import argparse
 import sys
+from pathlib import Path
 
-from pyspark.sql import SparkSession
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from config import TABLES, DEFAULT_CATALOG, DEFAULT_SCHEMA
 from utils import build_spark_session, table_exists
+
+from pyspark.sql import SparkSession
 
 
 def parse_args() -> argparse.Namespace:

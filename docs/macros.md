@@ -36,9 +36,9 @@ Arquivo: `src/dbt/macros/default_supplier_sku.sql`
 
 Normaliza o `supplier_sku` aplicando `trim` e substituindo valores nulos ou placeholders (`'TBD'`, `'?'`, `'SEM-CODIGO'`, `''`) por um identificador no formato `SUP-{supplier_id}-{product_variant_id}`. Usada na `int_product_suppliers` e nas fatos de compra e recebimento.
 
-### `get_regiao_by_state`
+### `get_region_by_state`
 
-Arquivo: `src/dbt/macros/get_regiao_by_state.sql`
+Arquivo: `src/dbt/macros/get_region_by_state.sql`
 
 Recebe uma coluna com a sigla da unidade federativa e retorna a região geográfica do Brasil (Norte, Nordeste, Centro-Oeste, Sudeste ou Sul). Usa `upper(trim(...))` para normalizar o valor antes do mapeamento. Utilizada nas dimensões `dim_customers` e `dim_locations` para agregar dados por região.
 

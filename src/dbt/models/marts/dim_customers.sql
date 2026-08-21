@@ -83,6 +83,7 @@ with customers as (
         , cast(null as string) as district
         , cast(null as string) as city
         , cast(null as string) as state
+        , cast(null as string) as region
         , cast(null as string) as country
         , false as is_primary_address
         , false as is_active
@@ -109,6 +110,7 @@ with customers as (
         , selected_addresses.district
         , selected_addresses.city
         , selected_addresses.state
+        , {{ get_region_by_state('selected_addresses.state') }} as region
         , selected_addresses.country
         , customers.is_active
         , false as is_technical_member
@@ -139,6 +141,7 @@ with customers as (
         , district
         , city
         , state
+        , region
         , country
         , is_primary_address
         , is_active
@@ -166,6 +169,7 @@ with customers as (
         , district
         , city
         , state
+        , region
         , country
         , is_primary_address
         , is_active

@@ -81,3 +81,17 @@ macros:
       no job `dbt_transform`, após materialização e testes de todas as camadas.
       Apenas membros do grupo `lh_nautical_dev` enxergam valores reais.
     arguments: []
+
+  - name: get_region_by_state
+    description: |
+      Retorna a região geográfica do Brasil (Norte, Nordeste, Centro-Oeste,
+      Sudeste ou Sul) com base na sigla da unidade federativa. Centraliza
+      o mapeamento estado→região nas dimensões `dim_customers` e
+      `dim_locations`, evitando duplicação da regra de negócio.
+    arguments:
+      - name: state_column
+        type: column expression
+        description: >
+          Expressão SQL da coluna que contém a sigla da unidade federativa
+          (ex.: `state`, `selected_addresses.state`). O valor é normalizado
+          com `upper(trim(...))` antes da comparação.

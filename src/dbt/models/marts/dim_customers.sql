@@ -83,6 +83,7 @@ with customers as (
         , cast(null as string) as district
         , cast(null as string) as city
         , cast(null as string) as state
+        , cast(null as string) as state_name
         , cast(null as string) as region
         , cast(null as string) as country
         , false as is_primary_address
@@ -110,6 +111,7 @@ with customers as (
         , selected_addresses.district
         , selected_addresses.city
         , selected_addresses.state
+        , {{ get_state_name_by_uf('selected_addresses.state') }} as state_name
         , {{ get_region_by_state('selected_addresses.state') }} as region
         , selected_addresses.country
         , customers.is_active
@@ -141,6 +143,7 @@ with customers as (
         , district
         , city
         , state
+        , state_name
         , region
         , country
         , is_primary_address
@@ -169,6 +172,7 @@ with customers as (
         , district
         , city
         , state
+        , state_name
         , region
         , country
         , is_primary_address

@@ -34,6 +34,7 @@ with locations as (
         , cast(null as string) as district
         , cast(null as string) as city
         , cast(null as string) as state
+        , cast(null as string) as state_name
         , cast(null as string) as region
         , cast(null as string) as country
         , false as is_active
@@ -53,6 +54,7 @@ with locations as (
         , district
         , city
         , state
+        , {{ get_state_name_by_uf('state') }} as state_name
         , {{ get_region_by_state('state') }} as region
         , country
         , is_active
@@ -74,6 +76,7 @@ with locations as (
         , district
         , city
         , state
+        , state_name
         , region
         , country
         , is_active
@@ -94,6 +97,7 @@ with locations as (
         , district
         , city
         , state
+        , state_name
         , region
         , country
         , is_active

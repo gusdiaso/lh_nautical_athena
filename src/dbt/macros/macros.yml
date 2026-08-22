@@ -95,3 +95,17 @@ macros:
           Expressão SQL da coluna que contém a sigla da unidade federativa
           (ex.: `state`, `selected_addresses.state`). O valor é normalizado
           com `upper(trim(...))` antes da comparação.
+
+  - name: get_state_name_by_uf
+    description: |
+      Retorna o nome completo do estado brasileiro, sem acentuação, com base
+      na sigla da unidade federativa. Centraliza o mapeamento UF→nome do
+      estado nas dimensões `dim_customers` e `dim_locations`, evitando
+      duplicação da regra de negócio.
+    arguments:
+      - name: state_column
+        type: column expression
+        description: >
+          Expressão SQL da coluna que contém a sigla da unidade federativa
+          (ex.: `state`, `selected_addresses.state`). O valor é normalizado
+          com `upper(trim(...))` antes da comparação.

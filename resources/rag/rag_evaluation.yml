@@ -27,6 +27,12 @@ resources:
           default: ${var.rag_evaluation_report_table}
         - name: question_endpoint
           default: ${var.rag_llm_endpoint}
+        - name: judge_endpoint
+          default: ${var.rag_llm_endpoint}
+        - name: judge_timeout_seconds
+          default: '60'
+        - name: request_interval_seconds
+          default: '2'
         - name: max_results
           default: '5'
         - name: run_label
@@ -58,6 +64,12 @@ resources:
               - '{{job.parameters.report_table}}'
               - --question-endpoint
               - '{{job.parameters.question_endpoint}}'
+              - --judge-endpoint
+              - '{{job.parameters.judge_endpoint}}'
+              - --judge-timeout-seconds
+              - '{{job.parameters.judge_timeout_seconds}}'
+              - --request-interval-seconds
+              - '{{job.parameters.request_interval_seconds}}'
               - --max-results
               - '{{job.parameters.max_results}}'
               - --run-label

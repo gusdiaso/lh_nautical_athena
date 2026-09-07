@@ -2,6 +2,7 @@ import json
 import tempfile
 import unittest
 import sys
+from dataclasses import replace
 from pathlib import Path
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
@@ -10,7 +11,9 @@ from src.analytics_ai.rag_evaluation import (
     DatasetValidationError,
     EvaluationObservation,
     ExpectedSource,
+    REPORT_COLUMNS,
     append_remote_results,
+    calculate_deterministic_metrics,
     classify_remote_result,
     coverage_report,
     evaluate_cases,
@@ -19,6 +22,7 @@ from src.analytics_ai.rag_evaluation import (
     run_remote_evaluation,
     select_suite,
 )
+from src.analytics_ai.rag_groundedness import GroundednessEvaluation, JudgedClaim
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -69,6 +73,25 @@ class RagEvaluationDatasetTest(unittest.TestCase):
                 self.assertTrue(case.expected_facts, case.id)
                 self.assertTrue(case.expected_sources, case.id)
                 self.assertTrue(all(len(fact) <= 180 for fact in case.expected_facts), case.id)
+
+    def test_optional_editorial_alternative_is_loaded_and_validated(self):
+        case = next(case for case in self.cases if case.id == "rag_001")
+
+        self.assertEqual(
+            case.allowed_source_alternatives,
+            (ExpectedSource("docs/staging.md", "Componentes"),),
+        )
+
+    def test_editorial_alternative_outside_allowlist_is_rejected(self):
+        first = json.loads(DATASET_PATH.read_text(encoding="utf-8").splitlines()[0])
+        first["expectations"]["allowed_source_alternatives"] = [
+            {"path": "docs/rag_mvp.md", "section": "Objetivo"}
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "invalid-alternative.jsonl"
+            path.write_text(json.dumps(first, ensure_ascii=False) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(DatasetValidationError, "outside the RAG allowlist"):
+                load_golden_dataset(path, REPOSITORY_ROOT, expected_count=1)
 
     def test_coverage_report_exposes_requested_dimensions(self):
         report = coverage_report(self.cases, REPOSITORY_ROOT)
@@ -275,6 +298,50 @@ class RemoteRagEvaluationTest(unittest.TestCase):
         self.assertEqual(result.status, "failed")
         self.assertIn("warehouse_refusal_mismatch", result.failure_reasons)
 
+    def test_retrieval_and_citation_metrics_include_allowed_alternatives(self):
+        expected_one = ExpectedSource("docs/staging.md", "Objetivo")
+        expected_two = ExpectedSource("docs/staging.md", "Visão Geral")
+        alternative = ExpectedSource("docs/staging.md", "Componentes")
+        retrieved_outside = ExpectedSource("docs/intermediate.md", "Visão Geral")
+        other = ExpectedSource("docs/intermediate.md", "Fluxo")
+        nonexistent = ExpectedSource("docs/unknown.md", "Inventada")
+        case = replace(
+            self.cases[0],
+            expected_sources=(expected_one, expected_two),
+            allowed_source_alternatives=(alternative,),
+        )
+        retrieved = (retrieved_outside, alternative, expected_one, other, other)
+        cited = (expected_one, alternative, expected_two, retrieved_outside, nonexistent)
+        known = frozenset({expected_one, expected_two, alternative, retrieved_outside, other})
+
+        metrics = calculate_deterministic_metrics(case, retrieved, cited, 5, known)
+
+        self.assertEqual(metrics.recall_at_k, 0.5)
+        self.assertEqual(metrics.precision_at_k, 0.4)
+        self.assertAlmostEqual(metrics.reciprocal_rank, 1 / 3)
+        self.assertEqual(metrics.citation_retrieved_rate, 0.6)
+        self.assertEqual(metrics.citation_allowed_rate, 0.6)
+        self.assertEqual(metrics.technical_has_valid_citation, 1.0)
+        self.assertEqual(metrics.nonexistent_citations, (nonexistent,))
+        self.assertEqual(metrics.not_retrieved_citations, (expected_two,))
+        self.assertEqual(
+            metrics.outside_allowed_citations,
+            (retrieved_outside, nonexistent),
+        )
+
+    def test_special_behaviors_have_null_non_applicable_metrics(self):
+        case = next(case for case in self.cases if case.expected_behavior != "answer")
+
+        metrics = calculate_deterministic_metrics(case, (), (), 5, frozenset())
+
+        self.assertIsNone(metrics.retrieval_k)
+        self.assertIsNone(metrics.recall_at_k)
+        self.assertIsNone(metrics.precision_at_k)
+        self.assertIsNone(metrics.reciprocal_rank)
+        self.assertIsNone(metrics.citation_retrieved_rate)
+        self.assertIsNone(metrics.citation_allowed_rate)
+        self.assertIsNone(metrics.technical_has_valid_citation)
+
     def test_parser_accepts_canonical_citation_without_brackets(self):
         self.assertEqual(
             parse_citations("Fonte: docs/staging.md - Secao: Componentes"),
@@ -298,7 +365,28 @@ class RemoteRagEvaluationTest(unittest.TestCase):
         )
         self.assertEqual(result.status, "needs_review")
         self.assertEqual(result.failure_reasons, ())
-        self.assertIn("technical_facts_require_human_review", result.review_reasons)
+        self.assertIn("groundedness_not_run", result.review_reasons)
+
+    def test_technical_answer_with_only_citation_is_not_produced(self):
+        case = self.cases[0]
+        source = case.expected_sources[0]
+        answer = f"Fonte: {source.path} - Secao: {source.section}"
+        result = classify_remote_result(
+            case, EvaluationObservation("unclassified", answer, (source,), (source,)),
+            "run", self._now().isoformat(), "full",
+        )
+        self.assertEqual(result.status, "failed")
+        self.assertIn("answer_not_produced", result.failure_reasons)
+
+    def test_technical_context_refusal_does_not_add_missing_citation_failure(self):
+        case = self.cases[0]
+        from src.analytics_ai.rag_prompt import NO_DOCUMENTATION_RESPONSE
+        result = classify_remote_result(
+            case, EvaluationObservation("unclassified", NO_DOCUMENTATION_RESPONSE),
+            "run", self._now().isoformat(), "full",
+        )
+        self.assertIn("answer_not_produced", result.failure_reasons)
+        self.assertNotIn("missing_formatted_citation", result.failure_reasons)
 
     def test_plausible_alternative_source_is_not_automatically_failed(self):
         case = self.cases[0]
@@ -356,6 +444,82 @@ class RemoteRagEvaluationTest(unittest.TestCase):
         self.assertEqual(summary.deterministic_pass_rate, 1.0)
         self.assertEqual(summary.mean_latency_seconds, 0.5)
 
+    def test_summary_aggregates_only_applicable_technical_metrics(self):
+        cases = [case for case in self.cases if len(case.expected_sources) == 1][:2]
+
+        def executor(case):
+            source = case.expected_sources[0]
+            return EvaluationObservation(
+                "answer",
+                f"Resposta. Fonte: {source.path} - Secao: {source.section}",
+                (source,),
+                (source,),
+                0.2,
+            )
+
+        summary = run_remote_evaluation(
+            cases,
+            "full",
+            executor,
+            "run",
+            now=self._now,
+            retrieval_k=1,
+            known_sources=frozenset(
+                source for case in cases for source in case.expected_sources
+            ),
+        )
+
+        self.assertEqual(summary.mean_recall_at_k, 1.0)
+        self.assertEqual(summary.mean_precision_at_k, 1.0)
+        self.assertEqual(summary.mean_reciprocal_rank, 1.0)
+        self.assertEqual(summary.mean_citation_retrieved_rate, 1.0)
+        self.assertEqual(summary.mean_citation_allowed_rate, 1.0)
+        self.assertEqual(summary.technical_citation_coverage, 1.0)
+
+    def test_groundedness_results_are_classified_and_aggregated(self):
+        cases = [case for case in self.cases if case.expected_behavior == "answer"][:2]
+        judgements = [
+            GroundednessEvaluation(
+                "completed", 1.0, True,
+                (JudgedClaim("fato", "supported", ()),), "v1", "judge", 0.1,
+                "{}", {"claims": []},
+            ),
+            GroundednessEvaluation(
+                "completed", 0.5, False,
+                (JudgedClaim("fato", "supported", ()), JudgedClaim("extra", "unsupported", ())),
+                "v1", "judge", 0.2, "{}", {"claims": []},
+            ),
+        ]
+
+        def executor(case):
+            index = cases.index(case)
+            source = case.expected_sources[0]
+            return EvaluationObservation(
+                "answer", f"Resposta. Fonte: {source.path} - Secao: {source.section}",
+                (source,), (source,), 0.3, judgements[index],
+            )
+
+        summary = run_remote_evaluation(
+            cases, "full", executor, "run", now=self._now, retrieval_k=1,
+            known_sources=frozenset(source for case in cases for source in case.expected_sources),
+        )
+        self.assertEqual(summary.groundedness_rate, 0.5)
+        self.assertEqual(summary.mean_groundedness_score, 0.75)
+        self.assertEqual((summary.supported_claims, summary.unsupported_claims), (2, 1))
+        self.assertEqual(summary.results[0].status, "needs_review")
+        self.assertEqual(summary.results[1].status, "failed")
+
+    def test_refusals_have_null_groundedness(self):
+        case = next(case for case in self.cases if case.expected_behavior == "insufficient_context")
+        from src.analytics_ai.rag_prompt import NO_DOCUMENTATION_RESPONSE
+        result = classify_remote_result(
+            case, EvaluationObservation("unclassified", NO_DOCUMENTATION_RESPONSE),
+            "run", self._now().isoformat(), "full",
+        )
+        self.assertIsNone(result.judge_status)
+        self.assertIsNone(result.groundedness_score)
+        self.assertIsNone(result.grounded)
+
     def test_report_persistence_is_append_only(self):
         case = next(
             case for case in self.cases if case.expected_behavior == "insufficient_context"
@@ -368,7 +532,7 @@ class RemoteRagEvaluationTest(unittest.TestCase):
         spark = MagicMock()
         dataframe = spark.createDataFrame.return_value
         selected = dataframe.select.return_value
-        writer = selected.write.format.return_value.mode.return_value
+        writer = selected.write.format.return_value.mode.return_value.option.return_value
 
         self.assertEqual(
             append_remote_results(spark, "dev_lh_nautical.rag.rag_evaluation_results", [result]),
@@ -376,9 +540,44 @@ class RemoteRagEvaluationTest(unittest.TestCase):
         )
         selected.write.format.assert_called_once_with("delta")
         selected.write.format.return_value.mode.assert_called_once_with("append")
+        selected.write.format.return_value.mode.return_value.option.assert_called_once_with(
+            "mergeSchema", "true"
+        )
         writer.saveAsTable.assert_called_once_with(
             "dev_lh_nautical.rag.rag_evaluation_results"
         )
+
+    def test_report_persists_case_and_aggregate_rows(self):
+        case = self.cases[0]
+        source = case.expected_sources[0]
+        summary = run_remote_evaluation(
+            [case],
+            "full",
+            lambda _: EvaluationObservation(
+                "answer", f"Resposta. Fonte: {source.path} - Secao: {source.section}",
+                (source,), (source,), 0.1,
+            ),
+            "run-summary",
+            now=self._now,
+            retrieval_k=1,
+            known_sources=frozenset({source}),
+        )
+        spark = MagicMock()
+
+        count = append_remote_results(
+            spark, "dev_lh_nautical.rag.rag_evaluation_results",
+            summary.results, summary,
+        )
+
+        self.assertEqual(count, 2)
+        rows = spark.createDataFrame.call_args.args[0]
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0][0], "case")
+        self.assertEqual(rows[1][0], "run_summary")
+        summary_row = dict(zip(REPORT_COLUMNS, rows[1]))
+        self.assertIn("groundedness_rate", summary_row)
+        self.assertIn("mean_groundedness_score", summary_row)
+        self.assertIn("invalid_or_unavailable_judgements", summary_row)
 
     def test_remote_entrypoint_parses_explicit_dataset_without_dunder_file(self):
         from src.analytics_ai import run_rag_evaluation
@@ -389,6 +588,7 @@ class RemoteRagEvaluationTest(unittest.TestCase):
             "--index-name", "catalog.schema.index",
             "--endpoint-name", "endpoint",
             "--report-table", "catalog.schema.report",
+            "--judge-endpoint", "judge-endpoint",
             "--dataset", "/Workspace/bundle/files/evaluation/rag_golden_dataset.jsonl",
         ]
         try:

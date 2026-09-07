@@ -257,7 +257,7 @@ A promocao para producao deve usar um Volume e schema documentais proprios, com 
 
 ## 18. Persistencia com Delta Lake
 
-A funcao `write_chunks_to_delta` valida o identificador completo `catalog.schema.table`, cria schema explicito de strings e grava os chunks em modo `overwrite`. A funcao rejeita colecao vazia.
+A funcao `write_chunks_to_delta` valida o identificador completo `catalog.schema.table`, cria schema explicito de strings e grava os chunks em modo `overwrite`. A funcao rejeita colecao vazia. Depois da escrita, o job chama `synchronize_delta_sync_index`: índices existentes recebem `sync()` e são aguardados com `wait_for_updates=True`; índices ausentes são criados e aguardados sem uma sincronização duplicada.
 
 O `overwrite` atende ao MVP e torna a ingestao repetivel, mas uma estrategia formal de remocao de chunks obsoletos e historico ainda precisa ser definida antes de atualizacoes automatizadas frequentes.
 
@@ -273,7 +273,7 @@ O indice foi criado como Delta Sync sobre a tabela documental, com pipeline `TRI
 
 O endpoint de embedding foi configurado como modelo gerenciado BGE Large. O indice passou por estado assíncrono de provisionamento e depois ficou pronto com todos os chunks esperados.
 
-O pacote antigo `databricks-vectorsearch` emite aviso de obsolescencia; o runtime atual foi atualizado para `databricks-ai-search`. O import legado pode continuar funcionando como reexport, mas novos jobs devem usar o pacote atual.
+O pacote antigo `databricks-vectorsearch` emite aviso de obsolescencia; o runtime atual usa exclusivamente `databricks-ai-search==0.78`. O código usa os imports canônicos `databricks.ai_search.client.AISearchClient`; os nomes `VectorSearchClient` e `databricks.vector_search` não são usados pelos jobs RAG.
 
 ## 21. Busca híbrida e filtros
 
@@ -443,7 +443,7 @@ databricks pipelines list-updates <pipeline-id> --output json
 databricks pipelines list-pipeline-events <pipeline-id> --max-results 100 --output json
 ```
 
-Quando `status.ready=true`, o indice pode receber consultas. Para pipeline `TRIGGERED`, use `sync` somente depois de uma atualizacao da tabela documental e quando o indice ja estiver provisionado.
+Quando `status.ready=true`, o indice pode receber consultas. Para pipeline `TRIGGERED`, o job dispara `sync` somente depois do overwrite da tabela documental e aguarda também o fim das atualizações pendentes. Erro remoto ou timeout é propagado como falha do job.
 
 ### 33.6 Consulta e LLM
 

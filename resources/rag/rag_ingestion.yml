@@ -7,6 +7,9 @@ variables:
     description: 'Volume UC com documentos aprovados'
   rag_chunks_table:
     description: 'Tabela Delta de chunks documentais'
+  rag_embedding_endpoint:
+    description: 'Endpoint de embeddings gerenciados do AI Search'
+    default: databricks-bge-large-en
 
 targets:
   dev:
@@ -27,7 +30,8 @@ resources:
     rag_ingestion:
       name: rag_ingestion
       description: >
-        Ingestao manual da documentacao aprovada para a tabela Delta do RAG.
+        Ingestao manual da documentacao aprovada para a tabela Delta do RAG,
+        seguida de sincronizacao confirmada do indice AI Search TRIGGERED.
         Nao acessa tabelas Bronze, Silver ou Gold e nao cria endpoints.
       max_concurrent_runs: 1
       environments:
@@ -39,7 +43,7 @@ resources:
       tasks:
         - task_key: ingest_documentation
           environment_key: default
-          description: 'Le, sanitiza, divide e grava os documentos aprovados em Delta'
+          description: 'Sobrescreve os chunks e aguarda a sincronizacao do indice AI Search'
           spark_python_task:
             python_file: ../../src/analytics_ai/run_rag_ingestion.py
             parameters:
@@ -47,6 +51,14 @@ resources:
               - /Volumes/${var.rag_catalog}/${var.rag_schema}/${var.rag_volume}
               - --chunks-table
               - ${var.rag_chunks_table}
+              - --index-name
+              - ${var.rag_index_name}
+              - --endpoint-name
+              - ${var.rag_vector_endpoint}
+              - --embedding-endpoint
+              - ${var.rag_embedding_endpoint}
+              - --index-timeout-seconds
+              - '3600'
               - --chunk-size
               - '800'
               - --chunk-overlap

@@ -49,8 +49,11 @@ Os testes offline podem ser executados sem Databricks Connect:
 
 1. Publicar os documentos aprovados em um Unity Catalog Volume. **Concluido em dev.**
 2. Confirmar catalogo, schema, endpoint de embedding, endpoint LLM e permissao minima da identidade de execucao. **Concluido em dev:** `dev_lh_nautical.rag`, `databricks-bge-large-en` e `databricks-meta-llama-3-3-70b-instruct`.
-3. Converter os objetos `Chunk` para uma tabela Delta exclusiva do RAG. **Concluido:** `dev_lh_nautical.rag.document_chunks`, com 224 chunks e CDF habilitado.
+3. Converter os objetos `Chunk` para uma tabela Delta exclusiva do RAG. A escrita usa `overwrite` e CDF; uma reingestao substitui os IDs antigos pelos IDs determinísticos do corpus atual.
 4. Instalar `databricks-ai-search` no runtime aprovado e criar um indice Delta Sync com pipeline `TRIGGERED`. **Concluido em dev:** indice Hybrid pronto com os chunks documentais.
+5. Depois do overwrite, obter o índice existente, chamar `sync()` uma vez e aguardar `wait_until_ready(wait_for_updates=True)`. Se o índice não existir, criá-lo e aguardar o carregamento inicial sem disparar uma segunda sincronização.
+
+O job somente conclui depois que a atualização do índice termina. Estado remoto de erro ou timeout interrompe o job; para o timeout padrão, o limite é 3600 segundos. Como o Delta Sync acompanha a tabela com CDF pela chave `chunk_id`, a sincronização concluída também propaga a remoção dos IDs que desapareceram no overwrite.
 5. Usar `retrieve_context` com busca hibrida, filtros e `top-k` entre 3 e 5. **Concluido na demonstracao end-to-end.**
 6. Bloquear perguntas numericas antes de chamar o LLM.
 7. Validar 15 a 20 perguntas do Golden Dataset, incluindo perguntas sem resposta, prompt injection e consultas que devem ser recusadas. **Pendente.**

@@ -37,6 +37,7 @@ _SECRET_PATTERNS = (
     re.compile(r"(?i)databricks[_-]?token\s*[:=]\s*[^\s,;]+"),
 )
 _EMAIL_PATTERN = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)
+_MARKDOWN_HEADING_PATTERN = re.compile(r"(?m)^#{1,6}\s+(.+?)\s*$")
 
 
 @dataclass(frozen=True)
@@ -131,9 +132,50 @@ def _source_type(path: Path) -> str:
 
 
 def _section_for(content: str, start: int) -> str:
-    headings = list(re.finditer(r"(?m)^#{1,6}\s+(.+?)\s*$", content))
+    headings = list(_MARKDOWN_HEADING_PATTERN.finditer(content))
     previous = [heading for heading in headings if heading.start() <= start]
     return previous[-1].group(1).strip() if previous else "document"
+
+
+def _markdown_sections(content: str) -> list[tuple[str, str, str]]:
+    """Return editorial section, hierarchical breadcrumb, and its own body."""
+    headings: list[tuple[int, int, int, str]] = []
+    offset = 0
+    fence: str | None = None
+    for line in content.splitlines(keepends=True):
+        fence_match = re.match(r"^[ \t]{0,3}(`{3,}|~{3,})", line)
+        if fence_match:
+            marker = fence_match.group(1)[0]
+            if fence is None:
+                fence = marker
+            elif fence == marker:
+                fence = None
+        elif fence is None:
+            heading = re.match(r"^(#{1,6})\s+(.+?)\s*$", line.rstrip("\r\n"))
+            if heading:
+                headings.append(
+                    (offset, offset + len(line.rstrip("\r\n")), len(heading.group(1)), heading.group(2).strip())
+                )
+        offset += len(line)
+
+    if not headings:
+        return [("document", "", content)] if content else []
+
+    sections: list[tuple[str, str, str]] = []
+    if content[: headings[0][0]].strip():
+        sections.append(("document", "", content[: headings[0][0]].strip()))
+    hierarchy: list[tuple[int, str]] = []
+    for position, (_, heading_end, level, section) in enumerate(headings):
+        while hierarchy and hierarchy[-1][0] >= level:
+            hierarchy.pop()
+        hierarchy.append((level, section))
+        end = headings[position + 1][0] if position + 1 < len(headings) else len(content)
+        body = content[heading_end:end].strip()
+        substantive_body = re.sub(r"(?m)^\s{0,3}(?:-{3,}|\*{3,}|_{3,})\s*$", "", body).strip()
+        if substantive_body:
+            breadcrumb = " > ".join(title for _, title in hierarchy)
+            sections.append((section, breadcrumb, body))
+    return sections
 
 
 def load_documents(root: Path, allowed_paths: Sequence[str] = DEFAULT_ALLOWED_PATHS) -> list[Document]:
@@ -194,9 +236,29 @@ def build_chunks(documents: Iterable[Document], chunk_size: int = 800, chunk_ove
     """Create stable chunks suitable for a Delta table or local inspection."""
     chunks: list[Chunk] = []
     for document in documents:
-        for position, (start, content) in enumerate(
-            _split_text_with_offsets(document.content, chunk_size, chunk_overlap)
-        ):
+        if Path(document.source_path).suffix.lower() == ".md":
+            pieces: list[tuple[str, str]] = []
+            for section, breadcrumb, body in _markdown_sections(document.content):
+                prefix = f"CONTEXTO: {breadcrumb}\n\n" if breadcrumb else ""
+                available_body_size = chunk_size - len(prefix)
+                if available_body_size <= chunk_overlap:
+                    raise ValueError(
+                        f"chunk_size leaves no room for body and overlap in section {section!r}"
+                    )
+                pieces.extend(
+                    (section, prefix + body_chunk)
+                    for _, body_chunk in _split_text_with_offsets(
+                        body, available_body_size, chunk_overlap
+                    )
+                )
+        else:
+            pieces = [
+                (_section_for(document.content, start), content)
+                for start, content in _split_text_with_offsets(
+                    document.content, chunk_size, chunk_overlap
+                )
+            ]
+        for position, (section, content) in enumerate(pieces):
             chunk_key = f"{document.source_path}:{document.content_hash}:{position}:{content}"
             chunk_id = hashlib.sha256(chunk_key.encode("utf-8")).hexdigest()
             chunks.append(
@@ -205,7 +267,7 @@ def build_chunks(documents: Iterable[Document], chunk_size: int = 800, chunk_ove
                     source_path=document.source_path,
                     file_name=document.file_name,
                     source_type=document.source_type,
-                    section=_section_for(document.content, start),
+                    section=section,
                     content=content,
                     content_hash=document.content_hash,
                     last_modified=document.last_modified,

@@ -1,16 +1,22 @@
 import json
 import tempfile
 import unittest
+import sys
 from pathlib import Path
-from unittest.mock import patch
+from datetime import datetime, timezone
+from unittest.mock import MagicMock, patch
 
 from src.analytics_ai.rag_evaluation import (
     DatasetValidationError,
     EvaluationObservation,
     ExpectedSource,
+    append_remote_results,
+    classify_remote_result,
     coverage_report,
     evaluate_cases,
     load_golden_dataset,
+    parse_citations,
+    run_remote_evaluation,
     select_suite,
 )
 
@@ -188,6 +194,214 @@ class RagEvaluationDatasetTest(unittest.TestCase):
         )
         self.assertTrue(summary.results[0].refusal_passed)
         self.assertTrue(summary.results[0].passed)
+
+
+class RemoteRagEvaluationTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.cases = load_golden_dataset(DATASET_PATH, REPOSITORY_ROOT)
+
+    @staticmethod
+    def _now():
+        return datetime(2026, 9, 7, 12, 0, tzinfo=timezone.utc)
+
+    def test_smoke_and_full_selection_execute_inside_one_runner(self):
+        calls = []
+
+        def executor(case):
+            calls.append(case.id)
+            return EvaluationObservation("answer", "resposta")
+
+        smoke = run_remote_evaluation(
+            self.cases, "smoke", executor, "run-smoke", now=self._now
+        )
+        self.assertEqual(smoke.total, 10)
+        self.assertEqual(len(calls), 10)
+        calls.clear()
+        full = run_remote_evaluation(
+            self.cases, "full", executor, "run-full", now=self._now
+        )
+        self.assertEqual(full.total, 30)
+        self.assertEqual(len(calls), 30)
+
+    def test_special_behaviors_are_classified_deterministically(self):
+        from src.analytics_ai.rag_prompt import (
+            ADVERSARIAL_RESPONSE,
+            DATA_WAREHOUSE_RESPONSE,
+            NO_DOCUMENTATION_RESPONSE,
+        )
+
+        answers = {
+            "refuse_warehouse_data": DATA_WAREHOUSE_RESPONSE,
+            "insufficient_context": NO_DOCUMENTATION_RESPONSE,
+            "refuse_adversarial": ADVERSARIAL_RESPONSE,
+        }
+        for behavior, answer in answers.items():
+            with self.subTest(behavior=behavior):
+                case = next(case for case in self.cases if case.expected_behavior == behavior)
+                result = classify_remote_result(
+                    case, EvaluationObservation("unclassified", answer),
+                    "run", self._now().isoformat(), "full",
+                )
+                self.assertEqual(result.status, "passed")
+                self.assertEqual(result.observed_behavior, behavior)
+
+    def test_insufficient_context_accepts_only_accent_case_and_space_variation(self):
+        case = next(case for case in self.cases if case.id == "rag_025")
+        accented = (
+            "  A DOCUMENTAÇÃO provida para consulta não dispõe de informações "
+            "suficientes para responder a esta questão.  "
+        )
+        accepted = classify_remote_result(
+            case, EvaluationObservation("unclassified", accented),
+            "run", self._now().isoformat(), "smoke",
+        )
+        different = classify_remote_result(
+            case, EvaluationObservation("unclassified", accented + " Consulte o suporte."),
+            "run", self._now().isoformat(), "smoke",
+        )
+
+        self.assertEqual(accepted.status, "passed")
+        self.assertEqual(different.status, "failed")
+
+    def test_wrong_special_refusal_fails(self):
+        case = next(
+            case for case in self.cases if case.expected_behavior == "refuse_warehouse_data"
+        )
+        result = classify_remote_result(
+            case, EvaluationObservation("unclassified", "42"),
+            "run", self._now().isoformat(), "full",
+        )
+        self.assertEqual(result.status, "failed")
+        self.assertIn("warehouse_refusal_mismatch", result.failure_reasons)
+
+    def test_parser_accepts_canonical_citation_without_brackets(self):
+        self.assertEqual(
+            parse_citations("Fonte: docs/staging.md - Secao: Componentes"),
+            (ExpectedSource("docs/staging.md", "Componentes"),),
+        )
+
+    def test_parser_keeps_compatibility_with_bracketed_citation(self):
+        self.assertEqual(
+            parse_citations("Fonte: [docs/staging.md] - Seção: Objetivo"),
+            (ExpectedSource("docs/staging.md", "Objetivo"),),
+        )
+
+    def test_technical_answer_with_evidence_needs_human_review(self):
+        case = self.cases[0]
+        source = case.expected_sources[0]
+        answer = f"Resposta. Fonte: {source.path} - Secao: {source.section}"
+        result = classify_remote_result(
+            case,
+            EvaluationObservation("unclassified", answer, (source,), parse_citations(answer), 0.2),
+            "run", self._now().isoformat(), "full",
+        )
+        self.assertEqual(result.status, "needs_review")
+        self.assertEqual(result.failure_reasons, ())
+        self.assertIn("technical_facts_require_human_review", result.review_reasons)
+
+    def test_plausible_alternative_source_is_not_automatically_failed(self):
+        case = self.cases[0]
+        alternative = ExpectedSource("docs/staging.md", "Componentes")
+        answer = "Resposta. Fonte: [docs/staging.md] - Secao: Componentes"
+        result = classify_remote_result(
+            case,
+            EvaluationObservation("unclassified", answer, (alternative,), (), 0.2),
+            "run", self._now().isoformat(), "full",
+        )
+        self.assertEqual(result.status, "needs_review")
+        self.assertIn(
+            "expected_source_missing_but_plausible_editorial_source_retrieved",
+            result.review_reasons,
+        )
+
+    def test_one_case_exception_does_not_interrupt_suite(self):
+        selected = select_suite(self.cases, "smoke")
+        calls = []
+
+        def executor(case):
+            calls.append(case.id)
+            if len(calls) == 1:
+                raise RuntimeError("simulated")
+            return EvaluationObservation("answer", "resposta")
+
+        summary = run_remote_evaluation(
+            self.cases, "smoke", executor, "run", now=self._now
+        )
+        self.assertEqual(len(calls), len(selected))
+        self.assertEqual(summary.total, 10)
+        self.assertEqual(summary.results[0].observed_behavior, "execution_error")
+        self.assertEqual(summary.results[0].status, "failed")
+
+    def test_summary_counts_statuses_and_latency(self):
+        special = [
+            case for case in self.cases
+            if case.expected_behavior in {"refuse_warehouse_data", "insufficient_context"}
+        ][:2]
+        from src.analytics_ai.rag_prompt import DATA_WAREHOUSE_RESPONSE, NO_DOCUMENTATION_RESPONSE
+        answers = {
+            "refuse_warehouse_data": DATA_WAREHOUSE_RESPONSE,
+            "insufficient_context": NO_DOCUMENTATION_RESPONSE,
+        }
+        summary = run_remote_evaluation(
+            special,
+            "full",
+            lambda case: EvaluationObservation(
+                "unclassified", answers[case.expected_behavior], latency_seconds=0.5
+            ),
+            "run",
+            now=self._now,
+        )
+        self.assertEqual((summary.total, summary.passed, summary.failed), (2, 2, 0))
+        self.assertEqual(summary.deterministic_pass_rate, 1.0)
+        self.assertEqual(summary.mean_latency_seconds, 0.5)
+
+    def test_report_persistence_is_append_only(self):
+        case = next(
+            case for case in self.cases if case.expected_behavior == "insufficient_context"
+        )
+        from src.analytics_ai.rag_prompt import NO_DOCUMENTATION_RESPONSE
+        result = classify_remote_result(
+            case, EvaluationObservation("unclassified", NO_DOCUMENTATION_RESPONSE),
+            "run", self._now().isoformat(), "full",
+        )
+        spark = MagicMock()
+        dataframe = spark.createDataFrame.return_value
+        selected = dataframe.select.return_value
+        writer = selected.write.format.return_value.mode.return_value
+
+        self.assertEqual(
+            append_remote_results(spark, "dev_lh_nautical.rag.rag_evaluation_results", [result]),
+            1,
+        )
+        selected.write.format.assert_called_once_with("delta")
+        selected.write.format.return_value.mode.assert_called_once_with("append")
+        writer.saveAsTable.assert_called_once_with(
+            "dev_lh_nautical.rag.rag_evaluation_results"
+        )
+
+    def test_remote_entrypoint_parses_explicit_dataset_without_dunder_file(self):
+        from src.analytics_ai import run_rag_evaluation
+
+        sentinel = run_rag_evaluation.__dict__.pop("__file__", None)
+        arguments = [
+            "run_rag_evaluation.py",
+            "--index-name", "catalog.schema.index",
+            "--endpoint-name", "endpoint",
+            "--report-table", "catalog.schema.report",
+            "--dataset", "/Workspace/bundle/files/evaluation/rag_golden_dataset.jsonl",
+        ]
+        try:
+            with patch.object(sys, "argv", arguments):
+                parsed = run_rag_evaluation.parse_args()
+        finally:
+            if sentinel is not None:
+                run_rag_evaluation.__dict__["__file__"] = sentinel
+
+        self.assertEqual(
+            parsed.dataset,
+            Path("/Workspace/bundle/files/evaluation/rag_golden_dataset.jsonl"),
+        )
 
 
 if __name__ == "__main__":

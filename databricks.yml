@@ -17,6 +17,7 @@ sync:
     - package-lock.yml
     - src/dbt/**
     - src/*/*.py
+    - evaluation/**
 
 # Permissões padrão do bundle
 permissions:

@@ -81,11 +81,42 @@ As dimensões são separadas:
 
 Correspondência lexical não prova que um fato foi corretamente afirmado, negado ou contextualizado. Por isso a base local marca a cobertura de fatos como `None` e o resultado de respostas como “requer revisão”, em vez de produzir uma precisão artificial. Um avaliador futuro pode preencher essa dimensão por revisão humana ou por LLM-as-a-judge com rubrica, versão de prompt e evidências auditáveis.
 
-## Execução remota futura
+## Execução remota
 
-Um runner remoto deverá reutilizar os adaptadores existentes de retrieval e geração, converter sua saída em `EvaluationObservation` e nunca duplicar guardrails ou parsing. Recomenda-se executar primeiro `smoke`, depois `full`, registrando versão do corpus, índice, endpoint, modelo e horário.
+O job `rag_evaluation` carrega o Golden Dataset uma vez e executa todos os casos selecionados no mesmo processo. O cliente de AI Search, o índice e o cliente do endpoint de geração também são reutilizados. Uma falha isolada é registrada como `failed` e não interrompe os demais casos.
 
-A execução remota ainda será necessária para medir recall real do Vector Search, groundedness da resposta, qualidade das citações e latência end-to-end.
+Após o deploy do bundle, execute primeiro os 10 casos rápidos:
+
+```bash
+databricks bundle run rag_evaluation -t dev --params suite=smoke,run_label=pre-release
+```
+
+Para os 30 casos:
+
+```bash
+databricks bundle run rag_evaluation -t dev --params suite=full,run_label=release-candidate
+```
+
+Os parâmetros de job também permitem substituir `index_name`, `endpoint_name`, `report_table`, `question_endpoint`, `max_results` e `dataset`. O bundle passa obrigatoriamente `--dataset` usando `${workspace.file_path}/evaluation/rag_golden_dataset.jsonl`, isto é, o Golden Dataset sincronizado na raiz de arquivos da implantação. O entrypoint não depende de `__file__`; em execução local, informe um caminho explícito, por exemplo `--dataset evaluation/rag_golden_dataset.jsonl`.
+
+A configuração dev grava, por padrão, em `dev_lh_nautical.rag.rag_evaluation_results`. A tabela é append-only: cada execução recebe um UUID e nunca apaga resultados anteriores.
+
+Cada linha contém:
+
+- identificação da execução (`run_id`, `run_timestamp`, `run_label`);
+- caso, suíte, pergunta e comportamento esperado/observado;
+- resposta, fontes recuperadas, citações e fontes esperadas em JSON;
+- latência, status e listas JSON de motivos de falha ou revisão.
+
+Os status significam:
+
+- `passed`: uma recusa especial produziu exatamente a resposta segura esperada e não contém afirmação proibida;
+- `failed`: houve erro de execução, ausência de resposta/fonte/citação válida ou divergência determinística de recusa;
+- `needs_review`: a infraestrutura produziu uma resposta técnica com evidências, mas correção, completude e groundedness ainda exigem revisão humana. Uma fonte editorial plausível diferente da expectativa também recebe este status, não uma reprovação automática.
+
+A taxa de aprovação determinística usa apenas casos decididos (`passed / (passed + failed)`), excluindo `needs_review` do denominador. Correspondência literal só é usada para as respostas canônicas de segurança e contexto insuficiente. Esta primeira versão não usa LLM-as-a-judge e não aprova respostas técnicas por palavras-chave.
+
+O resumo final apresenta totais, taxa determinística, latência média e IDs em `failed` ou `needs_review`. A execução remota continua necessária para medir recall real do índice, comportamento do endpoint de geração e latência end-to-end.
 
 ## Evolução do dataset
 

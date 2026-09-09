@@ -8,11 +8,15 @@ import re
 import unicodedata
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
-from .rag_documents import DEFAULT_ALLOWED_PATHS, Chunk, build_chunks, load_documents, parse_content
+if __package__:
+    from .rag_documents import DEFAULT_ALLOWED_PATHS, Chunk, build_chunks, load_documents, parse_content
+else:
+    from rag_documents import DEFAULT_ALLOWED_PATHS, Chunk, build_chunks, load_documents, parse_content
 
 EXPECTED_BEHAVIORS = frozenset(
     {"answer", "insufficient_context", "refuse_warehouse_data", "refuse_adversarial"}
@@ -106,6 +110,75 @@ class EvaluationSummary:
     needs_review: int
     mean_latency_seconds: float
     results: tuple[CaseEvaluationResult, ...] = field(repr=False)
+
+
+REPORT_COLUMNS = (
+    "run_id", "run_timestamp", "run_label", "case_id", "suite", "question",
+    "expected_behavior", "observed_behavior", "answer", "retrieved_sources_json",
+    "cited_sources_json", "expected_sources_json", "latency_seconds", "status",
+    "failure_reasons_json", "review_reasons_json",
+)
+
+
+@dataclass(frozen=True)
+class RemoteCaseResult:
+    """Append-only row produced by one remote Golden Dataset case."""
+
+    run_id: str
+    run_timestamp: str
+    run_label: str | None
+    case_id: str
+    suite: str
+    question: str
+    expected_behavior: str
+    observed_behavior: str
+    answer: str
+    retrieved_sources: tuple[ExpectedSource, ...]
+    cited_sources: tuple[ExpectedSource, ...]
+    expected_sources: tuple[ExpectedSource, ...]
+    latency_seconds: float
+    status: str
+    failure_reasons: tuple[str, ...]
+    review_reasons: tuple[str, ...]
+
+    def as_row(self) -> dict[str, Any]:
+        def source_json(values: Sequence[ExpectedSource]) -> str:
+            return json.dumps(
+                [{"path": value.path, "section": value.section} for value in values],
+                ensure_ascii=False,
+            )
+
+        return {
+            "run_id": self.run_id,
+            "run_timestamp": self.run_timestamp,
+            "run_label": self.run_label,
+            "case_id": self.case_id,
+            "suite": self.suite,
+            "question": self.question,
+            "expected_behavior": self.expected_behavior,
+            "observed_behavior": self.observed_behavior,
+            "answer": self.answer,
+            "retrieved_sources_json": source_json(self.retrieved_sources),
+            "cited_sources_json": source_json(self.cited_sources),
+            "expected_sources_json": source_json(self.expected_sources),
+            "latency_seconds": float(self.latency_seconds),
+            "status": self.status,
+            "failure_reasons_json": json.dumps(self.failure_reasons, ensure_ascii=False),
+            "review_reasons_json": json.dumps(self.review_reasons, ensure_ascii=False),
+        }
+
+
+@dataclass(frozen=True)
+class RemoteEvaluationSummary:
+    total: int
+    passed: int
+    failed: int
+    needs_review: int
+    deterministic_pass_rate: float
+    mean_latency_seconds: float
+    failed_ids: tuple[str, ...]
+    needs_review_ids: tuple[str, ...]
+    results: tuple[RemoteCaseResult, ...] = field(repr=False)
 
 
 def _required_mapping(value: Any, name: str, errors: list[str], case_ref: str) -> dict[str, Any]:
@@ -384,6 +457,220 @@ def evaluate_cases(
         mean_latency_seconds=sum(latencies) / len(latencies) if latencies else 0.0,
         results=tuple(results),
     )
+
+
+_CITATION_PATTERN = re.compile(
+    r"Fonte:\s*\[?(.+?)\]?\s*-\s*Se(?:c|ç)(?:a|ã)o:\s*([^\n]+)",
+    re.IGNORECASE,
+)
+
+
+def parse_citations(answer: str) -> tuple[ExpectedSource, ...]:
+    """Extract the citation contract required by the documentary prompt."""
+    return tuple(
+        dict.fromkeys(
+            ExpectedSource(path.strip(), section.strip().rstrip(". "))
+            for path, section in _CITATION_PATTERN.findall(answer)
+        )
+    )
+
+
+def _contains_claim(answer: str, claim: str) -> bool:
+    normalize = lambda value: " ".join(
+        "".join(
+            character
+            for character in unicodedata.normalize("NFKD", value.casefold())
+            if not unicodedata.combining(character)
+        ).split()
+    )
+    return bool(claim) and normalize(claim) in normalize(answer)
+
+
+def classify_remote_result(
+    case: GoldenCase,
+    observation: EvaluationObservation,
+    run_id: str,
+    run_timestamp: str,
+    suite: str,
+    run_label: str | None = None,
+) -> RemoteCaseResult:
+    """Classify only auditable signals; technical correctness remains human-reviewed."""
+    if __package__:
+        from .rag_prompt import (
+            ADVERSARIAL_RESPONSE,
+            DATA_WAREHOUSE_RESPONSE,
+            NO_DOCUMENTATION_RESPONSE,
+            normalize_deterministic_response,
+        )
+    else:
+        from rag_prompt import (
+            ADVERSARIAL_RESPONSE,
+            DATA_WAREHOUSE_RESPONSE,
+            NO_DOCUMENTATION_RESPONSE,
+            normalize_deterministic_response,
+        )
+
+    failures: list[str] = []
+    reviews: list[str] = []
+    answer = observation.answer.strip()
+    normalized_answer = normalize_deterministic_response(answer)
+    cited = observation.cited_sources or parse_citations(answer)
+    retrieved = observation.retrieved_sources
+    forbidden = [claim for claim in case.forbidden_claims if _contains_claim(answer, claim)]
+    if forbidden:
+        failures.append("forbidden_claim_present")
+
+    if case.expected_behavior == "refuse_warehouse_data":
+        observed = (
+            "refuse_warehouse_data"
+            if normalized_answer == normalize_deterministic_response(DATA_WAREHOUSE_RESPONSE)
+            else "answer"
+        )
+        if observed != case.expected_behavior:
+            failures.append("warehouse_refusal_mismatch")
+    elif case.expected_behavior == "insufficient_context":
+        observed = (
+            "insufficient_context"
+            if normalized_answer == normalize_deterministic_response(NO_DOCUMENTATION_RESPONSE)
+            else "answer"
+        )
+        if observed != case.expected_behavior:
+            failures.append("insufficient_context_refusal_mismatch")
+    elif case.expected_behavior == "refuse_adversarial":
+        observed = (
+            "refuse_adversarial"
+            if normalized_answer == normalize_deterministic_response(ADVERSARIAL_RESPONSE)
+            else "answer"
+        )
+        if observed != case.expected_behavior:
+            failures.append("adversarial_refusal_mismatch")
+    else:
+        observed = (
+            "insufficient_context"
+            if normalized_answer == normalize_deterministic_response(NO_DOCUMENTATION_RESPONSE)
+            else "answer"
+        )
+        if observed != "answer" or not answer:
+            failures.append("answer_not_produced")
+        valid_retrieved = tuple(
+            source for source in retrieved if source.path in DEFAULT_ALLOWED_PATHS and source.section
+        )
+        if not valid_retrieved:
+            failures.append("no_valid_retrieved_source")
+        if not cited:
+            failures.append("missing_formatted_citation")
+        elif any(source.path not in DEFAULT_ALLOWED_PATHS or not source.section for source in cited):
+            failures.append("invalid_citation_source")
+        elif any(source not in retrieved for source in cited):
+            failures.append("citation_not_in_retrieved_sources")
+        missing = tuple(source for source in case.expected_sources if source not in retrieved)
+        if missing:
+            if valid_retrieved:
+                reviews.append("expected_source_missing_but_plausible_editorial_source_retrieved")
+            else:
+                failures.append("expected_source_missing")
+        reviews.append("technical_facts_require_human_review")
+
+    status = "failed" if failures else ("needs_review" if reviews else "passed")
+    return RemoteCaseResult(
+        run_id=run_id,
+        run_timestamp=run_timestamp,
+        run_label=run_label,
+        case_id=case.id,
+        suite=suite,
+        question=case.question,
+        expected_behavior=case.expected_behavior,
+        observed_behavior=observed,
+        answer=answer,
+        retrieved_sources=retrieved,
+        cited_sources=cited,
+        expected_sources=case.expected_sources,
+        latency_seconds=observation.latency_seconds,
+        status=status,
+        failure_reasons=tuple(dict.fromkeys(failures)),
+        review_reasons=tuple(dict.fromkeys(reviews)),
+    )
+
+
+def run_remote_evaluation(
+    cases: Sequence[GoldenCase],
+    suite: str,
+    executor: Callable[[GoldenCase], EvaluationObservation],
+    run_id: str,
+    run_label: str | None = None,
+    now: Callable[[], datetime] | None = None,
+) -> RemoteEvaluationSummary:
+    """Execute a selected suite sequentially while isolating per-case failures."""
+    selected = select_suite(cases, suite)
+    timestamp = (now or (lambda: datetime.now(timezone.utc)))().isoformat()
+    results: list[RemoteCaseResult] = []
+    for case in selected:
+        started = perf_counter()
+        try:
+            observation = executor(case)
+            if observation.latency_seconds <= 0:
+                observation = EvaluationObservation(
+                    observation.behavior,
+                    observation.answer,
+                    observation.retrieved_sources,
+                    observation.cited_sources,
+                    perf_counter() - started,
+                )
+            result = classify_remote_result(
+                case, observation, run_id, timestamp, suite, run_label
+            )
+        except Exception as exc:
+            result = RemoteCaseResult(
+                run_id, timestamp, run_label, case.id, suite, case.question,
+                case.expected_behavior, "execution_error", "", (), (),
+                case.expected_sources, perf_counter() - started, "failed",
+                (f"execution_error: {type(exc).__name__}: {exc}",), (),
+            )
+        results.append(result)
+    total = len(results)
+    passed = sum(result.status == "passed" for result in results)
+    failed = sum(result.status == "failed" for result in results)
+    needs_review = sum(result.status == "needs_review" for result in results)
+    deterministically_decided = passed + failed
+    return RemoteEvaluationSummary(
+        total=total,
+        passed=passed,
+        failed=failed,
+        needs_review=needs_review,
+        deterministic_pass_rate=(passed / deterministically_decided if deterministically_decided else 0.0),
+        mean_latency_seconds=(
+            sum(result.latency_seconds for result in results) / total if total else 0.0
+        ),
+        failed_ids=tuple(result.case_id for result in results if result.status == "failed"),
+        needs_review_ids=tuple(
+            result.case_id for result in results if result.status == "needs_review"
+        ),
+        results=tuple(results),
+    )
+
+
+def append_remote_results(spark: Any, table_name: str, results: Sequence[RemoteCaseResult]) -> int:
+    """Append one evaluation run to its Delta history without replacing prior rows."""
+    if __package__:
+        from .rag_databricks import validate_table_name
+    else:
+        from rag_databricks import validate_table_name
+
+    validate_table_name(table_name)
+    if not results:
+        raise ValueError("cannot persist an empty evaluation result")
+    rows = [result.as_row() for result in results]
+    from pyspark.sql.types import DoubleType, StringType, StructField, StructType
+
+    schema = StructType([
+        StructField(column, DoubleType() if column == "latency_seconds" else StringType(), True)
+        for column in REPORT_COLUMNS
+    ])
+    dataframe = spark.createDataFrame(
+        [tuple(row[column] for column in REPORT_COLUMNS) for row in rows], schema=schema
+    )
+    dataframe.select(*REPORT_COLUMNS).write.format("delta").mode("append").saveAsTable(table_name)
+    return len(rows)
 
 
 def main() -> None:

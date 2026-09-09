@@ -196,6 +196,18 @@ def retrieve_context(
     refusal = guard_question(question)
     if refusal:
         return refusal
+    return format_context(retrieve_chunks(index, question, num_results, filters))
+
+
+def retrieve_chunks(
+    index: Any,
+    question: str,
+    num_results: int = 4,
+    filters: dict[str, str] | None = None,
+) -> list[Chunk]:
+    """Run hybrid retrieval and preserve chunk metadata for evaluation/generation."""
+    if guard_question(question):
+        return []
     if not question.strip():
         raise ValueError("question cannot be empty")
     if not 1 <= num_results <= 10:
@@ -245,4 +257,4 @@ def retrieve_context(
                 status="approved",
             )
         )
-    return format_context(chunks)
+    return chunks

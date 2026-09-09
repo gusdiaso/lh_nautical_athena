@@ -17,11 +17,14 @@ if __package__:
         EvaluationObservation,
         ExpectedSource,
         append_remote_results,
+        corpus_chunk_sources,
         load_golden_dataset,
         parse_citations,
         run_remote_evaluation,
     )
     from .rag_generation import generate_answer
+    from .rag_groundedness import answer_body, evaluate_groundedness
+    from .rag_endpoint import RateLimitedChatClient
     from .rag_prompt import guard_question
 else:
     from rag_databricks import retrieve_chunks
@@ -29,11 +32,14 @@ else:
         EvaluationObservation,
         ExpectedSource,
         append_remote_results,
+        corpus_chunk_sources,
         load_golden_dataset,
         parse_citations,
         run_remote_evaluation,
     )
     from rag_generation import generate_answer
+    from rag_groundedness import answer_body, evaluate_groundedness
+    from rag_endpoint import RateLimitedChatClient
     from rag_prompt import guard_question
 
 
@@ -49,6 +55,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--max-results", type=int, default=5)
     parser.add_argument("--run-label")
+    parser.add_argument("--judge-endpoint", required=True)
+    parser.add_argument("--judge-timeout-seconds", type=float, default=60.0)
+    parser.add_argument("--request-interval-seconds", type=float, default=2.0)
     parser.add_argument(
         "--dataset",
         type=Path,
@@ -74,6 +83,10 @@ def main() -> None:
     args = parse_args()
     if not 1 <= args.max_results <= 10:
         raise ValueError("max-results must be between 1 and 10")
+    if args.judge_timeout_seconds <= 0:
+        raise ValueError("judge-timeout-seconds must be positive")
+    if args.request_interval_seconds < 0:
+        raise ValueError("request-interval-seconds must be non-negative")
 
     from databricks.ai_search.client import AISearchClient
     from databricks.sdk import WorkspaceClient
@@ -90,7 +103,10 @@ def main() -> None:
         endpoint_name=args.endpoint_name,
         index_name=args.index_name,
     )
-    chat = OpenAI(api_key=token, base_url=f"{host}/serving-endpoints").chat.completions
+    chat = RateLimitedChatClient(
+        OpenAI(api_key=token, base_url=f"{host}/serving-endpoints").chat.completions,
+        request_interval_seconds=args.request_interval_seconds,
+    )
     repository_root = args.dataset.resolve().parents[1]
     cases = load_golden_dataset(args.dataset, repository_root)
 
@@ -101,12 +117,25 @@ def main() -> None:
         )
         generated = generate_answer(chat, case.question, chunks, args.question_endpoint)
         sources = tuple(ExpectedSource(chunk.source_path, chunk.section) for chunk in chunks)
+        citations = parse_citations(generated.answer)
+        judgement = None
+        if case.expected_behavior == "answer" and not generated.refused and answer_body(generated.answer):
+            judgement = evaluate_groundedness(
+                chat,
+                case.question,
+                generated.answer,
+                chunks,
+                citations,
+                args.judge_endpoint,
+                args.judge_timeout_seconds,
+            )
         return EvaluationObservation(
             behavior="unclassified",
             answer=generated.answer,
-            retrieved_sources=tuple(dict.fromkeys(sources)),
-            cited_sources=parse_citations(generated.answer),
+            retrieved_sources=sources,
+            cited_sources=citations,
             latency_seconds=perf_counter() - started,
+            groundedness_evaluation=judgement,
         )
 
     summary = run_remote_evaluation(
@@ -115,9 +144,11 @@ def main() -> None:
         executor=execute,
         run_id=str(uuid.uuid4()),
         run_label=args.run_label,
+        retrieval_k=args.max_results,
+        known_sources=corpus_chunk_sources(repository_root),
     )
     spark = SparkSession.builder.getOrCreate()
-    append_remote_results(spark, args.report_table, summary.results)
+    append_remote_results(spark, args.report_table, summary.results, summary)
     print(json.dumps({
         "total": summary.total,
         "passed": summary.passed,
@@ -127,6 +158,18 @@ def main() -> None:
         "mean_latency_seconds": summary.mean_latency_seconds,
         "failed_ids": summary.failed_ids,
         "needs_review_ids": summary.needs_review_ids,
+        "mean_recall_at_k": summary.mean_recall_at_k,
+        "mean_precision_at_k": summary.mean_precision_at_k,
+        "mrr": summary.mean_reciprocal_rank,
+        "mean_citation_retrieved_rate": summary.mean_citation_retrieved_rate,
+        "mean_citation_allowed_rate": summary.mean_citation_allowed_rate,
+        "technical_citation_coverage": summary.technical_citation_coverage,
+        "groundedness_rate": summary.groundedness_rate,
+        "mean_groundedness_score": summary.mean_groundedness_score,
+        "supported_claims": summary.supported_claims,
+        "unsupported_claims": summary.unsupported_claims,
+        "contradicted_claims": summary.contradicted_claims,
+        "invalid_or_unavailable_judgements": summary.invalid_or_unavailable_judgements,
     }, ensure_ascii=False))
 
 

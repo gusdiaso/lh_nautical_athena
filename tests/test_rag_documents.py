@@ -414,6 +414,58 @@ class RagDocumentsTest(unittest.TestCase):
         )
         self.assertNotIn("stock_levels e Intermediate", result.answer)
 
+    def test_citation_post_formatting_does_not_manufacture_body_or_extra_sources(self):
+        client = Mock()
+        raw = "Fonte: docs/first.md - Secao: First"
+        client.create.return_value.choices = [Mock(message=Mock(content=raw))]
+        chunks = build_chunks(load_documents_from_text("# First\nConteudo um\n# Second\nConteudo dois"))
+        first, second = chunks
+        first = first.__class__(
+            first.chunk_id, "docs/first.md", first.file_name, first.source_type,
+            first.section, first.content, first.content_hash, first.last_modified, first.status,
+        )
+        second = second.__class__(
+            second.chunk_id, "docs/second.md", second.file_name, second.source_type,
+            second.section, second.content, second.content_hash, second.last_modified, second.status,
+        )
+
+        result = generate_answer(client, "Pergunta tecnica?", [first, second], "test-model")
+
+        self.assertEqual(result.answer, raw)
+        self.assertNotIn("docs/second.md", result.answer)
+
+    def test_generation_retries_once_when_first_output_has_only_citations(self):
+        client = Mock()
+        client.create.side_effect = [
+            Mock(choices=[Mock(message=Mock(content="Fonte: document.md - Secao: First"))]),
+            Mock(choices=[Mock(message=Mock(content="O processo padroniza os dados."))]),
+        ]
+        chunks = build_chunks(load_documents_from_text("# First\nO processo padroniza os dados."))
+
+        result = generate_answer(client, "O que o processo faz?", chunks, "test-model")
+
+        self.assertEqual(client.create.call_count, 2)
+        self.assertIn("O processo padroniza os dados.", result.answer)
+        self.assertIn("Fonte: document.md - Secao: First", result.answer)
+        retry_prompt = client.create.call_args_list[1].kwargs["messages"][-1]["content"]
+        self.assertIn("somente linhas Fonte:", retry_prompt)
+        self.assertIn("usando somente os documentos recuperados", retry_prompt)
+
+    def test_generation_preserves_failure_when_both_outputs_have_only_citations(self):
+        client = Mock()
+        first = "Fonte: document.md - Secao: First"
+        second = "Fonte: document.md - Secao: Second"
+        client.create.side_effect = [
+            Mock(choices=[Mock(message=Mock(content=first))]),
+            Mock(choices=[Mock(message=Mock(content=second))]),
+        ]
+        chunks = build_chunks(load_documents_from_text("# First\nUm.\n# Second\nDois."))
+
+        result = generate_answer(client, "Explique.", chunks, "test-model")
+
+        self.assertEqual(client.create.call_count, 2)
+        self.assertEqual(result.answer, second)
+
     def test_generation_refuses_numeric_question_without_calling_llm(self):
         client = Mock()
         chunks = build_chunks(load_documents_from_text("content"))

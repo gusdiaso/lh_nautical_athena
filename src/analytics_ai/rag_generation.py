@@ -70,6 +70,10 @@ def _canonical_guard_response(answer: str) -> str | None:
 def _with_exact_chunk_citations(answer: str, chunks: list[Chunk]) -> str:
     """Replace model-produced citations with exact, separately listed chunk metadata."""
     without_citations = _answer_without_citation_lines(answer)
+    if not without_citations:
+        # Preserve deficient model output for audit/classification. Replacing it with all
+        # retrieved sources would manufacture a citation-only answer in post-processing.
+        return answer.strip()
     sources = tuple(dict.fromkeys((chunk.source_path, chunk.section) for chunk in chunks))
     citations = "\n".join(
         f"Fonte: {source_path} - Secao: {section}" for source_path, section in sources
@@ -141,4 +145,28 @@ def generate_answer(
     canonical_guard = _canonical_guard_response(answer)
     if canonical_guard is not None:
         return RagAnswer(canonical_guard, (), refused=True)
+    if not _answer_without_citation_lines(answer):
+        response = client.create(
+            model=model,
+            messages=messages + [{
+                "role": "user",
+                "content": (
+                    "A primeira saida continha somente linhas Fonte:, sem corpo textual. "
+                    "Produza agora uma resposta documental com corpo textual que responda a "
+                    "pergunta, usando somente os documentos recuperados. Depois do corpo, cite "
+                    "apenas os pares DOCUMENTO + SECAO usados."
+                ),
+            }],
+            max_tokens=max_tokens,
+            temperature=0.1,
+        )
+        try:
+            answer = response.choices[0].message.content
+        except (AttributeError, IndexError, KeyError, TypeError) as exc:
+            raise ValueError("chat client returned an invalid citation-only retry completion") from exc
+        if not isinstance(answer, str):
+            raise ValueError("chat client returned an invalid citation-only retry completion")
+        canonical_guard = _canonical_guard_response(answer)
+        if canonical_guard is not None:
+            return RagAnswer(canonical_guard, (), refused=True)
     return RagAnswer(_with_exact_chunk_citations(answer, chunks), _source_paths(chunks))

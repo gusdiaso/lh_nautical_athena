@@ -36,7 +36,7 @@ def _runtime_token() -> str | None:
 def main() -> None:
     args = parse_args()
     from databricks.sdk import WorkspaceClient
-    from databricks.ai_search.client import VectorSearchClient
+    from databricks.ai_search.client import AISearchClient
     from openai import OpenAI
 
     workspace = WorkspaceClient()
@@ -45,7 +45,7 @@ def main() -> None:
     if not token or not host:
         raise RuntimeError("Databricks workspace authentication is not available")
 
-    vector_client = VectorSearchClient(disable_notice=True)
+    vector_client = AISearchClient(disable_notice=True)
     index = vector_client.get_index(endpoint_name=args.endpoint_name, index_name=args.index_name)
     context = retrieve_context(index, args.question, num_results=5, filters={"status": "approved"})
     if context.startswith("Diretriz de Seguranca:"):

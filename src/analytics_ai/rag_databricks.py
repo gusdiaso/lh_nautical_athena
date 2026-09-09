@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any, Iterable
 
 if __package__:
@@ -91,12 +92,12 @@ def create_delta_sync_index(config: VectorIndexConfig, client: Any | None = None
 
     if client is None:
         try:
-            from databricks.vector_search.client import VectorSearchClient
+            from databricks.ai_search.client import AISearchClient
         except ImportError as exc:
             raise RuntimeError(
-                "databricks-vectorsearch is required for Vector Search integration"
+                "databricks-ai-search is required for AI Search integration"
             ) from exc
-        client = VectorSearchClient(disable_notice=True)
+        client = AISearchClient(disable_notice=True)
 
     return client.create_delta_sync_index_and_wait(
         endpoint_name=config.endpoint_name,
@@ -109,15 +110,74 @@ def create_delta_sync_index(config: VectorIndexConfig, client: Any | None = None
     )
 
 
+def synchronize_delta_sync_index(
+    config: VectorIndexConfig,
+    client: Any | None = None,
+    timeout_seconds: int = 3600,
+) -> Any:
+    """Create a missing index or synchronize an existing TRIGGERED index."""
+    validate_table_name(config.source_table_name)
+    validate_table_name(config.index_name)
+    if config.pipeline_type != "TRIGGERED":
+        raise ValueError("explicit synchronization requires pipeline_type TRIGGERED")
+    if timeout_seconds <= 0:
+        raise ValueError("timeout_seconds must be positive")
+    if client is None:
+        try:
+            from databricks.ai_search.client import AISearchClient
+        except ImportError as exc:
+            raise RuntimeError(
+                "databricks-ai-search is required for AI Search integration"
+            ) from exc
+        client = AISearchClient(disable_notice=True)
+
+    timeout = timedelta(seconds=timeout_seconds)
+    try:
+        if not client.index_exists(
+            endpoint_name=config.endpoint_name,
+            index_name=config.index_name,
+        ):
+            print(f"AI Search index {config.index_name} does not exist; creating it")
+            index = client.create_delta_sync_index_and_wait(
+                endpoint_name=config.endpoint_name,
+                index_name=config.index_name,
+                primary_key="chunk_id",
+                source_table_name=config.source_table_name,
+                pipeline_type=config.pipeline_type,
+                embedding_source_column=config.embedding_source_column,
+                embedding_model_endpoint_name=config.embedding_model_endpoint_name,
+                verbose=True,
+                timeout=timeout,
+            )
+            print(f"AI Search index {config.index_name} was created and is ready")
+            return index
+
+        print(f"Starting AI Search synchronization for {config.index_name}")
+        index = client.get_index(
+            endpoint_name=config.endpoint_name,
+            index_name=config.index_name,
+        )
+        index.sync()
+        index.wait_until_ready(
+            verbose=True,
+            timeout=timeout,
+            wait_for_updates=True,
+        )
+        print(f"AI Search synchronization completed for {config.index_name}")
+        return index
+    except Exception as exc:
+        message = f"AI Search synchronization failed for {config.index_name}: {exc}"
+        print(message)
+        raise RuntimeError(message) from exc
+
+
 def wait_for_index(index: Any, timeout_seconds: int = 3600) -> Any:
-    """Wait for an index created by the Vector Search SDK to become ready."""
+    """Wait for an index created by the AI Search SDK to become ready."""
     if timeout_seconds <= 0:
         raise ValueError("timeout_seconds must be positive")
     waiter = getattr(index, "wait_until_ready", None)
     if not callable(waiter):
         raise TypeError("index client does not provide wait_until_ready")
-    from datetime import timedelta
-
     return waiter(verbose=True, timeout=timedelta(seconds=timeout_seconds))
 
 

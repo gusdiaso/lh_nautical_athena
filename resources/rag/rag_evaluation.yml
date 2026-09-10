@@ -1,0 +1,79 @@
+variables:
+  rag_evaluation_report_table:
+    description: 'Tabela Delta append-only com resultados da avaliacao documental'
+
+targets:
+  dev:
+    variables:
+      rag_evaluation_report_table: dev_lh_nautical.rag.rag_evaluation_results
+  prod:
+    variables:
+      rag_evaluation_report_table: prod_lh_nautical.rag.rag_evaluation_results
+
+resources:
+  jobs:
+    rag_evaluation:
+      name: rag_evaluation
+      description: 'Executa uma suite do Golden Dataset em um unico job e persiste o relatorio'
+      max_concurrent_runs: 1
+      parameters:
+        - name: suite
+          default: smoke
+        - name: index_name
+          default: ${var.rag_index_name}
+        - name: endpoint_name
+          default: ${var.rag_vector_endpoint}
+        - name: report_table
+          default: ${var.rag_evaluation_report_table}
+        - name: question_endpoint
+          default: ${var.rag_llm_endpoint}
+        - name: judge_endpoint
+          default: ${var.rag_llm_endpoint}
+        - name: judge_timeout_seconds
+          default: '60'
+        - name: request_interval_seconds
+          default: '2'
+        - name: max_results
+          default: '5'
+        - name: run_label
+          default: ''
+        - name: dataset
+          default: ${workspace.file_path}/evaluation/rag_golden_dataset.jsonl
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: '2'
+            dependencies:
+              - databricks-ai-search==0.78
+              - openai
+              - protobuf<6
+      tasks:
+        - task_key: evaluate_documentation
+          environment_key: default
+          description: 'Avalia retrieval, recusas, citacoes, latencia e registra revisoes pendentes'
+          spark_python_task:
+            python_file: ../../src/analytics_ai/run_rag_evaluation.py
+            parameters:
+              - --suite
+              - '{{job.parameters.suite}}'
+              - --index-name
+              - '{{job.parameters.index_name}}'
+              - --endpoint-name
+              - '{{job.parameters.endpoint_name}}'
+              - --report-table
+              - '{{job.parameters.report_table}}'
+              - --question-endpoint
+              - '{{job.parameters.question_endpoint}}'
+              - --judge-endpoint
+              - '{{job.parameters.judge_endpoint}}'
+              - --judge-timeout-seconds
+              - '{{job.parameters.judge_timeout_seconds}}'
+              - --request-interval-seconds
+              - '{{job.parameters.request_interval_seconds}}'
+              - --max-results
+              - '{{job.parameters.max_results}}'
+              - --run-label
+              - '{{job.parameters.run_label}}'
+              - --dataset
+              - '{{job.parameters.dataset}}'
+          max_retries: 0

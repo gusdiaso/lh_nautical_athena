@@ -17,6 +17,7 @@ sync:
     - package-lock.yml
     - src/dbt/**
     - src/*/*.py
+    - evaluation/**
     - resources/security/*.py
 
 # Permissões padrão do bundle
@@ -48,4 +49,4 @@ targets:
       branch: main
     # Define a identidade que será dona (owner) dos recursos em produção
     run_as:
-      service_principal_name: '1d6b3e3c-c04d-41e0-9883-ae8d467adcaf'
+      service_principal_name: "1d6b3e3c-c04d-41e0-9883-ae8d467adcaf"

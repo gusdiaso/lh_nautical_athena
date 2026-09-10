@@ -19,11 +19,11 @@ with source as (
         , product_variant_id
         , location_id
         , movement_type
-        , round(quantity, 2) as quantity
         , reference_table
         , reference_id
         , employee_id
         , occurred_at
+        , round(quantity, 2) as quantity
         , case
             when movement_type in ('purchase_in', 'return_in')
                 then 'entrada'

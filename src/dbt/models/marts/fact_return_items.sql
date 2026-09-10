@@ -98,7 +98,8 @@ with return_items as (
         , returns.has_refund_amount as return_has_refund_amount
         , returns.created_at as returned_at
         , cast(1 as integer) as returned_item_count
-        , {{ sk_from_keys(["'return_item'", 'return_items.return_item_id']) }} as sk_return_item
+        , {{ sk_from_keys(["'return_item'", 'return_items.return_item_id']) }}
+            as sk_return_item
         , coalesce(
             returned_products.sk_product
             , md5('product||nao_informado')

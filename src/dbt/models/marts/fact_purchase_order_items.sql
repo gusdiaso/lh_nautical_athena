@@ -103,7 +103,10 @@ with purchase_order_items as (
         , purchase_orders.placed_at
         , purchase_orders.expected_delivery_at
         , cast(1 as integer) as purchase_order_item_count
-        , {{ sk_from_keys(["'purchase_order_item'", 'purchase_order_items.purchase_order_item_id']) }} as sk_purchase_order_item
+        , {{ sk_from_keys([
+            "'purchase_order_item'"
+            , 'purchase_order_items.purchase_order_item_id'
+        ]) }} as sk_purchase_order_item
         , coalesce(
             products.sk_product
             , md5('product||nao_informado')
@@ -140,7 +143,11 @@ with purchase_order_items as (
                     , 2
                 )
         end as line_total_brl
-        , {{ default_supplier_sku('product_suppliers.supplier_sku', 'purchase_orders.supplier_id', 'purchase_order_items.product_variant_id') }} as supplier_sku
+        , {{ default_supplier_sku(
+            'product_suppliers.supplier_sku'
+            , 'purchase_orders.supplier_id'
+            , 'purchase_order_items.product_variant_id'
+        ) }} as supplier_sku
         , purchase_orders.expected_delivery_at
         < current_date() as is_expected_delivery_overdue
     from purchase_order_items

@@ -7,9 +7,9 @@ with source as (
         , tax_id
         , tax_id_type
         , email
-        , trim(phone) as phone
         , contact_name
         , is_active
+        , trim(phone) as phone
     from {{ ref('stg_suppliers') }}
 )
 
@@ -41,7 +41,8 @@ select
     , is_active
     , case
         when length(digits) >= 10
-            then concat('55', substring(digits, 1, 2), '9', substring(digits, 3))
+            then
+                concat('55', substring(digits, 1, 2), '9', substring(digits, 3))
         else phone
     end as phone
 from cleaned

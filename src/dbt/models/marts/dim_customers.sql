@@ -116,7 +116,8 @@ with customers as (
         , selected_addresses.country
         , customers.is_active
         , false as is_technical_member
-        , {{ sk_from_keys(["'customer'", 'customers.customer_id']) }} as sk_customer
+        , {{ sk_from_keys(["'customer'", 'customers.customer_id']) }}
+            as sk_customer
         , coalesce(selected_addresses.is_primary, false) as is_primary_address
     from customers
     left join selected_addresses

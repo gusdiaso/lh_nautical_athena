@@ -119,7 +119,8 @@ with product_variants as (
         , products.is_active as is_product_active
         , product_variants.is_active as is_variant_active
         , false as is_technical_member
-        , {{ sk_from_keys(["'product'", 'product_variants.product_variant_id']) }} as sk_product
+        , {{ sk_from_keys(["'product'", 'product_variants.product_variant_id']) }}
+            as sk_product
         , coalesce(
             brands.brand_name
             , 'Marca não informada'

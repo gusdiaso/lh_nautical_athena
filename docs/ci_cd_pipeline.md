@@ -84,6 +84,37 @@ targets:
       service_principal_name: '1d6b3e3c-c04d-41e0-9883-ae8d467adcaf'
 ```
 
+## 4.3. Pipeline de Pull Request (Validação)
+
+Antes de qualquer merge na `main`, o Bitbucket Pipelines roda automaticamente em toda **Pull Request** duas etapas de validação, usando o ambiente de **dev**:
+
+1. **Lint (`sqlfluff`)**: instala as dependências, roda `dbt deps` e executa `sqlfluff lint` sobre `src/dbt/models`, validando estilo e convenções SQL contra o dialeto `sparksql` (via templater `dbt`).
+2. **Testes automatizados (`pytest`)**: autentica via OAuth M2M com a Service Principal de **dev** (`DATABRICKS_CLIENT_ID_DEV` / `DATABRICKS_CLIENT_SECRET_DEV`) e roda a suíte de testes em `tests/`, que abre uma sessão real via Databricks Connect (com fallback automático para serverless compute).
+
+Essas duas etapas usam variáveis de repositório específicas de **dev**, mapeadas para os nomes que o dbt e o Databricks SDK esperam:
+
+| Variável no Bitbucket | Usada como | Onde é consumida |
+|---|---|---|
+| `DBT_HTTP_PATH` | `DBT_HTTP_PATH` | `profiles.yml` (target `dev`) |
+| `DBT_DATABRICKS_TOKEN_DEV` | `DBT_DATABRICKS_TOKEN` | `profiles.yml` (target `dev`) |
+| `DATABRICKS_HOST` | `DATABRICKS_HOST` | Databricks SDK / Connect |
+| `DATABRICKS_CLIENT_ID_DEV` | `DATABRICKS_CLIENT_ID` | Databricks SDK / Connect (auth M2M) |
+| `DATABRICKS_CLIENT_SECRET_DEV` | `DATABRICKS_CLIENT_SECRET` | Databricks SDK / Connect (auth M2M) |
+
+> **Nota:** essa validação roda em dev. Se o lint ou os testes falharem, a PR fica marcada como falha, mas nada é bloqueado automaticamente até que o time habilite isso como *merge check* obrigatório no Bitbucket.
+
+> O gate de qualidade da `main` é feito na própria PR: a branch é protegida (sem commit direto) e o merge só é permitido com o pipeline de PR (lint + testes) aprovado. Por isso o pipeline da `main` não repete essas etapas — ele só faz o deploy.
+
+### 4.3.1. Disparo manual em qualquer branch
+
+Existe também um pipeline `custom` chamado `validar-qualidade`, que roda as mesmas duas etapas (lint + testes) sob demanda, em qualquer branch — útil para validar uma branch específica sem precisar abrir uma PR. Para disparar:
+
+1. No Bitbucket, acesse **Pipelines** (ou **Branches > ... > Run pipeline**).
+2. Clique em **Run pipeline**.
+3. Escolha a branch desejada e selecione o pipeline customizado `validar-qualidade`.
+
+---
+
 ## 5. Permissões de Dados (Unity Catalog)
 
 Para que os Jobs rodem com sucesso, a Service Principal precisa ter permissão explícita para interagir com o catálogo de produção. O acesso foi concedido no Data Explorer do Databricks:

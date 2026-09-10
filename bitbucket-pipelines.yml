@@ -1,6 +1,39 @@
-image: ubuntu:22.04
+image: python:3.11
+
+definitions:
+  caches:
+    pip: ~/.cache/pip
+  steps:
+    - step: &lint
+        name: "Lint (sqlfluff)"
+        caches:
+          - pip
+        script:
+          # Aponta o dbt para o workspace de dev, usando as credenciais de dev já cadastradas no repositório
+          - export DBT_DATABRICKS_TOKEN=$DBT_DATABRICKS_TOKEN_DEV
+          - pip install --upgrade pip
+          - pip install -r requirements.txt
+          - dbt deps
+          - sqlfluff lint src/dbt/models
+
+    - step: &tests
+        name: "Testes automatizados (pytest)"
+        caches:
+          - pip
+        script:
+          # Autentica o Databricks Connect via OAuth M2M com a Service Principal de dev
+          - export DATABRICKS_CLIENT_ID=$DATABRICKS_CLIENT_ID_DEV
+          - export DATABRICKS_CLIENT_SECRET=$DATABRICKS_CLIENT_SECRET_DEV
+          - pip install --upgrade pip
+          - pip install -r requirements.txt
+          - pytest tests/ -v
 
 pipelines:
+  pull-requests:
+    "**":
+      - step: *lint
+      - step: *tests
+
   branches:
     main:
       - step:
@@ -13,3 +46,10 @@ pipelines:
             - databricks bundle deploy -t prod
 
             - databricks bundle run orchestrator_transform --target prod
+
+  custom:
+    # Dispare manualmente pela aba "Pipelines" do Bitbucket, escolhendo a branch desejada,
+    # para rodar lint + testes em qualquer branch sem precisar abrir uma PR.
+    validar-qualidade:
+      - step: *lint
+      - step: *tests

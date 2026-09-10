@@ -16,6 +16,18 @@ definitions:
           - dbt deps
           - sqlfluff lint src/dbt/models
 
+    - step: &build
+        name: "dbt build (dev)"
+        caches:
+          - pip
+        script:
+          # Roda seeds + models + snapshots + testes do dbt, na ordem do DAG, contra o workspace de dev
+          - export DBT_DATABRICKS_TOKEN=$DBT_DATABRICKS_TOKEN_DEV
+          - pip install --upgrade pip
+          - pip install -r requirements.txt
+          - dbt deps
+          - dbt build --target dev
+
     - step: &tests
         name: "Testes automatizados (pytest)"
         caches:
@@ -32,6 +44,7 @@ pipelines:
   pull-requests:
     "**":
       - step: *lint
+      - step: *build
       - step: *tests
 
   branches:
@@ -49,7 +62,8 @@ pipelines:
 
   custom:
     # Dispare manualmente pela aba "Pipelines" do Bitbucket, escolhendo a branch desejada,
-    # para rodar lint + testes em qualquer branch sem precisar abrir uma PR.
+    # para rodar lint + dbt build + testes em qualquer branch sem precisar abrir uma PR.
     validar-qualidade:
       - step: *lint
+      - step: *build
       - step: *tests

@@ -6,7 +6,9 @@ Este documento registra a implementacao de um MVP academico de Recuperacao Aumen
 
 O fluxo implementado combina uma etapa local de preparacao documental com recursos do Databricks: Unity Catalog Volume, tabela Delta, Change Data Feed (CDF), indice Delta Sync Hybrid, modelo de embeddings e endpoint de linguagem. A demonstracao remota confirmou o fluxo completo para uma pergunta documental, com resposta em portugues e citacao do arquivo e da secao utilizados.
 
-O documento separa fatos observados, inferencias e itens pendentes. Nao apresenta credenciais, identificadores privados, URLs internas, dados reais ou valores financeiros.
+Sobre esse MVP foram construidas tres camadas adicionais: um Golden Dataset versionado de 30 casos, um avaliador remoto com metricas deterministicas e groundedness por LLM-as-a-judge, e um job de verificacao operacional que tambem prova o isolamento do Data Warehouse. A evolucao esta registrada na secao 39.
+
+O documento separa fatos observados, inferencias e itens pendentes. Nao apresenta credenciais, identificadores privados, URLs internas, dados reais ou valores financeiros. Documentos complementares: [rag_evaluation.md](rag_evaluation.md) para avaliacao, [rag_operacao.md](rag_operacao.md) para operacao e [rag_seguranca.md](rag_seguranca.md) para a politica de menor privilegio.
 
 ## 2. Objetivo do projeto
 
@@ -35,7 +37,7 @@ O RAG atende ao requisito do checkpoint de demonstrar uma solucao documental no 
 - Agentes autonomos ou ferramentas de execucao de codigo.
 - Dashboard ou aplicacao web.
 - Uso de APIs externas para processar o corpus.
-- Avaliacao formal pelo Golden Dataset, ainda pendente.
+- Julgamento automatico de correcao factual: a avaliacao mede fundamentacao e recuperacao, nao substitui revisao humana.
 
 ## 4. Requisitos funcionais
 
@@ -162,11 +164,13 @@ Perguntas operacionais devem ser recusadas antes da consulta ao indice. A valida
 | Retrieval Hybrid | VALIDADO REMOTAMENTE | Consulta remota retornou cinco resultados | Resultado interpretado por manifest na implementacao | Testes de regressao remotos |
 | Integracao com LLM | VALIDADO REMOTAMENTE | Job end-to-end terminou com sucesso | Resposta em portugues com fonte | Validar mais cenarios |
 | Citacao de arquivo e secao | VALIDADO REMOTAMENTE | Resposta observada citou caminho e secao | A citacao e montada no contexto | Validador automatico pendente |
-| Testes offline | VALIDADO REMOTAMENTE | 17 testes locais passando antes da documentacao | Testes nao dependem do workspace | Expandir cobertura de contratos |
-| Golden Dataset | PENDENTE | Nenhum dataset versionado encontrado | Requisito de avaliacao | Criar 15 a 20 perguntas |
-| ACL de menor privilegio | PENDENTE | Recursos de desenvolvimento existem | Nao ha evidencia de politica final de producao | Definir identidade e grants |
-| Deploy pelo bundle original | PENDENTE | Deploy bloqueado por permissao em jobs antigos | Job RAG isolado foi usado | Criar bundle dedicado ou obter permissao |
-| Procedimento operacional do indice | PENDENTE | Funcoes parciais existem no codigo | Nao ha automacao de monitoramento | Documentar e automatizar |
+| Testes offline | VALIDADO LOCALMENTE | 127 testes locais passando | Testes nao dependem do workspace | Manter cobertura ao evoluir contratos |
+| Golden Dataset | IMPLEMENTADO LOCALMENTE | 30 casos em `evaluation/rag_golden_dataset.jsonl`, 10 na suite `smoke` | Valido pelo validador offline | Executar as suites no workspace |
+| Avaliacao remota e metricas | IMPLEMENTADO LOCALMENTE | `rag_evaluation.py`, `rag_groundedness.py` e job `rag_evaluation` | Recall, precisao, MRR, citacoes e groundedness | Primeira execucao remota e calibracao do juiz |
+| Verificacao operacional do indice | IMPLEMENTADO LOCALMENTE | `rag_operations.py` e job `rag_health_check` | Prontidao, deriva, latencia e isolamento | Primeira execucao remota |
+| ACL de menor privilegio | IMPLEMENTADO LOCALMENTE | `resources/security/rag_least_privilege.sql` e `apply_rag_grants.py` | Politica versionada e verificavel | Criar a Service Principal dedicada e aplicar |
+| Bundle dedicado | VALIDADO ESTATICAMENTE | `databricks bundle validate` OK em dev e prod | Quatro jobs RAG no bundle do projeto | Deploy e execucao remota |
+| Procedimento operacional do indice | IMPLEMENTADO LOCALMENTE | [rag_operacao.md](rag_operacao.md) e job `rag_health_check` | Runbook e veredito automatizado | Alerta automatico permanece fora de escopo |
 
 ## 9. Componentes implementados
 
@@ -186,12 +190,26 @@ Perguntas operacionais devem ser recusadas antes da consulta ao indice. A valida
 | `src/analytics_ai/rag_databricks.py` | `retrieve_context` | Executar busca Hybrid | Indice e pergunta | Contexto citavel | Cliente Vector/AI Search | VALIDADO REMOTAMENTE |
 | `src/analytics_ai/rag_databricks.py` | `wait_for_index` | Aguardar prontidao | Cliente de indice | Resultado do waiter | SDK tardio | IMPLEMENTADO LOCALMENTE |
 | `src/analytics_ai/rag_generation.py` | `generate_answer` | Adaptar geracao e fontes | Cliente, pergunta e chunks | `RagAnswer` | Cliente injetavel | IMPLEMENTADO LOCALMENTE |
+| `src/analytics_ai/rag_generation.py` | `check_citations` | Conferir citacoes contra o contexto | Resposta e chunks | `CitationCheck` | Biblioteca padrao | IMPLEMENTADO LOCALMENTE |
+| `src/analytics_ai/rag_endpoint.py` | `RateLimitedChatClient` | Espacar chamadas e repetir apenas 429 | Cliente de chat | Cliente pacificado | `openai` opcional | IMPLEMENTADO LOCALMENTE |
+| `src/analytics_ai/rag_evaluation.py` | `load_golden_dataset` | Validar o Golden Dataset | JSONL e corpus | Casos validados | Biblioteca padrao | IMPLEMENTADO LOCALMENTE |
+| `src/analytics_ai/rag_evaluation.py` | `run_remote_evaluation` | Executar e classificar uma suite | Casos e executor | Resumo e resultados | Executor injetavel | IMPLEMENTADO LOCALMENTE |
+| `src/analytics_ai/rag_groundedness.py` | `evaluate_groundedness` | Julgar sustentacao das afirmacoes | Resposta, chunks e juiz | Vereditos por afirmacao | Cliente injetavel | IMPLEMENTADO LOCALMENTE |
+| `src/analytics_ai/rag_operations.py` | `describe_index_state` | Ler estado do indice sem supor formato | Objeto de indice | `IndexState` | Cliente injetavel | IMPLEMENTADO LOCALMENTE |
+| `src/analytics_ai/rag_operations.py` | `probe_warehouse_isolation` | Provar ausencia de acesso ao warehouse | Executor SQL e schemas | `IsolationProbe` | Executor injetavel | IMPLEMENTADO LOCALMENTE |
+| `src/analytics_ai/rag_operations.py` | `build_health_report` | Classificar o veredito operacional | Sinais coletados | `HealthReport` | Biblioteca padrao | IMPLEMENTADO LOCALMENTE |
 | `src/analytics_ai/rag_config.py` | `RagRuntimeConfig` | Parametrizar recursos | Variaveis de ambiente | Configuracao imutavel | `os` | IMPLEMENTADO LOCALMENTE |
-| `src/analytics_ai/run_rag_ingestion.py` | `main` | Entry point de ingestao | Argumentos de Volume/tabela | Tabela Delta | Spark e modulos RAG | VALIDADO REMOTAMENTE |
-| `src/analytics_ai/run_rag_demo.py` | `main` | Demo retrieval + LLM | Argumentos de indice/pergunta | Resposta impressa | SDK Databricks e OpenAI | VALIDADO REMOTAMENTE |
+| `src/analytics_ai/run_rag_ingestion.py` | `main` | Entry point de ingestao | Argumentos de Volume/tabela | Tabela Delta e indice sincronizado | Spark e modulos RAG | VALIDADO REMOTAMENTE |
+| `src/analytics_ai/run_rag_demo.py` | `main` | Demo com `RagAnswer` e citacoes conferidas | Argumentos de indice/pergunta | Resposta e diagnostico | SDK Databricks e OpenAI | IMPLEMENTADO LOCALMENTE |
+| `src/analytics_ai/run_rag_evaluation.py` | `main` | Entry point da avaliacao remota | Suite, indice e endpoints | Relatorio Delta | Spark e modulos RAG | IMPLEMENTADO LOCALMENTE |
+| `src/analytics_ai/run_rag_health_check.py` | `main` | Entry point da verificacao operacional | Indice, tabela e schemas | Veredito e relatorio Delta | Spark e modulos RAG | IMPLEMENTADO LOCALMENTE |
 | `resources/rag/rag_ingestion.yml` | `rag_ingestion` | Declarar job de ingestao | Variaveis DAB | Job | Databricks Asset Bundle | VALIDADO ESTATICAMENTE |
 | `resources/rag/rag_demo.yml` | `rag_demo` | Declarar job de demonstracao | Variaveis DAB | Job | Databricks Asset Bundle | VALIDADO ESTATICAMENTE |
+| `resources/rag/rag_evaluation.yml` | `rag_evaluation` | Declarar job de avaliacao | Parametros de suite | Job | Databricks Asset Bundle | VALIDADO ESTATICAMENTE |
+| `resources/rag/rag_health_check.yml` | `rag_health_check` | Declarar job de verificacao | Parametros de indice e schemas | Job | Databricks Asset Bundle | VALIDADO ESTATICAMENTE |
+| `resources/security/apply_rag_grants.py` | `main` | Aplicar e verificar menor privilegio | Principal e ambiente | Statements Unity Catalog | `databricks-sql-connector` | IMPLEMENTADO LOCALMENTE |
 | `tests/test_rag_documents.py` | `RagDocumentsTest` | Testar contratos e guardrails | Fixtures temporarias | Assertions | `unittest`, mocks | VALIDADO LOCALMENTE |
+| `tests/test_rag_operations.py` | `RagHealthReportTest` | Testar veredito, isolamento e citacoes | Clientes falsos | Assertions | `unittest` | VALIDADO LOCALMENTE |
 
 ## 10. Nucleo Python offline
 
@@ -233,7 +251,7 @@ O hash do conteudo participa do identificador estavel. O timestamp de alteracao 
 
 O prompt tambem instrui o LLM a nao estimar dados do Data Warehouse. Essa segunda camada nao substitui o bloqueio deterministico nem as permissoes de catalogo.
 
-A recusa por ausencia de evidencia usa uma mensagem fixa de documentacao insuficiente. O comportamento precisa ser medido com o Golden Dataset.
+A recusa por ausencia de evidencia usa uma mensagem fixa de documentacao insuficiente. O Golden Dataset cobre esse comportamento com casos de contexto insuficiente, recusa operacional e tentativas adversariais; a medicao efetiva depende da execucao remota das suites.
 
 ## 15. Protecao contra prompt injection
 
@@ -299,7 +317,9 @@ A demonstracao produziu uma resposta em portugues sobre o fluxo de ingestao e tr
 
 O contexto e formatado com caminho, nome, secao e conteudo. A fonte exibida ao usuario deve usar o caminho retornado pelo indice, e nao somente o nome do arquivo, para evitar colisao entre arquivos de diretorios diferentes.
 
-O adaptador `generate_answer` retorna `RagAnswer` com texto, fontes unicas e indicador de recusa. O entry point remoto da demonstracao usa o mesmo prompt e o contexto recuperado; a integracao do objeto `RagAnswer` ao entry point ainda pode ser consolidada.
+O adaptador `generate_answer` retorna `RagAnswer` com texto, fontes unicas e indicador de recusa. O entry point da demonstracao foi consolidado sobre esse contrato: ele usa `retrieve_chunks`, o cliente pacificado de `rag_endpoint.py` e `generate_answer`, em vez de remontar prompt e contexto por conta propria.
+
+A citacao tambem deixou de ser apenas visual. `check_citations` compara cada par DOCUMENTO + SECAO citado com os pares efetivamente recuperados e devolve as citacoes que nao tem respaldo no contexto. A demonstracao imprime esse diagnostico e avisa quando uma resposta tecnica nao e auditavel. A verificacao e deterministica: ela prova que a fonte citada estava no contexto, nao que a afirmacao esta correta. O mesmo parser de citacoes alimenta a avaliacao, evitando duas definicoes divergentes do contrato de citacao.
 
 ## 25. Autenticacao e credenciais
 
@@ -321,13 +341,19 @@ O bundle original sincroniza recursos do projeto, mas o deploy completo foi impe
 
 Foi criado um job manual isolado para ingestao e outro para demonstracao. Os recursos versionados em [resources/rag/rag_ingestion.yml](../resources/rag/rag_ingestion.yml) e [resources/rag/rag_demo.yml](../resources/rag/rag_demo.yml) declaram a separacao dos jobs.
 
-A declaracao do bundle foi validada estaticamente. A promocao pelo bundle dedicado ainda e pendente porque o bundle original possui recursos fora da permissao da identidade atual.
+Hoje o bundle do projeto declara quatro jobs RAG independentes: `rag_ingestion`, `rag_demo`, `rag_evaluation` e `rag_health_check`. Cada um tem seu proprio `environments.spec`, porque a avaliacao e a demonstracao precisam de `openai` e a ingestao e o health check nao. `databricks bundle validate` conclui com sucesso nos targets `dev` e `prod`, incluindo as variaveis de indice, endpoint e tabelas de relatorio dos dois ambientes.
+
+A validacao estatica cobre sintaxe, variaveis e referencias, nao permissao. Se o deploy completo voltar a ser bloqueado por recursos de terceiros no workspace, a saida continua sendo executar apenas os jobs RAG, sem assumir propriedade nem alterar jobs de outra identidade.
 
 ## 28. Testes e validacoes
 
 | Tipo | Escopo | Resultado | Ambiente | Evidencia | Estado |
 |---|---|---|---|---|---|
-| Teste unitario | Parser, sanitizacao, allowlist, chunks e guardrails | 17 passando | Local | `tests/test_rag_documents.py` | VALIDADO LOCALMENTE |
+| Teste unitario | Parser, sanitizacao, allowlist, chunks e guardrails | 127 passando no total das suites RAG | Local | `tests/test_rag_*.py` | VALIDADO LOCALMENTE |
+| Teste unitario | Golden Dataset, metricas deterministicas e classificacao | Coberto | Local | `tests/test_rag_evaluation.py` | VALIDADO LOCALMENTE |
+| Teste unitario | Juiz de groundedness e contrato de saida | Coberto | Local | `tests/test_rag_groundedness.py` | VALIDADO LOCALMENTE |
+| Teste unitario | Estado do indice, deriva, isolamento, veredito e citacoes | Coberto | Local | `tests/test_rag_operations.py` | VALIDADO LOCALMENTE |
+| Validacao de dataset | 30 casos e cobertura do corpus | `validate --suite full` sem erro | Local | `analytics_ai.rag_evaluation validate` | VALIDADO LOCALMENTE |
 | Compilacao | Modulos Python | Passou | Local | `compileall` | VALIDADO LOCALMENTE |
 | Dependencias | Consistencia do ambiente principal | Sem requisitos quebrados | Local | `pip check` | VALIDADO LOCALMENTE |
 | Bundle | Sintaxe e planejamento estatico | `Validation OK` | CLI Databricks | `databricks bundle validate` | VALIDADO LOCALMENTE |
@@ -338,8 +364,12 @@ A declaracao do bundle foi validada estaticamente. A promocao pelo bundle dedica
 | Geracao | Contexto -> LLM | Sucesso | Databricks | Saida do demo | VALIDADO REMOTAMENTE |
 | Citacao | Caminho e secao | Observado na resposta | Databricks | Saida do demo | VALIDADO REMOTAMENTE |
 | Recusa numerica | Bloqueio antes do indice/LLM | Coberto por teste mock | Local | Teste de `guard_question` | IMPLEMENTADO LOCALMENTE |
-| Prompt injection | Regra no prompt e contexto delimitado | Nao avaliado em bateria formal | A confirmar | Sem Golden Dataset | PENDENTE |
-| Groundedness | Medicao sistematica | Nao executada | A confirmar | Sem avaliador formal | PENDENTE |
+| Prompt injection | Regra no prompt e contexto delimitado | Casos adversariais versionados no Golden Dataset | Local | `evaluation/rag_golden_dataset.jsonl` | IMPLEMENTADO LOCALMENTE |
+| Groundedness | Medicao sistematica por LLM-as-a-judge | Avaliador implementado e testado offline | Local | `rag_groundedness.py` | IMPLEMENTADO LOCALMENTE |
+| Bundle | Sintaxe, variaveis e targets dev e prod | `Validation OK` | CLI Databricks | `databricks bundle validate` | VALIDADO LOCALMENTE |
+| Suites de avaliacao | Execucao remota de `smoke` e `full` | Nao executadas | A confirmar | Sem linhas em `rag_evaluation_results` | PENDENTE |
+| Health check | Execucao remota do veredito operacional | Nao executada | A confirmar | Sem linhas em `rag_health_checks` | PENDENTE |
+| Isolamento do warehouse | Prova empirica por probe de permissao | Nao executada | A confirmar | Depende da Service Principal dedicada | PENDENTE |
 
 Os resultados remotos acima sao registros de execucoes realizadas durante a implementacao. Nao foram reexecutadas operacoes remotas somente para produzir este documento.
 
@@ -380,9 +410,10 @@ A primeira tentativa falhou por autenticacao ausente no job. O runtime foi ajust
 - Guardrails baseados em regex podem ter falsos positivos e falsos negativos.
 - O LLM pode falhar em groundedness; a resposta ainda precisa de avaliacao formal.
 - A escrita `overwrite` nao define por si so historico e remocao incremental de chunks.
-- O procedimento operacional ainda nao esta automatizado.
-- ACL de producao e Service Principal ainda nao foram configurados neste escopo.
-- O bundle original continua dependente de permissoes sobre recursos de terceiros.
+- O procedimento operacional esta automatizado, mas sem alerta: o veredito precisa ser consultado.
+- ACL de producao e Service Principal dedicada estao versionadas como politica e ainda nao aplicadas no workspace.
+- A avaliacao esta implementada e testada offline, porem sem resultados remotos registrados.
+- O juiz de groundedness ainda nao foi calibrado contra revisao humana e pode errar ao decompor afirmacoes.
 - O Free Edition pode ocultar billing tradicional, mas possui quotas e limites.
 
 ## 32. Custos, quotas e desligamento
@@ -456,9 +487,16 @@ O resultado deve ser interpretado por `manifest.columns`. A resposta final deve 
 
 ## 34. Operacao e atualizacao do indice
 
-**Estado: PENDENTE.** O codigo possui `wait_for_index`, mas ainda nao existe um operador automatizado de monitoramento.
+**Estado: IMPLEMENTADO LOCALMENTE.** O job `rag_health_check` automatiza a
+verificacao: prontidao do indice, deriva de linhas entre tabela e indice,
+latencia de uma pergunta documental e isolamento do Data Warehouse. O runbook
+completo, a politica de ciclo de vida e a tabela de sintomas estao em
+[rag_operacao.md](rag_operacao.md). O que permanece fora de escopo e alerta
+automatico: o historico e consultado sob demanda na tabela
+`rag_health_checks`.
 
-Procedimento recomendado:
+O procedimento manual abaixo continua valido como diagnostico profundo quando
+o veredito automatico aponta um problema:
 
 1. Consultar estado do endpoint.
 2. Consultar `status.ready` do indice.
@@ -474,32 +512,41 @@ Procedimento recomendado:
 
 ## 35. Pendencias
 
-1. Criar Golden Dataset com 15 a 20 perguntas.
-2. Incluir perguntas validas, sem evidencia, operacionais, ambiguas, com termos tecnicos em ingles e tentativas de injection.
-3. Automatizar taxa de recusa correta, groundedness, precisao das citacoes e recuperacao do trecho esperado.
-4. Medir falsos positivos e falsos negativos dos guardrails.
-5. Configurar identidade de producao com menor privilegio.
-6. Garantir ausencia de `USE SCHEMA` e `SELECT` no Data Warehouse.
-7. Formalizar atualizacao, sincronizacao, remocao e rollback do indice.
-8. Criar monitoramento de endpoint, pipeline, latencia e quota.
-9. Decidir ciclo de vida dos recursos de serving na Free Edition.
-10. Consolidar o bundle dedicado sem dependencia de jobs de terceiros.
-11. Consolidar o entrypoint de geracao com `RagAnswer` e validacao de citacoes.
+Concluido desde a primeira versao deste documento:
+
+1. Golden Dataset versionado com 30 casos, incluindo perguntas validas, sem evidencia, operacionais, adversariais e com termos tecnicos em ingles.
+2. Avaliacao automatizada de recuperacao, recusa, citacoes, latencia e groundedness, com relatorio append-only em Delta.
+3. Operacao do indice formalizada e automatizada pelo job `rag_health_check`, com runbook em [rag_operacao.md](rag_operacao.md).
+4. Ciclo de vida dos recursos e politica de quota decididos e registrados.
+5. Politica de menor privilegio versionada e parametrizavel, com verificacao empirica de isolamento.
+6. Bundle dedicado com os quatro jobs RAG, validado nos targets dev e prod.
+7. Entrypoint de geracao consolidado sobre `RagAnswer`, com validacao deterministica de citacoes.
+
+Pendente:
+
+1. Executar a suite `smoke` e depois a suite `full` no workspace e registrar os resultados reais.
+2. Calibrar o juiz de groundedness contra uma amostra revisada por humanos antes de trata-lo como criterio de aprovacao.
+3. Medir falsos positivos e falsos negativos dos guardrails a partir dos resultados das suites.
+4. Criar a Service Principal dedicada ao RAG e aplicar a politica de menor privilegio.
+5. Confirmar no workspace os nomes exatos de privilegio usados nos statements de `GRANT` e `DENY`.
+6. Executar o `rag_health_check` e arquivar o veredito como evidencia de isolamento.
+7. Definir rotacao de credenciais da identidade do RAG.
+8. Decidir se o corpus sera expandido com os documentos do proprio RAG, com revisao dos casos afetados.
 
 ## 36. Proximos passos para o checkpoint
 
 A ordem recomendada e:
 
-1. Criar e versionar o Golden Dataset.
-2. Automatizar a avaliacao e registrar resultados.
-3. Configurar ACL documental de menor privilegio.
-4. Formalizar operacao e recuperacao de falhas do indice.
-5. Revisar quotas e desligamento de endpoints.
-6. Executar nova bateria end-to-end com perguntas positivas e negativas.
-7. Consolidar evidencias do notebook, tabela, indice e respostas.
-8. Atualizar README e material da apresentacao.
-9. Ensaiar uma demonstracao curta e reproduzivel.
-10. Registrar limitacoes e resultados sem apresentar alegacoes de producao.
+1. Deploy do bundle em dev e execucao da ingestao, para garantir indice sincronizado com a documentacao atual.
+2. Execucao da suite `smoke` e leitura do relatorio antes de qualquer ajuste.
+3. Correcao dos problemas revelados pela suite `smoke`, com prioridade para guardrail e recuperacao.
+4. Execucao da suite `full` e registro dos numeros finais nesta documentacao.
+5. Criacao da Service Principal dedicada e aplicacao da politica de menor privilegio.
+6. Execucao do `rag_health_check` com `fail_on=degraded` e arquivamento do veredito.
+7. Consolidacao das evidencias de tabela, indice, respostas, avaliacao e isolamento.
+8. Atualizacao do README e do material da apresentacao.
+9. Ensaio de uma demonstracao curta e reproduzivel.
+10. Registro das limitacoes e dos resultados sem apresentar alegacoes de producao.
 
 ## 37. Criterios de conclusao
 
@@ -522,4 +569,20 @@ O MVP documental sera considerado pronto para a entrega quando:
 
 A implementacao atual confirma a viabilidade do MVP de RAG documental no Databricks. O fluxo de ingestao, indexacao, retrieval e geracao foi executado remotamente com sucesso, mantendo o Data Warehouse fora da arquitetura de consulta.
 
-O projeto ainda nao deve ser descrito como uma solucao de producao. As principais atividades restantes sao avaliacao sistematica, ACL de menor privilegio, operacao formal do indice, controle de quotas e consolidacao do bundle dedicado. Essas pendencias sao objetivas e podem ser tratadas sem alterar o pipeline Bronze, Silver ou Gold.
+Sobre esse MVP existem hoje tres camadas de garantia: avaliacao versionada com Golden Dataset e metricas, verificacao operacional automatizada e uma politica de menor privilegio com prova empirica de isolamento. Todas sao reproduziveis e testadas offline.
+
+O projeto ainda nao deve ser descrito como uma solucao de producao. O que falta nao e mais construcao, e execucao no workspace: rodar as suites de avaliacao, criar a identidade dedicada, aplicar a politica de acesso e arquivar as evidencias. Essas pendencias sao objetivas e podem ser tratadas sem alterar o pipeline Bronze, Silver ou Gold.
+
+## 39. Evolucao da entrega
+
+| Etapa | Entrega | Estado |
+|---|---|---|
+| MVP documental | Parser, allowlist, sanitizacao, chunking, Delta, CDF, indice Delta Sync Hybrid, guardrails, retrieval e geracao com citacoes | Fluxo validado remotamente |
+| Golden Dataset e ingestao | 30 casos versionados, chunking por secao com breadcrumb e sincronizacao confirmada do indice | Implementado e validado offline |
+| Avaliacao remota | Job `rag_evaluation`, relatorio append-only, classificacao de recusas e reforco de guardrails | Implementado, sem execucao remota |
+| Metricas e groundedness | Recall, precisao, MRR, cobertura de citacoes e LLM-as-a-judge com contrato auditavel | Implementado, sem execucao remota |
+| Operacao e seguranca | Job `rag_health_check`, runbook operacional, ciclo de vida definido, politica de menor privilegio e prova de isolamento | Implementado, sem execucao remota |
+
+Cada etapa preservou as decisoes anteriores: o corpus continua restrito a
+allowlist, o Data Warehouse continua fora do fluxo de consulta e nenhuma
+camada nova recebeu privilegio adicional sobre dados operacionais.

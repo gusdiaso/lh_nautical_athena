@@ -26,7 +26,10 @@ definitions:
           - pip install --upgrade pip
           - pip install -r requirements.txt
           - dbt deps
-          - dbt build --target dev
+          # Como o target dev é compartilhado, uma escrita concorrente de outra PR/job pode
+          # esbarrar num DELTA_METADATA_CHANGED transitório. "dbt retry" reroda só os nodes
+          # que falharam (não builda tudo de novo) antes de desistir de vez.
+          - dbt build --target dev || dbt retry --target dev
 
     - step: &tests
         name: "Testes automatizados (pytest)"
@@ -52,6 +55,10 @@ pipelines:
       - step:
           name: "Deploy para Produção no Databricks"
           script:
+            # Autentica a CLI do Databricks via OAuth M2M com a Service Principal de prod
+            - export DATABRICKS_CLIENT_ID=$DATABRICKS_CLIENT_ID_PROD
+            - export DATABRICKS_CLIENT_SECRET=$DATABRICKS_CLIENT_SECRET_PROD
+
             - apt-get update && apt-get install -y curl unzip
 
             - curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh

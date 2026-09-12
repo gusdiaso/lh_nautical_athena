@@ -8,6 +8,14 @@
 -- nas análises de compras, abastecimento e SLA de fornecedores.
 -- ============================================================
 
+{{ config(
+    post_hook=mask_post_hooks({
+        "tax_id": "mask_full",
+        "email": "mask_email",
+        "phone": "mask_phone",
+    })
+) }}
+
 with suppliers as (
     select
         supplier_id

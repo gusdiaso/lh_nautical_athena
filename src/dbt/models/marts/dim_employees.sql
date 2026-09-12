@@ -5,6 +5,13 @@
 -- + membros técnicos validados com o cliente
 -- ============================================================
 
+{{ config(
+    post_hook=mask_post_hooks({
+        "cpf": "mask_cpf",
+        "email": "mask_email",
+    })
+) }}
+
 with employees as (
     select
         employee_id

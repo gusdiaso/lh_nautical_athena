@@ -9,6 +9,14 @@
 -- forma determinística para manter uma linha por cliente.
 -- ============================================================
 
+{{ config(
+    post_hook=mask_post_hooks({
+        "tax_id": "mask_full",
+        "email": "mask_email",
+        "phone": "mask_phone",
+    })
+) }}
+
 with customers as (
     select
         customer_id

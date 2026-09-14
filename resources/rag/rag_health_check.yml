@@ -1,0 +1,73 @@
+variables:
+  rag_health_report_table:
+    description: 'Tabela Delta append-only com o historico de saude operacional do RAG'
+
+targets:
+  dev:
+    variables:
+      rag_health_report_table: dev_lh_nautical.rag.rag_health_checks
+  prod:
+    variables:
+      rag_health_report_table: prod_lh_nautical.rag.rag_health_checks
+
+resources:
+  jobs:
+    rag_health_check:
+      name: rag_health_check
+      description: >
+        Verifica prontidao do indice, deriva de linhas entre tabela e indice,
+        latencia de uma pergunta documental e o isolamento do Data Warehouse.
+        Falha quando a identidade do RAG alcanca Bronze, Silver ou Gold.
+      max_concurrent_runs: 1
+      parameters:
+        - name: index_name
+          default: ${var.rag_index_name}
+        - name: endpoint_name
+          default: ${var.rag_vector_endpoint}
+        - name: chunks_table
+          default: ${var.rag_chunks_table}
+        - name: report_table
+          default: ${var.rag_health_report_table}
+        - name: probe_question
+          default: 'Como funciona o processo de ingestao e transformacao do projeto?'
+        - name: isolation_schemas
+          default: bronze,silver,gold
+        - name: max_results
+          default: '5'
+        - name: fail_on
+          default: violated
+        - name: run_label
+          default: ''
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: '2'
+            dependencies:
+              - databricks-ai-search==0.78
+              - protobuf<6
+      tasks:
+        - task_key: check_rag_operation
+          environment_key: default
+          description: 'Registra o veredito operacional e o isolamento do warehouse'
+          spark_python_task:
+            python_file: ../../src/analytics_ai/run_rag_health_check.py
+            parameters:
+              - --index-name
+              - '{{job.parameters.index_name}}'
+              - --endpoint-name
+              - '{{job.parameters.endpoint_name}}'
+              - --chunks-table
+              - '{{job.parameters.chunks_table}}'
+              - --report-table
+              - '{{job.parameters.report_table}}'
+              - --probe-question
+              - '{{job.parameters.probe_question}}'
+              - --isolation-schemas
+              - '{{job.parameters.isolation_schemas}}'
+              - --max-results
+              - '{{job.parameters.max_results}}'
+              - --fail-on
+              - '{{job.parameters.fail_on}}'
+              - --run-label
+              - '{{job.parameters.run_label}}'
+          max_retries: 0

@@ -46,9 +46,9 @@ O dbt lê as tabelas Bronze via `{{ source('bronze', 'nome_tabela') }}` e aplica
 | **Staging** | Modelos ephemeral (CTE) para organização e tipagem | Implementado |
 | **Intermediate** | Tabelas dbt com limpeza, validação e enriquecimento | Implementado |
 | **Gold / Marts** | Modelos dimensionais prontos para análise | Implementado |
+| **RAG Documental** | Busca em linguagem natural na documentação do projeto (Gen AI) | Implementado |
 | **Dashboards** | Visualizações e relatórios | Futuro |
 | **Machine Learning** | Modelos preditivos (previsão de demanda, churn) | Futuro |
-| **Gen AI** | Assistentes inteligentes e análise em linguagem natural | Futuro |
 
 ---
 
@@ -57,6 +57,7 @@ O dbt lê as tabelas Bronze via `{{ source('bronze', 'nome_tabela') }}` e aplica
 - [Dependências do Projeto](#dependências-do-projeto)
 - [Configuração do Ambiente de Desenvolvimento](#configuração-do-ambiente-de-desenvolvimento)
 - [Pipeline Completo (Ingestão → Transformação)](#passo-a-passo-pipeline-completo-ingestão--transformação)
+- [RAG Documental](#rag-documental)
 - [Comandos Úteis](#comandos-úteis)
 - [Estrutura do Projeto](#estrutura-do-projeto)
 - [Arquitetura](#arquitetura)
@@ -258,6 +259,55 @@ dbt docs serve   # Acessar em http://localhost:8080
 
 ---
 
+## RAG Documental
+
+O projeto possui um RAG que responde perguntas em linguagem natural **somente
+sobre a documentação técnica versionada**. Ele não consulta Bronze, Silver ou
+Gold, não gera SQL e recusa perguntas que peçam valores do Data Warehouse.
+
+Os recursos ficam em um schema próprio (`dev_lh_nautical.rag`): Volume com os
+documentos aprovados, tabela Delta de chunks e índice Delta Sync Hybrid.
+
+### Jobs disponíveis
+
+| Job | O que faz | Quando rodar |
+|-----|-----------|--------------|
+| `rag_ingestion` | Lê a allowlist, sanitiza, divide em chunks, sobrescreve o Delta e sincroniza o índice | Sempre que a documentação aprovada mudar |
+| `rag_health_check` | Prontidão do índice, deriva de linhas, latência e isolamento do warehouse | Após a ingestão e antes de apresentar |
+| `rag_evaluation` | Executa uma suíte do Golden Dataset e grava o relatório | `smoke` no dia a dia, `full` em marcos |
+| `rag_demo` | Uma pergunta documental end-to-end com citações conferidas | Demonstração ao vivo |
+
+```bash
+# Ingestão da documentação aprovada
+databricks bundle run rag_ingestion -t dev
+
+# Verificação operacional e de isolamento
+databricks bundle run rag_health_check -t dev
+
+# Avaliação: 10 casos rápidos ou os 30 casos completos
+databricks bundle run rag_evaluation -t dev --params suite=smoke
+databricks bundle run rag_evaluation -t dev --params suite=full
+
+# Demonstração
+databricks bundle run rag_demo -t dev
+```
+
+### Validação local (sem Databricks)
+
+```bash
+# Testes offline do RAG
+python -m unittest tests.test_rag_documents tests.test_rag_endpoint tests.test_rag_evaluation tests.test_rag_groundedness tests.test_rag_operations
+
+# Validação do Golden Dataset e da cobertura do corpus
+PYTHONPATH=src python -m analytics_ai.rag_evaluation validate --suite full
+```
+
+> ℹ️ O SDK `databricks-ai-search` não entra no `requirements.txt` principal:
+> ele exige `protobuf < 6` e o dbt do projeto exige `protobuf >= 6`. A
+> dependência é declarada apenas no ambiente dos jobs RAG.
+
+---
+
 ## Comandos Úteis
 
 ### Deploy e Jobs
@@ -336,10 +386,17 @@ lh_nautical/
 │   │   └── dbt_transform.yml              # Job: transformação dbt
 │   ├── orchestrator/
 │   │   └── orchestrator_transform.yml     # Job: orquestrador principal
+│   ├── rag/
+│   │   ├── rag_ingestion.yml              # Job: documentação → Delta → índice
+│   │   ├── rag_evaluation.yml             # Job: suíte do Golden Dataset
+│   │   ├── rag_health_check.yml           # Job: saúde do índice e isolamento
+│   │   └── rag_demo.yml                   # Job: demonstração end-to-end
 │   └── security/
 │       ├── apply_column_masks.sql         # SQL de column masking
 │       ├── apply_column_masks.py          # Script Python para aplicar masks
-│       └── apply_bronze_masks.py          # Script para aplicar masks na Bronze
+│       ├── apply_bronze_masks.py          # Script para aplicar masks na Bronze
+│       ├── rag_least_privilege.sql        # SQL de menor privilégio do RAG
+│       └── apply_rag_grants.py            # Script para aplicar/verificar os grants
 ├── src/
 │   ├── ingestion/
 │   │   ├── config.py                      # Constantes (tabelas, JDBC URL)
@@ -355,7 +412,18 @@ lh_nautical/
 │   │   │   └── marts/                     # Modelo dimensional (Gold)
 │   │   ├── macros/                        # Funções reutilizáveis
 │   │   └── tests/                         # Testes de qualidade
-│   └── analytics_ai/                      # ML e Gen AI (futuro)
+│   └── analytics_ai/                      # RAG documental (Gen AI)
+│       ├── rag_documents.py               # Allowlist, sanitização e chunking
+│       ├── rag_prompt.py                  # Guardrails e contexto delimitado
+│       ├── rag_databricks.py              # Delta, índice Delta Sync e retrieval
+│       ├── rag_generation.py              # Geração e verificação de citações
+│       ├── rag_endpoint.py                # Pacing e retry de rate limit
+│       ├── rag_evaluation.py              # Golden Dataset e métricas
+│       ├── rag_groundedness.py            # LLM-as-a-judge de fundamentação
+│       ├── rag_operations.py              # Saúde do índice e isolamento
+│       └── run_rag_*.py                   # Entrypoints dos jobs RAG
+├── evaluation/
+│   └── rag_golden_dataset.jsonl           # 30 casos de avaliação do RAG
 ├── docs/                                  # Documentação
 │   ├── dictionary.md                      # Dicionário de dados
 │   ├── extract_lh_nautical.md             # Docs extração SQL Server
@@ -365,6 +433,7 @@ lh_nautical/
 │   ├── dbt_configuration.md               # Configuração do dbt
 │   └── macros.md                          # Documentação das macros
 └── tests/
+    ├── test_rag_*.py                      # Testes offline do RAG (sem Databricks)
     ├── notebooks/                         # Notebooks de teste
     └── sql/                               # Scripts SQL de teste
 ```
@@ -427,6 +496,11 @@ SQL Server (ERP)                API PTAX (BCB)
 | `docs/star_schema.md` | Modelo dimensional (Star Schema) |
 | `docs/planejamento_dbt.md` | Planejamento e convenções do projeto dbt |
 | `docs/transform_after_extract.md` | Como rodar transformação logo após extração |
+| `docs/implementacao-rag-documental-databricks.md` | Arquitetura completa do RAG documental, decisões e limitações |
+| `docs/rag_mvp.md` | Escopo e estado do MVP do RAG |
+| `docs/rag_evaluation.md` | Golden Dataset, métricas e groundedness |
+| `docs/rag_operacao.md` | Operação do RAG: health check, ciclo de vida e falhas |
+| `docs/rag_seguranca.md` | Menor privilégio e isolamento do Data Warehouse |
 
 > ℹ️ A tabela `fiscal_invoices` é extraída para Bronze mas não possui modelo dbt, pois não integra o modelo dimensional atual.
 

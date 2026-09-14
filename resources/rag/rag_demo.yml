@@ -12,6 +12,11 @@ targets:
       rag_index_name: dev_lh_nautical.rag.document_chunks_index
       rag_vector_endpoint: rag-documents-dev
       rag_llm_endpoint: databricks-meta-llama-3-3-70b-instruct
+  prod:
+    variables:
+      rag_index_name: prod_lh_nautical.rag.document_chunks_index
+      rag_vector_endpoint: rag-documents-prod
+      rag_llm_endpoint: databricks-meta-llama-3-3-70b-instruct
 
 resources:
   jobs:

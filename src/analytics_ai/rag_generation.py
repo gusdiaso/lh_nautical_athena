@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Protocol, Sequence
 
 if __package__:
     from .rag_documents import Chunk
@@ -44,6 +44,53 @@ class RagAnswer:
     answer: str
     sources: tuple[str, ...]
     refused: bool = False
+
+
+@dataclass(frozen=True)
+class CitationCheck:
+    """Diagnostics comparing the citations of an answer with the retrieved chunks."""
+
+    cited: tuple[tuple[str, str], ...]
+    retrieved: tuple[tuple[str, str], ...]
+    not_retrieved: tuple[tuple[str, str], ...]
+
+    @property
+    def valid(self) -> bool:
+        """A technical answer is citable only when every citation was retrieved."""
+        return bool(self.cited) and not self.not_retrieved
+
+
+CITATION_PATTERN = re.compile(
+    r"Fonte:\s*\[?(.+?)\]?\s*-\s*Se(?:c|ç)(?:a|ã)o:\s*([^\n]+)",
+    re.IGNORECASE,
+)
+
+
+def parse_citation_pairs(answer: str) -> tuple[tuple[str, str], ...]:
+    """Extract unique ``(document, section)`` citations preserving their order."""
+    return tuple(
+        dict.fromkeys(
+            (path.strip(), section.strip().rstrip(". "))
+            for path, section in CITATION_PATTERN.findall(answer)
+        )
+    )
+
+
+def check_citations(answer: str, chunks: Sequence[Chunk]) -> CitationCheck:
+    """Verify that every citation of the answer points to a retrieved chunk.
+
+    The check is deterministic and local: it never proves that a claim is
+    correct, only that the cited document and section were actually part of the
+    context sent to the model.
+    """
+    cited = parse_citation_pairs(answer)
+    retrieved = tuple(dict.fromkeys((chunk.source_path, chunk.section) for chunk in chunks))
+    retrieved_pairs = frozenset(retrieved)
+    return CitationCheck(
+        cited=cited,
+        retrieved=retrieved,
+        not_retrieved=tuple(pair for pair in cited if pair not in retrieved_pairs),
+    )
 
 
 def _source_paths(chunks: list[Chunk]) -> tuple[str, ...]:

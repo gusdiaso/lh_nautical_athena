@@ -1,0 +1,66 @@
+variables:
+  rag_catalog:
+    description: 'Catalogo UC do RAG documental'
+  rag_schema:
+    description: 'Schema UC isolado do RAG documental'
+  rag_volume:
+    description: 'Volume UC com documentos aprovados'
+  rag_chunks_table:
+    description: 'Tabela Delta de chunks documentais'
+  rag_embedding_endpoint:
+    description: 'Endpoint de embeddings gerenciados do AI Search'
+    default: databricks-bge-large-en
+
+targets:
+  dev:
+    variables:
+      rag_catalog: dev_lh_nautical
+      rag_schema: rag
+      rag_volume: documents
+      rag_chunks_table: dev_lh_nautical.rag.document_chunks
+  prod:
+    variables:
+      rag_catalog: prod_lh_nautical
+      rag_schema: rag
+      rag_volume: documents
+      rag_chunks_table: prod_lh_nautical.rag.document_chunks
+
+resources:
+  jobs:
+    rag_ingestion:
+      name: rag_ingestion
+      description: >
+        Ingestao manual da documentacao aprovada para a tabela Delta do RAG,
+        seguida de sincronizacao confirmada do indice AI Search TRIGGERED.
+        Nao acessa tabelas Bronze, Silver ou Gold e nao cria endpoints.
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: '2'
+            dependencies:
+              - databricks-ai-search==0.78
+      tasks:
+        - task_key: ingest_documentation
+          environment_key: default
+          description: 'Sobrescreve os chunks e aguarda a sincronizacao do indice AI Search'
+          spark_python_task:
+            python_file: ../../src/analytics_ai/run_rag_ingestion.py
+            parameters:
+              - --volume-path
+              - /Volumes/${var.rag_catalog}/${var.rag_schema}/${var.rag_volume}
+              - --chunks-table
+              - ${var.rag_chunks_table}
+              - --index-name
+              - ${var.rag_index_name}
+              - --endpoint-name
+              - ${var.rag_vector_endpoint}
+              - --embedding-endpoint
+              - ${var.rag_embedding_endpoint}
+              - --index-timeout-seconds
+              - '3600'
+              - --chunk-size
+              - '800'
+              - --chunk-overlap
+              - '80'
+          max_retries: 1

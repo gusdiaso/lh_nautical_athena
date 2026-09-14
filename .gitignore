@@ -1,5 +1,6 @@
 .venv/
 .vscode/
+.pytest_cache
 __pycache__/
 *.pyc
 *.egg-info
@@ -22,6 +23,7 @@ scratch/**
 .vscode/__builtins__.pyi
 tests/secrets.py
 .user.yml
+.claude/settings.local.json
 # DuckDB local development
 *.duckdb
 *.duckdb.wal

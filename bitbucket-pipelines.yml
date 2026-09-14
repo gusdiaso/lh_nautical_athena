@@ -1,11 +1,64 @@
-image: ubuntu:22.04
+image: python:3.12
+
+definitions:
+  caches:
+    pip: ~/.cache/pip
+  steps:
+    - step: &lint
+        name: "Lint (sqlfluff)"
+        caches:
+          - pip
+        script:
+          # Aponta o dbt para o workspace de dev, usando as credenciais de dev já cadastradas no repositório
+          - export DBT_DATABRICKS_TOKEN=$DBT_DATABRICKS_TOKEN_DEV
+          - pip install --upgrade pip
+          - pip install -r requirements.txt
+          - dbt deps
+          - sqlfluff lint src/dbt/models
+
+    - step: &build
+        name: "dbt build (dev)"
+        caches:
+          - pip
+        script:
+          # Roda seeds + models + snapshots + testes do dbt, na ordem do DAG, contra o workspace de dev
+          - export DBT_DATABRICKS_TOKEN=$DBT_DATABRICKS_TOKEN_DEV
+          - pip install --upgrade pip
+          - pip install -r requirements.txt
+          - dbt deps
+          # Como o target dev é compartilhado, uma escrita concorrente de outra PR/job pode
+          # esbarrar num DELTA_METADATA_CHANGED transitório. "dbt retry" reroda só os nodes
+          # que falharam (não builda tudo de novo) antes de desistir de vez.
+          - dbt build --target dev || dbt retry --target dev
+
+    - step: &tests
+        name: "Testes automatizados (pytest)"
+        caches:
+          - pip
+        script:
+          # Autentica o Databricks Connect via OAuth M2M com a Service Principal de dev
+          - export DATABRICKS_CLIENT_ID=$DATABRICKS_CLIENT_ID_DEV
+          - export DATABRICKS_CLIENT_SECRET=$DATABRICKS_CLIENT_SECRET_DEV
+          - pip install --upgrade pip
+          - pip install -r requirements.txt
+          - pytest tests/ -v
 
 pipelines:
+  pull-requests:
+    "**":
+      - step: *lint
+      - step: *build
+      - step: *tests
+
   branches:
     main:
       - step:
           name: "Deploy para Produção no Databricks"
           script:
+            # Autentica a CLI do Databricks via OAuth M2M com a Service Principal de prod
+            - export DATABRICKS_CLIENT_ID=$DATABRICKS_CLIENT_ID_PROD
+            - export DATABRICKS_CLIENT_SECRET=$DATABRICKS_CLIENT_SECRET_PROD
+
             - apt-get update && apt-get install -y curl unzip
 
             - curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
@@ -13,3 +66,11 @@ pipelines:
             - databricks bundle deploy -t prod
 
             - databricks bundle run orchestrator_transform --target prod
+
+  custom:
+    # Dispare manualmente pela aba "Pipelines" do Bitbucket, escolhendo a branch desejada,
+    # para rodar lint + dbt build + testes em qualquer branch sem precisar abrir uma PR.
+    validar-qualidade:
+      - step: *lint
+      - step: *build
+      - step: *tests

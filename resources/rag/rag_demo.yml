@@ -1,0 +1,50 @@
+variables:
+  rag_index_name:
+    description: 'Indice Vector Search documental'
+  rag_vector_endpoint:
+    description: 'Endpoint Vector Search documental'
+  rag_llm_endpoint:
+    description: 'Endpoint LLM para geracao'
+
+targets:
+  dev:
+    variables:
+      rag_index_name: dev_lh_nautical.rag.document_chunks_index
+      rag_vector_endpoint: rag-documents-dev
+      rag_llm_endpoint: databricks-meta-llama-3-3-70b-instruct
+  prod:
+    variables:
+      rag_index_name: prod_lh_nautical.rag.document_chunks_index
+      rag_vector_endpoint: rag-documents-prod
+      rag_llm_endpoint: databricks-meta-llama-3-3-70b-instruct
+
+resources:
+  jobs:
+    rag_demo:
+      name: rag_demo
+      description: 'Demonstracao end-to-end do RAG documental com citacoes'
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: '2'
+            dependencies:
+              - databricks-ai-search==0.78
+              - openai
+              - protobuf<6
+      tasks:
+        - task_key: ask_documentation
+          environment_key: default
+          description: 'Executa retrieval hibrido e gera resposta documental'
+          spark_python_task:
+            python_file: ../../src/analytics_ai/run_rag_demo.py
+            parameters:
+              - --index-name
+              - ${var.rag_index_name}
+              - --endpoint-name
+              - ${var.rag_vector_endpoint}
+              - --llm-endpoint
+              - ${var.rag_llm_endpoint}
+              - --question
+              - 'Como funciona o processo de ingestao e transformacao do projeto?'
+          max_retries: 0

@@ -41,6 +41,14 @@ def validate_table_name(table_name: str) -> str:
     return table_name
 
 
+def validate_schema_name(schema_name: str) -> str:
+    """Validate a Unity Catalog ``catalog.schema`` identifier before SQL interpolation."""
+    parts = schema_name.split(".")
+    if len(parts) != 2 or not all(_TABLE_NAME_PATTERN.fullmatch(part) for part in parts):
+        raise ValueError("schema_name must be a catalog.schema identifier")
+    return schema_name
+
+
 def chunk_rows(chunks: Iterable[Chunk]) -> list[dict[str, str]]:
     """Convert chunks to the explicit row contract used by the Delta table."""
     return [chunk.as_dict() for chunk in chunks]

@@ -652,19 +652,15 @@ def evaluate_cases(
     )
 
 
-_CITATION_PATTERN = re.compile(
-    r"Fonte:\s*\[?(.+?)\]?\s*-\s*Se(?:c|ç)(?:a|ã)o:\s*([^\n]+)",
-    re.IGNORECASE,
-)
-
-
 def parse_citations(answer: str) -> tuple[ExpectedSource, ...]:
     """Extract the citation contract required by the documentary prompt."""
+    if __package__:
+        from .rag_generation import parse_citation_pairs
+    else:
+        from rag_generation import parse_citation_pairs
+
     return tuple(
-        dict.fromkeys(
-            ExpectedSource(path.strip(), section.strip().rstrip(". "))
-            for path, section in _CITATION_PATTERN.findall(answer)
-        )
+        ExpectedSource(path, section) for path, section in parse_citation_pairs(answer)
     )
 
 

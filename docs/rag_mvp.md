@@ -22,6 +22,14 @@ O modulo `src/analytics_ai/rag_prompt.py` implementa os limites da geracao:
 - contexto delimitado com nome do arquivo e secao;
 - prompt restritivo para respostas fundamentadas e citaveis.
 
+O modulo `src/analytics_ai/rag_operations.py` implementa a verificacao operacional:
+
+- leitura tolerante do estado do indice, sem supor o formato do SDK;
+- comparacao de linhas entre a tabela Delta e o indice;
+- probe de uma pergunta documental com medicao de latencia;
+- prova empirica de que a identidade nao alcanca Bronze, Silver e Gold;
+- veredito `healthy`, `degraded` ou `violated` com motivos explicitos.
+
 O modulo `src/analytics_ai/rag_databricks.py` implementa a fronteira com o Databricks:
 
 - validacao de identificadores `catalog.schema.table`;
@@ -55,8 +63,10 @@ Os testes offline podem ser executados sem Databricks Connect:
 
 O job somente conclui depois que a atualização do índice termina. Estado remoto de erro ou timeout interrompe o job; para o timeout padrão, o limite é 3600 segundos. Como o Delta Sync acompanha a tabela com CDF pela chave `chunk_id`, a sincronização concluída também propaga a remoção dos IDs que desapareceram no overwrite.
 5. Usar `retrieve_context` com busca hibrida, filtros e `top-k` entre 3 e 5. **Concluido na demonstracao end-to-end.**
-6. Bloquear perguntas numericas antes de chamar o LLM.
-7. Validar 15 a 20 perguntas do Golden Dataset, incluindo perguntas sem resposta, prompt injection e consultas que devem ser recusadas. **Pendente.**
+6. Bloquear perguntas numericas antes de chamar o LLM. **Concluido:** `guard_question` roda antes do indice e do LLM.
+7. Validar o Golden Dataset, incluindo perguntas sem resposta, prompt injection e consultas que devem ser recusadas. **Implementado:** 30 casos versionados e job `rag_evaluation`; a execucao remota das suites `smoke` e `full` continua pendente. Ver [rag_evaluation.md](rag_evaluation.md).
+8. Verificar prontidao, deriva e isolamento pelo job `rag_health_check`. **Implementado:** execucao remota pendente. Ver [rag_operacao.md](rag_operacao.md).
+9. Aplicar a politica de menor privilegio a uma Service Principal dedicada. **Pendente.** Ver [rag_seguranca.md](rag_seguranca.md).
 
 ## Seguranca
 

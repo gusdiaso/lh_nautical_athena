@@ -3,10 +3,17 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 
-from rag_databricks import retrieve_context
-from rag_prompt import build_system_prompt
+if __package__:
+    from .rag_databricks import retrieve_chunks
+    from .rag_endpoint import RateLimitedChatClient
+    from .rag_generation import check_citations, generate_answer
+else:
+    from rag_databricks import retrieve_chunks
+    from rag_endpoint import RateLimitedChatClient
+    from rag_generation import check_citations, generate_answer
 
 
 def parse_args() -> argparse.Namespace:
@@ -14,6 +21,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--index-name", required=True)
     parser.add_argument("--endpoint-name", required=True)
     parser.add_argument("--llm-endpoint", default="databricks-meta-llama-3-3-70b-instruct")
+    parser.add_argument("--max-results", type=int, default=5)
+    parser.add_argument("--request-interval-seconds", type=float, default=2.0)
     parser.add_argument(
         "--question",
         default="Como funciona o processo de ingestao e transformacao do projeto?",
@@ -35,6 +44,11 @@ def _runtime_token() -> str | None:
 
 def main() -> None:
     args = parse_args()
+    if not 1 <= args.max_results <= 10:
+        raise ValueError("max-results must be between 1 and 10")
+    if args.request_interval_seconds < 0:
+        raise ValueError("request-interval-seconds must be non-negative")
+
     from databricks.sdk import WorkspaceClient
     from databricks.ai_search.client import AISearchClient
     from openai import OpenAI
@@ -47,25 +61,38 @@ def main() -> None:
 
     vector_client = AISearchClient(disable_notice=True)
     index = vector_client.get_index(endpoint_name=args.endpoint_name, index_name=args.index_name)
-    context = retrieve_context(index, args.question, num_results=5, filters={"status": "approved"})
-    if context.startswith("Diretriz de Seguranca:"):
-        print(context)
-        return
-
-    llm_client = OpenAI(api_key=token, base_url=f"{host}/serving-endpoints")
-    result = llm_client.chat.completions.create(
-        model=args.llm_endpoint,
-        messages=[
-            {"role": "system", "content": build_system_prompt()},
-            {"role": "user", "content": f"<DOCUMENTOS_RECUPERADOS>\n{context}\n</DOCUMENTOS_RECUPERADOS>\n\nPERGUNTA:\n{args.question}"},
-        ],
-        max_tokens=500,
-        temperature=0.1,
+    chunks = retrieve_chunks(
+        index, args.question, num_results=args.max_results, filters={"status": "approved"}
     )
-    answer = result.choices[0].message.content
-    if not answer:
-        raise RuntimeError("LLM returned an empty answer")
-    print(answer)
+    chat = RateLimitedChatClient(
+        OpenAI(api_key=token, base_url=f"{host}/serving-endpoints").chat.completions,
+        request_interval_seconds=args.request_interval_seconds,
+    )
+    generated = generate_answer(chat, args.question, chunks, args.llm_endpoint)
+    citations = check_citations(generated.answer, chunks)
+
+    print(generated.answer)
+    print(json.dumps({
+        "question": args.question,
+        "refused": generated.refused,
+        "retrieved_chunks": len(chunks),
+        "sources": list(generated.sources),
+        "citations": [
+            {"document": document, "section": section}
+            for document, section in citations.cited
+        ],
+        "citations_valid": citations.valid,
+        "citations_not_retrieved": [
+            {"document": document, "section": section}
+            for document, section in citations.not_retrieved
+        ],
+    }, ensure_ascii=False))
+
+    if not generated.refused and not citations.valid:
+        print(
+            "AVISO: a resposta tecnica nao apresentou citacoes verificaveis nos "
+            "trechos recuperados; trate a saida como nao auditavel."
+        )
 
 
 if __name__ == "__main__":

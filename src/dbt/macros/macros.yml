@@ -83,9 +83,10 @@ macros:
       dependeria implicitamente de `apply_bronze_masks.py` (Bronze) ter
       rodado antes na mesma execução do orchestrator, mas `dbt_transform`
       também é disparado manualmente para reprocessamento e precisa
-      funcionar sozinho. Usa `target.name` para decidir o grupo
-      (`lh_nautical_dev` ou `lh_nautical_prod`), então funciona igual em
-      dev e prod.
+      funcionar sozinho. O grupo verificado é sempre `lh_nautical_dev`,
+      independente do catálogo (dev ou prod) — é o único grupo com visão
+      de dado real; qualquer outro grupo, incluindo `lh_nautical_prod`,
+      vê sempre o valor mascarado.
     arguments: []
 
   - name: mask_post_hooks

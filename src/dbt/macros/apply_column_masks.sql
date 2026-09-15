@@ -9,7 +9,13 @@
   #}
   {% if execute %}
     {% set c = target.catalog %}
-    {% set group = "lh_nautical_prod" if target.name == "prod" else "lh_nautical_dev" %}
+    {#
+      Grupo fixo em lh_nautical_dev independente do target/catalogo: e o
+      unico grupo com visao de dado real, em dev e em prod. lh_nautical_prod
+      (e qualquer outro grupo) sempre ve o valor mascarado, nos dois
+      catalogos -- nao ha ramificacao por ambiente aqui de proposito.
+    #}
+    {% set group = "lh_nautical_dev" %}
 
     {% for func in ["mask_full", "mask_cpf", "mask_email", "mask_phone"] %}
       {% do run_query(

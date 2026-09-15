@@ -73,13 +73,50 @@ macros:
           Exemplos: `product_variant_id`, `receipt_base.product_variant_id`,
           `purchase_order_items.product_variant_id`.
 
+  - name: create_mask_functions
+    description: |
+      Cria (idempotente, `CREATE OR REPLACE`) as 4 funções de máscara
+      (`mask_full`, `mask_cpf`, `mask_email`, `mask_phone`) no schema
+      `gold` do catálogo do target atual. Executada via
+      `dbt run-operation create_mask_functions` como primeiro step do job
+      `dbt_transform`, antes de qualquer model rodar — sem isso, o job
+      dependeria implicitamente de `apply_bronze_masks.py` (Bronze) ter
+      rodado antes na mesma execução do orchestrator, mas `dbt_transform`
+      também é disparado manualmente para reprocessamento e precisa
+      funcionar sozinho. O grupo verificado é sempre `lh_nautical_dev`,
+      independente do catálogo (dev ou prod) — é o único grupo com visão
+      de dado real; qualquer outro grupo, incluindo `lh_nautical_prod`,
+      vê sempre o valor mascarado.
+    arguments: []
+
+  - name: mask_post_hooks
+    description: |
+      Gera a lista de post-hooks que mascaram colunas sensíveis na
+      sequência imediata da criação do model — mesma etapa, sem step
+      separado depois. Usada no `config()` de `int_customers`,
+      `int_employees`, `int_suppliers`, `dim_customers`, `dim_employees`
+      e `dim_suppliers`. Como `materialized=table` recria a tabela (e
+      apaga a máscara anterior) a cada run, aplicar via post-hook fecha a
+      janela de exposição de dados sensíveis para a duração de um único
+      `ALTER TABLE` (segundos), em vez do tempo restante do run daquela
+      camada inteira.
+    arguments:
+      - name: columns
+        type: dict
+        description: >
+          Mapa coluna → função de máscara, ex:
+          `{'tax_id': 'mask_full', 'email': 'mask_email', 'phone': 'mask_phone'}`.
+
   - name: apply_column_masks
     description: |
-      Aplica Column Masking do Unity Catalog nas tabelas Silver e Gold para
-      proteger dados sensíveis (tax_id, cpf, email, phone) em query time.
-      Executada via `dbt run-operation apply_column_masks` como step explícito
-      no job `dbt_transform`, após materialização e testes de todas as camadas.
-      Apenas membros do grupo `lh_nautical_dev` enxergam valores reais.
+      Reaplica Column Masking em todas as tabelas Silver e Gold sensíveis
+      de uma vez. Executada via `dbt run-operation apply_column_masks`
+      como step final no job `dbt_transform`, após materialização e
+      testes de todas as camadas — redundante com os post-hooks de
+      `mask_post_hooks` (que já cobrem o caso comum), mantida como
+      segunda camada de garantia sem custo adicional (é uma operação de
+      metadado, não reescreve dados), útil por exemplo após um `dbt run`
+      parcial fora do fluxo padrão.
     arguments: []
 
   - name: get_region_by_state

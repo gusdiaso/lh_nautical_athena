@@ -13,10 +13,18 @@ _SECRET_ENV_MAP = {
 
 STEPS = {
     "deps": ["deps"],
+    # Cria (idempotente) as funcoes de mascara antes de qualquer model rodar.
+    "create_mask_functions": ["run-operation", "create_mask_functions"],
+    # int_customers/int_employees/int_suppliers e dim_customers/dim_employees/
+    # dim_suppliers tem post_hook (macro mask_post_hooks) que reaplica a
+    # mascara na sequencia imediata da criacao de cada tabela
     "intermediate_run": ["run", "--select", "intermediate"],
     "intermediate_test": ["test", "--select", "intermediate"],
     "marts_run": ["run", "--select", "marts"],
     "marts_test": ["test", "--select", "marts"],
+    # Reaplica a mascara em todas as tabelas Silver e Gold de uma vez — os
+    # post-hooks acima ja cobrem o caso comum; este step e uma segunda
+    # camada de garantia.
     "apply_masks": ["run-operation", "apply_column_masks"],
 }
 
@@ -43,7 +51,8 @@ def _load_secrets(target: str):
         for env_var, secret_key in env_map.items():
             if env_var not in os.environ:
                 try:
-                    value = dbutils.secrets.get(scope=SECRET_SCOPE, key=secret_key)
+                    value = dbutils.secrets.get(
+                        scope=SECRET_SCOPE, key=secret_key)
                     if value:
                         os.environ[env_var] = value
                 except Exception:
@@ -53,13 +62,15 @@ def _load_secrets(target: str):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Wrapper para execucao de steps dbt no Databricks")
+    parser = argparse.ArgumentParser(
+        description="Wrapper para execucao de steps dbt no Databricks")
     parser.add_argument("--step", required=True)
     parser.add_argument("--target", default="dev")
     args = parser.parse_args()
 
     if args.step not in STEPS:
-        print(f"Step '{args.step}' invalido. Disponiveis: {sorted(STEPS.keys())}", file=sys.stderr)
+        print(
+            f"Step '{args.step}' invalido. Disponiveis: {sorted(STEPS.keys())}", file=sys.stderr)
         sys.exit(1)
 
     bundle_root = _find_bundle_root()

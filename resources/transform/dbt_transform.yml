@@ -25,8 +25,15 @@ resources:
         Pipeline de transformacao dbt completa.
         Executa APOS extracao (bronze) — acionado pelo orchestrator_transform
         ou manualmente para reprocessamento.
-        Fluxo: deps → intermediate (run + test) → marts (run + test).
+        Fluxo: deps → create_mask_functions → intermediate_run →
+        intermediate_test → marts_run → marts_test → apply_masks.
         Staging e ephemeral (CTE) — e compilado junto com intermediate.
+        Os models sensiveis (int_customers, int_employees, int_suppliers,
+        dim_customers, dim_employees, dim_suppliers) tem post_hook que
+        reaplica a mascara na sequencia imediata da propria criacao. O
+        post_hook fecha essa janela de exposicao para a duracao de um
+        ALTER TABLE. apply_masks no final e uma segunda camada de garantia, sem custo
+        adicional (operacao de metadado).
 
       max_concurrent_runs: 1
 
@@ -51,10 +58,26 @@ resources:
           timeout_seconds: 300
           max_retries: 1
 
-        - task_key: intermediate_run
+        - task_key: create_mask_functions
           environment_key: default
+          description: "Cria (idempotente) as funcoes de mascara usadas pelos post-hooks e pelo apply_masks"
           depends_on:
             - task_key: deps
+          spark_python_task:
+            python_file: ../../src/dbt/run_dbt_step.py
+            parameters:
+              - --step
+              - create_mask_functions
+              - --target
+              - ${var.dbt_target}
+          timeout_seconds: 300
+          max_retries: 1
+
+        - task_key: intermediate_run
+          environment_key: default
+          description: "Cria as tabelas Silver; post_hook mascara int_customers/int_employees/int_suppliers na sequencia"
+          depends_on:
+            - task_key: create_mask_functions
           spark_python_task:
             python_file: ../../src/dbt/run_dbt_step.py
             parameters:
@@ -81,6 +104,7 @@ resources:
 
         - task_key: marts_run
           environment_key: default
+          description: "Cria as tabelas Gold; post_hook mascara dim_customers/dim_employees/dim_suppliers na sequencia"
           depends_on:
             - task_key: intermediate_test
           spark_python_task:
@@ -109,7 +133,7 @@ resources:
 
         - task_key: apply_masks
           environment_key: default
-          description: "Aplica column masking nas tabelas Silver e Gold"
+          description: "Segunda camada de garantia: reaplica column masking em todas as tabelas Silver e Gold"
           depends_on:
             - task_key: marts_test
           spark_python_task:
@@ -121,4 +145,3 @@ resources:
               - ${var.dbt_target}
           timeout_seconds: 300
           max_retries: 1
-

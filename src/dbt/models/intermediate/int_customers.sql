@@ -1,3 +1,11 @@
+{{ config(
+    post_hook=mask_post_hooks({
+        "tax_id": "mask_full",
+        "email": "mask_email",
+        "phone": "mask_phone",
+    })
+) }}
+
 with source as (
 
     select *

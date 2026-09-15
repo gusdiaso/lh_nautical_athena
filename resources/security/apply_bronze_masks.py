@@ -7,7 +7,9 @@ args = parser.parse_args()
 
 spark = SparkSession.builder.getOrCreate()
 catalog = args.catalog
-group = "lh_nautical_prod" if "prod" in catalog else "lh_nautical_dev"
+# Grupo fixo em lh_nautical_dev independente do catalogo (dev ou prod): e o
+# unico grupo com visao de dado real. lh_nautical_prod sempre ve mascarado.
+group = "lh_nautical_dev"
 
 mask_functions = f"""
 CREATE OR REPLACE FUNCTION {catalog}.gold.mask_full(value STRING)

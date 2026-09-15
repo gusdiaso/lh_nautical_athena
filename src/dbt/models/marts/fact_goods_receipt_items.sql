@@ -159,7 +159,11 @@ with goods_receipt_items as (
         , receipt_base.purchase_order_status
         , receipt_base.currency
         , receipt_base.exchange_rate_sell
-        , {{ default_supplier_sku('product_suppliers.supplier_sku', 'receipt_base.supplier_id', 'receipt_base.product_variant_id') }} as supplier_sku
+        , {{ default_supplier_sku(
+            'product_suppliers.supplier_sku'
+            , 'receipt_base.supplier_id'
+            , 'receipt_base.product_variant_id'
+        ) }} as supplier_sku
         , receipt_base.quantity_ordered
         , receipt_base.quantity_received
         , receipt_base.cumulative_quantity_received

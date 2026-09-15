@@ -23,7 +23,7 @@
 │                        ▼                                                │
 │             ┌──────────────────┐                                        │
 │             │  dbt_transform   │                                        │
-│             │  (job - 5 tasks) │                                        │
+│             │  (job - 7 tasks) │                                        │
 │             └──────────────────┘                                        │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -88,13 +88,14 @@ Pipeline de transformação dbt completa. Executado pelo orchestrator ou manualm
 | Task | Comando dbt | Depende de | Descrição |
 |------|------------|------------|-----------|
 | `deps` | `dbt deps` | — | Instala dependências (dbt_utils) |
-| `intermediate_run` | `dbt run --select intermediate` | `deps` | Compila staging (ephemeral) + cria 24 tabelas no schema `silver` |
+| `create_mask_functions` | `dbt run-operation create_mask_functions` | `deps` | Cria (idempotente) as funções de máscara, antes de qualquer model rodar |
+| `intermediate_run` | `dbt run --select intermediate` | `create_mask_functions` | Compila staging (ephemeral) + cria 24 tabelas no schema `silver`. `int_customers`/`int_employees`/`int_suppliers` têm post-hook que mascara suas colunas sensíveis assim que cada uma é criada |
 | `intermediate_test` | `dbt test --select intermediate` | `intermediate_run` | Testa dados da intermediate (inclui testes dos modelos staging) |
-| `marts_run` | `dbt run --select marts` | `intermediate_test` | Cria 12 modelos (6 dimensões + 6 fatos) no schema `gold` |
+| `marts_run` | `dbt run --select marts` | `intermediate_test` | Cria 12 modelos (6 dimensões + 6 fatos) no schema `gold`. `dim_customers`/`dim_employees`/`dim_suppliers` têm o mesmo post-hook de máscara |
 | `marts_test` | `dbt test --select marts` | `marts_run` | Testa dados da camada marts |
-| `apply_masks` | `dbt run-operation apply_column_masks` | `marts_test` | Aplica column masking nas tabelas Silver e Gold |
+| `apply_masks` | `dbt run-operation apply_column_masks` | `marts_test` | Reaplica column masking em todas as tabelas Silver e Gold (segunda camada de garantia) |
 
-> **Nota:** O `on-run-end` foi removido do `dbt_project.yml` — o masking é executado como step explícito após todas as camadas estarem materializadas.
+> **Nota:** O `materialized=table` recria a tabela (e apaga qualquer máscara aplicada antes) a cada run, os 6 models sensíveis (`int_customers`, `int_employees`, `int_suppliers`, `dim_customers`, `dim_employees`, `dim_suppliers`) usam um `post_hook` (macro `mask_post_hooks`, em `apply_column_masks.sql`) que reaplica a máscara na sequência imediata da própria criação, a janela de exposição é a duração de um único `ALTER TABLE` (segundos). `create_mask_functions` garante que as funções existam antes de qualquer post-hook disparar, mesmo se `dbt_transform` for rodado manualmente sem o `orchestrator_transform` ter passado por `apply_bronze_masks` antes. O `apply_masks` final é redundante com os post-hooks, mas é uma operação de metadado (sem custo), mantida como segunda camada de garantia.
 
 > **Por que essa ordem?** O dbt gerencia as dependências entre modelos automaticamente via `ref()`.
 > A ordem sequencial por camada (staging → intermediate → marts) garante que cada camada
@@ -151,16 +152,26 @@ Exemplo: `fact_order_items` depende de `dim_products`, `dim_customers`, `dim_loc
         │  deps                            │
         │    │                             │
         │    ▼                             │
-        │  intermediate_run (24 tabelas)   │
+        │  create_mask_functions           │
+        │    │                             │
+        │    ▼                             │
+        │  intermediate_run (24 tabelas,   │
+        │  3 delas se auto-mascaram via    │
+        │  post-hook ao serem criadas)     │
         │    │                             │
         │    ▼                             │
         │  intermediate_test (testes int)  │
         │    │                             │
         │    ▼                             │
-        │  marts_run (12 tabelas ─ gold)   │
+        │  marts_run (12 tabelas ─ gold,   │
+        │  3 delas se auto-mascaram via    │
+        │  post-hook ao serem criadas)     │
         │    │                             │
         │    ▼                             │
         │  marts_test (testes marts)       │
+        │    │                             │
+        │    ▼                             │
+        │  apply_masks (garantia final)    │
         └──────────────────────────────────┘
                 │
                 ▼

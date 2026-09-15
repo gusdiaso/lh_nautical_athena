@@ -1,3 +1,10 @@
+{{ config(
+    post_hook=mask_post_hooks({
+        "cpf": "mask_cpf",
+        "email": "mask_email",
+    })
+) }}
+
 with source as (
 
     select *

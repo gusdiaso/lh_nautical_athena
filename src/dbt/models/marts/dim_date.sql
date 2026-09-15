@@ -3,11 +3,13 @@
 -- Grão:
 -- uma linha por dia do calendário
 --
--- O intervalo considera a menor e a maior data presentes
--- nos processos operacionais disponíveis no projeto.
+-- O intervalo vai da menor data presente nos processos
+-- operacionais disponíveis no projeto até a data atual.
 --
--- A data final recebe uma margem de um ano para permitir
--- análises futuras e acompanhar a evolução dos dados.
+-- Quando já existem datas futuras conhecidas (ex: entregas
+-- previstas em purchase orders), a data final acompanha essas
+-- datas, garantindo que fatos com eventos futuros já registrados
+-- continuem encontrando uma linha correspondente em dim_date.
 --
 -- Inclui atributos de calendário e indicadores auxiliares
 -- para análises temporais.
@@ -58,7 +60,7 @@ with event_dates as (
 , date_bounds as (
     select
         min(event_date) as start_date
-        , date_add(max(event_date), 365) as end_date
+        , greatest(current_date(), max(event_date)) as end_date
     from event_dates
 )
 

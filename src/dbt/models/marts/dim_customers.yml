@@ -69,6 +69,52 @@ models:
       - name: state
         description: "Estado do endereço."
 
+      - name: state_name
+        description: "Nome completo do estado, sem acentuação, derivado da sigla (UF)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - Acre
+                  - Alagoas
+                  - Amapa
+                  - Amazonas
+                  - Bahia
+                  - Ceara
+                  - Distrito Federal
+                  - Espirito Santo
+                  - Goias
+                  - Maranhao
+                  - Mato Grosso
+                  - Mato Grosso do Sul
+                  - Minas Gerais
+                  - Para
+                  - Paraiba
+                  - Parana
+                  - Pernambuco
+                  - Piaui
+                  - Rio de Janeiro
+                  - Rio Grande do Norte
+                  - Rio Grande do Sul
+                  - Rondonia
+                  - Roraima
+                  - Santa Catarina
+                  - Sao Paulo
+                  - Sergipe
+                  - Tocantins
+
+      - name: region
+        description: "Região geográfica do estado (Norte, Nordeste, Centro-Oeste, Sudeste, Sul)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - Norte
+                  - Nordeste
+                  - Centro-Oeste
+                  - Sudeste
+                  - Sul
+
       - name: country
         description: "País do endereço."
 

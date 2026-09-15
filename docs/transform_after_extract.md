@@ -13,10 +13,12 @@ O fluxo atual (via Orchestrator do Databricks) é:
 3. `validate_extraction` — verifica se todas as tabelas foram carregadas
 4. `apply_bronze_masks` — aplica column masking nas tabelas Bronze
 5. `dbt deps` — instala dependências
-6. `dbt run --select intermediate` — materializa Silver
-7. `dbt test --select intermediate` — testa Silver
-8. `dbt run --select marts` — materializa Gold
-9. `dbt test --select marts` — testa Gold
+6. `dbt run-operation create_mask_functions` — cria (idempotente) as funções de máscara
+7. `dbt run --select intermediate` — materializa Silver; `int_customers`/`int_employees`/`int_suppliers` se auto-mascaram via post-hook ao serem criadas
+8. `dbt test --select intermediate` — testa Silver
+9. `dbt run --select marts` — materializa Gold; `dim_customers`/`dim_employees`/`dim_suppliers` se auto-mascaram via post-hook ao serem criadas
+10. `dbt test --select marts` — testa Gold
+11. `dbt run-operation apply_column_masks` — reaplica masking em Silver + Gold (segunda camada de garantia)
 
 ## Arquitetura
 

@@ -172,7 +172,8 @@ with order_items as (
         , products.is_profitable
         , enriched_order_items.placed_at
         , cast(1 as integer) as order_item_count
-        , {{ sk_from_keys(["'order_item'", 'enriched_order_items.order_item_id']) }} as sk_order_item
+        , {{ sk_from_keys(["'order_item'", 'enriched_order_items.order_item_id']) }}
+            as sk_order_item
         , coalesce(
             products.sk_product
             , md5('product||nao_informado')

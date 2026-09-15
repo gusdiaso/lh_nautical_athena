@@ -11,6 +11,8 @@ JDBC_URL = (
 )
 SECRET_SCOPE = "lh_nautical"
 SECRET_KEY = "secret_lh_nautical_bd"
+DBT_TOKEN_SECRET_KEY = "dbt_databricks_token"
+DBT_HTTP_PATH_SECRET_KEY = "dbt_http_path"
 SOURCE_SCHEMA = "dbo"
 
 # ── Tabelas de destino ───────────────────────────────────────────────

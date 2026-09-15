@@ -88,7 +88,7 @@ Em conformidade com a **Lei Geral de Proteção de Dados (LGPD)**, implementamos
 - `mask_email` — oculta completamente (`***MASKED***`)
 - `mask_phone` — oculta completamente (`***MASKED***`)
 
-**Regra:** Apenas membros do grupo `lh_nautical_dev` enxergam valores reais. Qualquer outro usuário vê apenas dados mascarados. Isso vale para **Bronze, Silver e Gold**, garantindo proteção em todas as camadas.
+**Regra:** Apenas membros do grupo `lh_nautical_dev` enxergam valores reais — o grupo verificado é fixo, independente do catálogo (`dev` ou `prod`). Qualquer outro usuário, incluindo membros de `lh_nautical_prod`, vê apenas dados mascarados. Isso vale para **Bronze, Silver e Gold**, em ambos os catálogos, garantindo proteção em todas as camadas.
 
 ### 4.3 Documentação robusta para onboarding acelerado
 
@@ -309,8 +309,6 @@ lh_nautical/
 │   ├── orchestrator/
 │   │   └── orchestrator_transform.yml    # Job: orquestrador principal (23:00 BRT)
 │   └── security/
-│       ├── apply_column_masks.sql         # SQL de column masking
-│       ├── apply_column_masks.py          # Script Python para aplicar masks
 │       └── apply_bronze_masks.py          # Script para aplicar masks na Bronze
 ├── src/
 │   ├── ingestion/

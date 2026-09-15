@@ -1,0 +1,4 @@
+# Separate environment from dbt/Databricks Connect.
+streamlit==1.63.0
+databricks-sdk==0.138.0
+openai==2.54.0

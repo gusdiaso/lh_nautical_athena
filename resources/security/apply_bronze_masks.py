@@ -7,6 +7,42 @@ args = parser.parse_args()
 
 spark = SparkSession.builder.getOrCreate()
 catalog = args.catalog
+# Grupo fixo em lh_nautical_dev independente do catalogo (dev ou prod): e o
+# unico grupo com visao de dado real. lh_nautical_prod sempre ve mascarado.
+group = "lh_nautical_dev"
+
+mask_functions = f"""
+CREATE OR REPLACE FUNCTION {catalog}.gold.mask_full(value STRING)
+  RETURN CASE
+    WHEN is_member('{group}') THEN value
+    ELSE '***MASKED***'
+  END;
+
+CREATE OR REPLACE FUNCTION {catalog}.gold.mask_cpf(value STRING)
+  RETURN CASE
+    WHEN is_member('{group}') THEN value
+    ELSE '***MASKED***'
+  END;
+
+CREATE OR REPLACE FUNCTION {catalog}.gold.mask_email(value STRING)
+  RETURN CASE
+    WHEN is_member('{group}') THEN value
+    ELSE '***MASKED***'
+  END;
+
+CREATE OR REPLACE FUNCTION {catalog}.gold.mask_phone(value STRING)
+  RETURN CASE
+    WHEN is_member('{group}') THEN value
+    ELSE '***MASKED***'
+  END;
+"""
+
+for stmt in mask_functions.strip().split(";"):
+    stmt = stmt.strip()
+    if stmt:
+        print(f"Creating mask function: {stmt[:80]}...")
+        spark.sql(stmt)
+        print("  Done.")
 
 mask_tables = {
     "customers": ["tax_id", "email", "phone"],

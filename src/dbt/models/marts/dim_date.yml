@@ -4,8 +4,10 @@ models:
   - name: dim_date
     description: >
       Dimensão calendário compartilhada pelas tabelas fato.
-      Possui uma linha por dia e cobre o intervalo temporal
-      identificado nos processos operacionais do projeto.
+      Possui uma linha por dia, do menor evento operacional
+      registrado até a data atual, estendendo-se apenas quando
+      já existem datas futuras conhecidas (ex: entregas previstas
+      em purchase orders).
     columns:
       - name: sk_date
         description: "Chave substituta da data no formato YYYYMMDD."

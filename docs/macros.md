@@ -36,6 +36,18 @@ Arquivo: `src/dbt/macros/default_supplier_sku.sql`
 
 Normaliza o `supplier_sku` aplicando `trim` e substituindo valores nulos ou placeholders (`'TBD'`, `'?'`, `'SEM-CODIGO'`, `''`) por um identificador no formato `SUP-{supplier_id}-{product_variant_id}`. Usada na `int_product_suppliers` e nas fatos de compra e recebimento.
 
+### `get_region_by_state`
+
+Arquivo: `src/dbt/macros/get_region_by_state.sql`
+
+Recebe uma coluna com a sigla da unidade federativa e retorna a região geográfica do Brasil (Norte, Nordeste, Centro-Oeste, Sudeste ou Sul). Usa `upper(trim(...))` para normalizar o valor antes do mapeamento. Utilizada nas dimensões `dim_customers` e `dim_locations` para agregar dados por região.
+
+### `get_state_name_by_uf`
+
+Arquivo: `src/dbt/macros/get_state_name_by_uf.sql`
+
+Recebe uma coluna com a sigla da unidade federativa e retorna o nome completo do estado brasileiro, sem acentuação (ex.: `SP` → `Sao Paulo`). Usa `upper(trim(...))` para normalizar o valor antes do mapeamento. Utilizada nas dimensões `dim_customers` e `dim_locations`.
+
 ## Dependências
 
 - `packages.yml` declara `dbt-labs/dbt_utils`.
@@ -52,7 +64,7 @@ dbt compile --select marts
 
 ## Observações
 
-- As cinco macros do projeto estão documentadas neste arquivo e em `src/dbt/macros/macros.yml`.
+- As sete macros do projeto estão documentadas neste arquivo e em `src/dbt/macros/macros.yml`.
 - A documentação antiga de macros futuras foi removida para manter o guia alinhado ao código atual.
 
 ## Referências

@@ -1,0 +1,8 @@
+# Copied to the release root by prepare_release.py.
+# Resource bindings require separate, explicitly approved remote configuration.
+command: ['streamlit', 'run', 'apps/rag_chat/app.py', '--server.address', '0.0.0.0', '--server.headless', 'true']
+env:
+  - name: RAG_INDEX_NAME
+    valueFrom: documentary-index
+  - name: RAG_LLM_ENDPOINT
+    valueFrom: generation-endpoint

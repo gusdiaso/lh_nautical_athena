@@ -1,0 +1,32 @@
+{% macro get_state_name_by_uf(state_column) %}
+case upper(trim({{ state_column }}))
+    when 'AC' then 'Acre'
+    when 'AL' then 'Alagoas'
+    when 'AP' then 'Amapa'
+    when 'AM' then 'Amazonas'
+    when 'BA' then 'Bahia'
+    when 'CE' then 'Ceara'
+    when 'DF' then 'Distrito Federal'
+    when 'ES' then 'Espirito Santo'
+    when 'GO' then 'Goias'
+    when 'MA' then 'Maranhao'
+    when 'MT' then 'Mato Grosso'
+    when 'MS' then 'Mato Grosso do Sul'
+    when 'MG' then 'Minas Gerais'
+    when 'PA' then 'Para'
+    when 'PB' then 'Paraiba'
+    when 'PR' then 'Parana'
+    when 'PE' then 'Pernambuco'
+    when 'PI' then 'Piaui'
+    when 'RJ' then 'Rio de Janeiro'
+    when 'RN' then 'Rio Grande do Norte'
+    when 'RS' then 'Rio Grande do Sul'
+    when 'RO' then 'Rondonia'
+    when 'RR' then 'Roraima'
+    when 'SC' then 'Santa Catarina'
+    when 'SP' then 'Sao Paulo'
+    when 'SE' then 'Sergipe'
+    when 'TO' then 'Tocantins'
+    else null
+end
+{% endmacro %}

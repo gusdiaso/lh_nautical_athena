@@ -9,6 +9,14 @@
 -- forma determinística para manter uma linha por cliente.
 -- ============================================================
 
+{{ config(
+    post_hook=mask_post_hooks({
+        "tax_id": "mask_full",
+        "email": "mask_email",
+        "phone": "mask_phone",
+    })
+) }}
+
 with customers as (
     select
         customer_id
@@ -83,6 +91,8 @@ with customers as (
         , cast(null as string) as district
         , cast(null as string) as city
         , cast(null as string) as state
+        , cast(null as string) as state_name
+        , cast(null as string) as region
         , cast(null as string) as country
         , false as is_primary_address
         , false as is_active
@@ -109,10 +119,13 @@ with customers as (
         , selected_addresses.district
         , selected_addresses.city
         , selected_addresses.state
+        , {{ get_state_name_by_uf('selected_addresses.state') }} as state_name
+        , {{ get_region_by_state('selected_addresses.state') }} as region
         , selected_addresses.country
         , customers.is_active
         , false as is_technical_member
-        , {{ sk_from_keys(["'customer'", 'customers.customer_id']) }} as sk_customer
+        , {{ sk_from_keys(["'customer'", 'customers.customer_id']) }}
+            as sk_customer
         , coalesce(selected_addresses.is_primary, false) as is_primary_address
     from customers
     left join selected_addresses
@@ -139,6 +152,8 @@ with customers as (
         , district
         , city
         , state
+        , state_name
+        , region
         , country
         , is_primary_address
         , is_active
@@ -166,6 +181,8 @@ with customers as (
         , district
         , city
         , state
+        , state_name
+        , region
         , country
         , is_primary_address
         , is_active

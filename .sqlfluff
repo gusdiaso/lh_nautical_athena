@@ -1,6 +1,13 @@
 [sqlfluff]
 dialect = sparksql
 templater = dbt
+# 80 colunas corta expressoes case/coalesce/window function no meio de forma
+# ilegivel; 120 acomoda essas expressoes sem forcar quebras artificiais.
+max_line_length = 120
+# state, number, role, value, action, method e year_month sao nomes de
+# negocio ja usados nas tabelas dim/fact; renomear quebraria modelos, docs
+# e consumidores de BI existentes.
+exclude_rules = references.keywords
 
 [sqlfluff:templater:dbt]
 project_dir = .

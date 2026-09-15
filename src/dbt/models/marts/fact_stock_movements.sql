@@ -91,7 +91,8 @@ with stock_movements as (
         , resolved_movements.occurred_at
         , resolved_movements.is_legacy_migration
         , cast(1 as integer) as movement_count
-        , {{ sk_from_keys(["'stock_movement'", 'resolved_movements.stock_movement_id']) }} as sk_stock_movement
+        , {{ sk_from_keys(["'stock_movement'", 'resolved_movements.stock_movement_id']) }}
+            as sk_stock_movement
         , coalesce(
             products.sk_product
             , md5('product||nao_informado')

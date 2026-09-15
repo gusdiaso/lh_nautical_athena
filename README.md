@@ -392,8 +392,6 @@ lh_nautical/
 │   │   ├── rag_health_check.yml           # Job: saúde do índice e isolamento
 │   │   └── rag_demo.yml                   # Job: demonstração end-to-end
 │   └── security/
-│       ├── apply_column_masks.sql         # SQL de column masking
-│       ├── apply_column_masks.py          # Script Python para aplicar masks
 │       ├── apply_bronze_masks.py          # Script para aplicar masks na Bronze
 │       ├── rag_least_privilege.sql        # SQL de menor privilégio do RAG
 │       └── apply_rag_grants.py            # Script para aplicar/verificar os grants
@@ -608,7 +606,7 @@ O pipeline `bitbucket-pipelines.yml` executa automaticamente ao fazer push na br
 
 ## Segurança — Column Masking (Dados Sensíveis)
 
-O projeto utiliza **Column Masking** do Unity Catalog para proteger dados sensíveis em todas as camadas. A máscara é aplicada em query time — apenas usuários do grupo `lh_nautical_dev` enxergam os valores reais.
+O projeto utiliza **Column Masking** do Unity Catalog para proteger dados sensíveis em todas as camadas. A máscara é aplicada em query time — apenas usuários do grupo `lh_nautical_dev` enxergam os valores reais, tanto no catálogo `dev` quanto no `prod`. Qualquer outro grupo, incluindo `lh_nautical_prod`, sempre vê os valores mascarados nos dois catálogos.
 
 ### Colunas Protegidas por Camada
 
@@ -632,7 +630,7 @@ O projeto utiliza **Column Masking** do Unity Catalog para proteger dados sensí
 - `mask_cpf`: oculta completamente (`***MASKED***`)
 - `mask_email`: oculta completamente (`***MASKED***`)
 - `mask_phone`: oculta completamente (`***MASKED***`)
-- Apenas membros do grupo `lh_nautical_dev` enxergam valores reais em qualquer função
+- Apenas membros do grupo `lh_nautical_dev` enxergam valores reais em qualquer função — o grupo verificado é fixo, independente do catálogo (`dev` ou `prod`); `lh_nautical_prod` nunca vê dado real
 
 ---
 

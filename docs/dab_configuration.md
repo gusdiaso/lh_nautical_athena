@@ -37,7 +37,6 @@ lh_nautical/
 │   ├── transform/
 │   │   └── dbt_transform.yml             # Job: transformacao dbt
 │   └── security/
-│       ├── apply_column_masks.py          # Script para aplicar masks
 │       └── apply_bronze_masks.py          # Script para masks na Bronze
 └── src/
     ├── ingestion/

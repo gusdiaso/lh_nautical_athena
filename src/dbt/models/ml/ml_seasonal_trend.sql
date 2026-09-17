@@ -57,12 +57,16 @@ with totals as (
     from totals
 )
 
+, month_numbers as (
+    select explode(sequence(1, 12)) as month_number
+)
+
 , month_number_grid as (
     select
         totals.month_start_date as cutoff
         , grid.month_number
     from totals
-    cross join (select explode(sequence(1, 12)) as month_number) as grid
+    cross join month_numbers as grid
 )
 
 , anchored as (
@@ -99,13 +103,17 @@ with totals as (
     from seasonal_by_month_number
 )
 
+, next_three_offsets as (
+    select explode(sequence(1, 3)) as months_ahead
+)
+
 , next_3_months as (
     select
         totals.month_start_date as cutoff
         , offsets.months_ahead
         , month(add_months(totals.month_start_date, offsets.months_ahead)) as target_month_number
     from totals
-    cross join (select explode(sequence(1, 3)) as months_ahead) as offsets
+    cross join next_three_offsets as offsets
 )
 
 , season_sum as (

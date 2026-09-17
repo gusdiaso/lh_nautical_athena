@@ -1,0 +1,64 @@
+version: 2
+
+models:
+  - name: agg_demand_monthly
+    description: >
+      Série de demanda mensal por produto × loja — mesma fonte e
+      definição de agg_demand_daily, agregada em meses
+      (date_trunc('month', ...)). Usada na comparação de
+      granularidade (P1) do Plano de Modelagem Preditiva e no
+      horizonte de previsão de 3 meses (mês 1, mês 2, mês 3).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - sk_product
+              - sk_location
+              - month_start_date
+    columns:
+      - name: sk_product
+        description: "Chave da dimensão de produtos."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: sk_product
+
+      - name: sk_location
+        description: "Chave da dimensão de localizações."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: sk_location
+
+      - name: month_start_date
+        description: "Primeiro dia do mês ao qual a demanda se refere."
+        data_tests:
+          - not_null
+
+      - name: days_in_period
+        description: >
+          Quantidade de dias da série diária agregados no mês.
+          Menor que os dias do calendário no mês da primeira venda
+          da combinação e no último mês do dataset, se o corte
+          final cair no meio do mês — meses parciais.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+                max_value: 31
+
+      - name: demand_quantity
+        description: >
+          Soma de demand_quantity diária do mês para a combinação
+          produto×loja; zero nos meses sem venda dentro da janela
+          de atividade da combinação.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0

@@ -1,0 +1,50 @@
+version: 2
+models:
+  - name: int_high_season_months
+    description: >
+      Alta temporada por mês do ano, calculada a partir da demanda
+      (quantity_ordered de pedidos confirmados ou pagos). Um mês é
+      alta temporada quando a demanda média dele ao longo dos anos é
+      maior que a média das 12 médias mensais. Considera só meses
+      completos. Usada por dim_date.is_high_season.
+    columns:
+      - name: month_number
+        description: Mês do ano (1 = janeiro, 12 = dezembro) (PK).
+        data_tests:
+          - not_null
+          - unique
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+                max_value: 12
+
+      - name: complete_months_count
+        description: Quantidade de meses completos desse mês do ano usados na média.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+
+      - name: avg_monthly_demand
+        description: Demanda média do mês do ano ao longo dos anos.
+        data_tests:
+          - not_null
+
+      - name: overall_avg_monthly_demand
+        description: Média das 12 médias mensais — a referência da alta temporada.
+        data_tests:
+          - not_null
+
+      - name: seasonal_index
+        description: >
+          avg_monthly_demand ÷ overall_avg_monthly_demand. Acima de 1 =
+          mês acima da média geral; valores perto de 1 podem mudar de
+          lado conforme o histórico cresce.
+        data_tests:
+          - not_null
+
+      - name: is_high_season
+        description: Verdadeiro quando avg_monthly_demand é maior que overall_avg_monthly_demand.
+        data_tests:
+          - not_null

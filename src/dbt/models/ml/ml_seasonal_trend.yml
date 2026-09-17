@@ -1,0 +1,75 @@
+version: 2
+
+models:
+  - name: ml_seasonal_trend
+    description: >
+      Índice sazonal dos 3 meses seguintes e fator de tendência,
+      recalculados em cada corte com dados só até o próprio corte
+      (sem usar o futuro) — porta para SQL seasonal_index_at e
+      trend_factor_at de src/analytics_ai/demand_baselines.py.
+      Alimenta ml_features_produto_loja_mes.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cutoff
+    columns:
+      - name: cutoff
+        description: "Mês de corte (primeiro dia do mês)."
+        data_tests:
+          - not_null
+
+      - name: seasonal_ready
+        description: >
+          true quando os 12 meses do ano já apareceram ao menos uma
+          vez no histórico até o corte — sem isso a média geral
+          (denominador do índice) não é confiável. Toda linha da
+          tabela já tem seasonal_ready = true (o modelo filtra as
+          demais).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true]
+
+      - name: seasonal_index_month_plus1
+        description: "Índice sazonal do 1º mês previsto (mês do corte + 1)."
+        data_tests:
+          - not_null
+
+      - name: seasonal_index_month_plus2
+        description: "Índice sazonal do 2º mês previsto (mês do corte + 2)."
+        data_tests:
+          - not_null
+
+      - name: seasonal_index_month_plus3
+        description: "Índice sazonal do 3º mês previsto (mês do corte + 3)."
+        data_tests:
+          - not_null
+
+      - name: season_sum_next_3m
+        description: >
+          Soma dos índices sazonais dos 3 meses previstos —
+          ingrediente das réguas MM12 × índice do notebook 03.
+        data_tests:
+          - not_null
+
+      - name: trend_ready
+        description: >
+          true quando o corte já tem 24 meses de histórico
+          (necessários para comparar os últimos 12 meses com os 12
+          anteriores). false nos cortes mais antigos do dataset —
+          growth_12m e trend_factor ficam nulos nesses casos.
+        data_tests:
+          - not_null
+
+      - name: growth_12m
+        description: >
+          Demanda total dos 12 meses até o corte ÷ demanda total dos
+          12 meses anteriores. Nulo quando trend_ready = false.
+
+      - name: trend_factor
+        description: >
+          growth_12m elevado a 7,5/12 (MM12_LAG_MONTHS/12 do notebook
+          03) — fator que corrige o atraso da MM12 em relação ao
+          centro dos 3 meses previstos. Nulo quando trend_ready = false.

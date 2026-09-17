@@ -13,6 +13,11 @@
 --
 -- Inclui atributos de calendário e indicadores auxiliares
 -- para análises temporais.
+--
+-- is_high_season vem de int_high_season_months: um mês é alta
+-- temporada quando sua demanda média ao longo dos anos supera a
+-- média das 12 médias mensais. A lista de meses acompanha os dados,
+-- não é fixa.
 -- ============================================================
 
 with event_dates as (
@@ -55,6 +60,13 @@ with event_dates as (
     select cast(exchange_date as date) as event_date
     from {{ ref('int_exchange_rates') }}
     where exchange_date is not null
+)
+
+, high_season_months as (
+    select
+        month_number
+        , is_high_season
+    from {{ ref('int_high_season_months') }}
 )
 
 , date_bounds as (
@@ -136,8 +148,10 @@ with event_dates as (
             else 2
         end as semester_number
         , pmod(dayofweek(date_day) + 5, 7) + 1 in (6, 7) as is_weekend
-        , month(date_day) in (10, 11, 12, 1) as is_high_season
+        , coalesce(high_season_months.is_high_season, false) as is_high_season
     from date_spine
+    left join high_season_months
+        on month(date_spine.date_day) = high_season_months.month_number
 )
 
 , final as (

@@ -21,11 +21,20 @@ STEPS = {
     "intermediate_run": ["run", "--select", "intermediate"],
     "intermediate_test": ["test", "--select", "intermediate"],
     "marts_run": ["run", "--select", "marts"],
-    "marts_test": ["test", "--select", "marts"],
+    # indirect-selection=cautious: o default do dbt (eager) inclui um teste
+    # na selecao se QUALQUER parent dele estiver selecionado. Os testes
+    # relationships de agg_demand_daily/weekly (pasta ml) tem
+    # dim_products/dim_locations (pasta marts) como parent, e vazariam para
+    # dentro do --select marts mesmo agg_demand_* ainda nao existindo nesse
+    # ponto do pipeline (ml_run so roda depois de marts_test). Cautious so
+    # inclui um teste se TODOS os parents estiverem selecionados.
+    "marts_test": ["test", "--select", "marts", "--indirect-selection", "cautious"],
     # Reaplica a mascara em todas as tabelas Silver e Gold de uma vez — os
     # post-hooks acima ja cobrem o caso comum; este step e uma segunda
     # camada de garantia.
     "apply_masks": ["run-operation", "apply_column_masks"],
+    "ml_run": ["run", "--select", "ml"],
+    "ml_test": ["test", "--select", "ml"],
 }
 
 
@@ -44,7 +53,7 @@ def _find_bundle_root() -> str | None:
 def _load_secrets(target: str):
     env_map = dict(_SECRET_ENV_MAP)
     if target == "prod":
-        env_map["DBT_DATABRICKS_TOKEN_PROD"] = "dbt_databricks_token"
+        env_map["DBT_DATABRICKS_TOKEN_PROD"] = "dbt_databricks_token_prod"
 
     try:
         from databricks.sdk.runtime import dbutils

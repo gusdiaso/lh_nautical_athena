@@ -29,3 +29,7 @@ models:
     marts:
       +schema: gold
       +materialized: table
+
+    ml:
+      +schema: ml
+      +materialized: table

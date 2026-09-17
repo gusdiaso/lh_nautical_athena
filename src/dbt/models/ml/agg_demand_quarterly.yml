@@ -1,0 +1,64 @@
+version: 2
+
+models:
+  - name: agg_demand_quarterly
+    description: >
+      Série de demanda trimestral por produto × loja — mesma fonte
+      e definição de agg_demand_daily, agregada em trimestres de
+      calendário (date_trunc('quarter', ...)). Usada na comparação
+      de granularidade (P1) do Plano de Modelagem Preditiva; um
+      passo à frente coincide com o horizonte de 3 meses.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - sk_product
+              - sk_location
+              - quarter_start_date
+    columns:
+      - name: sk_product
+        description: "Chave da dimensão de produtos."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: sk_product
+
+      - name: sk_location
+        description: "Chave da dimensão de localizações."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: sk_location
+
+      - name: quarter_start_date
+        description: "Primeiro dia do trimestre ao qual a demanda se refere."
+        data_tests:
+          - not_null
+
+      - name: days_in_period
+        description: >
+          Quantidade de dias da série diária agregados no trimestre.
+          Menor que os dias do calendário no trimestre da primeira
+          venda da combinação e no último trimestre do dataset, se o
+          corte final cair no meio dele — trimestres parciais.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+                max_value: 92
+
+      - name: demand_quantity
+        description: >
+          Soma de demand_quantity diária do trimestre para a
+          combinação produto×loja; zero nos trimestres sem venda
+          dentro da janela de atividade da combinação.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0

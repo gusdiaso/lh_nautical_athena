@@ -140,8 +140,10 @@ models:
 
       - name: is_high_season
         description: >
-          Indica se a data pertence à alta temporada náutica,
-          considerada entre outubro e janeiro.
+          Indica se a data pertence à alta temporada náutica: o mês
+          dela tem demanda média ao longo dos anos maior que a média
+          das 12 médias mensais (ver int_high_season_months). Com os
+          dados atuais, novembro a abril.
         data_tests:
           - not_null
           - accepted_values:

@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: agg_demand_daily
+    description: >
+      Série de demanda diária por produto × loja, usada como
+      fundação de dados da Frente 1 do Plano de Modelagem
+      Preditiva (Checkpoint 05). Demanda = quantity_ordered de
+      pedidos confirmados ou pagos (P2). Densa por combinação:
+      dias sem venda entram com quantidade zero, do primeiro dia
+      de atividade da combinação até o último dia de atividade
+      observado em todo o dataset.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - sk_product
+              - sk_location
+              - full_date
+    columns:
+      - name: sk_product
+        description: "Chave da dimensão de produtos."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: sk_product
+
+      - name: sk_location
+        description: "Chave da dimensão de localizações."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: sk_location
+
+      - name: full_date
+        description: "Dia do calendário ao qual a demanda se refere."
+        data_tests:
+          - not_null
+
+      - name: demand_quantity
+        description: >
+          Soma de quantity_ordered do dia para a combinação
+          produto×loja; zero nos dias sem venda dentro da janela
+          de atividade da combinação.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0

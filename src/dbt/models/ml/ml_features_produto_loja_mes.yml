@@ -1,0 +1,220 @@
+version: 2
+
+models:
+  - name: ml_features_produto_loja_mes
+    description: >
+      Tabela final de features de Machine Learning (Etapa 3 do plano
+      de previsão) — uma linha por produto × loja × mês de corte,
+      pronta para treinar/avaliar os modelos da Etapa 4. Junta
+      ml_cutoff_panel, ml_seasonal_trend, dim_products e
+      dim_locations, e adiciona os níveis de grupo (categoria × loja,
+      produto nos 6 locais) que os notebooks 01-03 (notebooks/ml)
+      comprovaram serem o sinal mais forte. Ver o cabeçalho do .sql
+      para o veredito de cada bloco de features.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - sk_product
+              - sk_location
+              - cutoff
+    columns:
+      - name: cutoff
+        description: "Mês de corte (primeiro dia do mês). Só entra informação até ele."
+        data_tests:
+          - not_null
+
+      - name: sk_product
+        description: "Chave da dimensão de produtos."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: sk_product
+
+      - name: sk_location
+        description: "Chave da dimensão de localizações."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: sk_location
+
+      - name: sku
+        description: "SKU do produto (baixa prioridade — ver notebook 02)."
+
+      - name: product_name
+        description: "Nome do produto (baixa prioridade)."
+
+      - name: category_name
+        description: "Categoria do produto — atributo de baixa prioridade e chave do nível de grupo categoria × loja."
+        data_tests:
+          - not_null
+
+      - name: brand_name
+        description: "Marca do produto (baixa prioridade)."
+
+      - name: sale_price
+        description: "Preço de venda do produto (baixa prioridade)."
+
+      - name: location_name
+        description: "Nome da loja/armazém — chave do nível de grupo categoria × loja."
+        data_tests:
+          - not_null
+
+      - name: location_type
+        description: "Tipo de local (loja | armazém) — atributo de baixa prioridade."
+
+      - name: region
+        description: "Região do local (baixa prioridade)."
+
+      - name: sum_12m
+        description: >
+          Soma da demanda da própria série nos 12 meses até o corte —
+          histórico da própria série, provavelmente inútil isolado
+          (notebook 03, seção 8), mantido para o modelo testar.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+      - name: sum_3m
+        description: "Soma da demanda da própria série nos 3 meses até o corte."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+      - name: avg_monthly_12m
+        description: "sum_12m ÷ 12 — a MM12 da própria série (régua baseline do notebook 03)."
+        data_tests:
+          - not_null
+
+      - name: avg_monthly_3m
+        description: "sum_3m ÷ 3 — a MM3 da própria série."
+        data_tests:
+          - not_null
+
+      - name: months_with_sale_12m
+        description: "Quantos dos 12 meses até o corte tiveram venda > 0 na própria série."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 12
+
+      - name: frequency_class
+        description: >
+          alta (5+ meses com venda em 12) | media (3-4) | baixa (1-2)
+          | sem_venda (0) — mesmos cortes do notebook 02.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["alta", "media", "baixa", "sem_venda"]
+
+      - name: months_since_last_sale
+        description: "Meses desde a última venda da série até o corte (0 = vendeu no próprio mês)."
+
+      - name: is_stopped_12m
+        description: "true quando a série não vendeu nada nos 12 meses até o corte (life_phase 'parada' do notebook 02)."
+        data_tests:
+          - not_null
+
+      - name: categoria_local_avg_12m
+        description: >
+          Média de sum_12m entre as séries da mesma categoria × loja
+          neste corte — nível de grupo ESSENCIAL (notebook 03, seção
+          7): prevê melhor que a própria série.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+      - name: categoria_local_n_series
+        description: "Quantas séries (produtos) da categoria × loja entraram na média categoria_local_avg_12m neste corte."
+        data_tests:
+          - not_null
+
+      - name: produto_locais_avg_12m
+        description: >
+          Média de sum_12m do mesmo produto nos locais em que ele
+          vende neste corte — empata com a categoria × loja e não
+          melhora sobre ela (notebook 03, seções 7 e 8).
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+      - name: produto_locais_n_locations
+        description: "Em quantos locais o produto já vendia neste corte (proxy de alcance, notebook 02, seção 7)."
+        data_tests:
+          - not_null
+
+      - name: seasonal_index_month_plus1
+        description: "Índice sazonal do 1º mês previsto, calculado só com histórico até o corte (ml_seasonal_trend)."
+        data_tests:
+          - not_null
+
+      - name: seasonal_index_month_plus2
+        description: "Índice sazonal do 2º mês previsto."
+        data_tests:
+          - not_null
+
+      - name: seasonal_index_month_plus3
+        description: "Índice sazonal do 3º mês previsto."
+        data_tests:
+          - not_null
+
+      - name: season_sum_next_3m
+        description: "Soma dos três índices sazonais acima — ESSENCIAL (notebook 03, seção 5)."
+        data_tests:
+          - not_null
+
+      - name: trend_ready
+        description: "false nos cortes sem 24 meses de histórico — growth_12m e trend_factor ficam nulos nesses casos."
+        data_tests:
+          - not_null
+
+      - name: growth_12m
+        description: "Crescimento da demanda total: 12 meses até o corte ÷ 12 meses anteriores. Nulo quando trend_ready = false."
+
+      - name: trend_factor
+        description: >
+          Fator de correção de tendência — ESSENCIAL (notebook 03,
+          seção 6): remove o viés de ~-9% que o crescimento de
+          ~15%/ano causa em qualquer média do passado. Nulo quando
+          trend_ready = false.
+
+      - name: baseline_pred_categoria_local_idx_trend
+        description: >
+          categoria_local_avg_12m ÷ 12 × season_sum_next_3m ×
+          trend_factor — a régua vencedora do notebook 03 (seção 14:
+          WAPE 86,6% por produto, 10,7% por categoria × local, 6,1%
+          por local, viés −2,8%). Entregue como feature/prior: o
+          modelo só se justifica se melhorar sobre isto.
+
+      - name: target_3m
+        description: >
+          Total real vendido pela série nos 3 meses seguintes ao
+          corte — a variável alvo. Nulo quando is_target_complete =
+          false (linha de inferência).
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+      - name: is_target_complete
+        description: >
+          true = linha de treino/avaliação (target_3m conhecido).
+          false = linha de inferência (corte recente, ainda sem os 3
+          meses seguintes completos).
+        data_tests:
+          - not_null

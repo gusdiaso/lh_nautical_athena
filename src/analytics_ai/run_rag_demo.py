@@ -7,13 +7,11 @@ import json
 import os
 
 if __package__:
-    from .rag_databricks import retrieve_chunks
+    from .rag_service import RagService
     from .rag_endpoint import RateLimitedChatClient
-    from .rag_generation import check_citations, generate_answer
 else:
-    from rag_databricks import retrieve_chunks
+    from rag_service import RagService
     from rag_endpoint import RateLimitedChatClient
-    from rag_generation import check_citations, generate_answer
 
 
 def parse_args() -> argparse.Namespace:
@@ -49,50 +47,34 @@ def main() -> None:
     if args.request_interval_seconds < 0:
         raise ValueError("request-interval-seconds must be non-negative")
 
-    from databricks.sdk import WorkspaceClient
-    from databricks.ai_search.client import AISearchClient
-    from openai import OpenAI
+    def clients():
+        from databricks.sdk import WorkspaceClient
+        from databricks.ai_search.client import AISearchClient
+        from openai import OpenAI
 
-    workspace = WorkspaceClient()
-    token = workspace.config.token or _runtime_token()
-    host = workspace.config.host or os.environ.get("DATABRICKS_HOST")
-    if not token or not host:
-        raise RuntimeError("Databricks workspace authentication is not available")
-
-    vector_client = AISearchClient(disable_notice=True)
-    index = vector_client.get_index(endpoint_name=args.endpoint_name, index_name=args.index_name)
-    chunks = retrieve_chunks(
-        index, args.question, num_results=args.max_results, filters={"status": "approved"}
-    )
-    chat = RateLimitedChatClient(
-        OpenAI(api_key=token, base_url=f"{host}/serving-endpoints").chat.completions,
-        request_interval_seconds=args.request_interval_seconds,
-    )
-    generated = generate_answer(chat, args.question, chunks, args.llm_endpoint)
-    citations = check_citations(generated.answer, chunks)
-
-    print(generated.answer)
-    print(json.dumps({
-        "question": args.question,
-        "refused": generated.refused,
-        "retrieved_chunks": len(chunks),
-        "sources": list(generated.sources),
-        "citations": [
-            {"document": document, "section": section}
-            for document, section in citations.cited
-        ],
-        "citations_valid": citations.valid,
-        "citations_not_retrieved": [
-            {"document": document, "section": section}
-            for document, section in citations.not_retrieved
-        ],
-    }, ensure_ascii=False))
-
-    if not generated.refused and not citations.valid:
-        print(
-            "AVISO: a resposta tecnica nao apresentou citacoes verificaveis nos "
-            "trechos recuperados; trate a saida como nao auditavel."
+        workspace = WorkspaceClient()
+        token = workspace.config.token or _runtime_token()
+        host = workspace.config.host or os.environ.get("DATABRICKS_HOST")
+        if not token or not host:
+            raise RuntimeError("Databricks workspace authentication is not available")
+        index = AISearchClient(disable_notice=True).get_index(
+            endpoint_name=args.endpoint_name, index_name=args.index_name,
         )
+        chat = RateLimitedChatClient(
+            OpenAI(api_key=token, base_url=f"{host}/serving-endpoints",
+                   timeout=60, max_retries=0).chat.completions,
+            request_interval_seconds=args.request_interval_seconds,
+        )
+        return index, chat
+
+    result = RagService(clients, args.llm_endpoint, args.max_results).ask(args.question)
+    print(result.answer)
+    from dataclasses import asdict
+    print(json.dumps(asdict(result), ensure_ascii=False))
+    if result.status == "error":
+        raise SystemExit(1)
+    if result.status == "answer" and not result.citations_valid:
+        print("AVISO: confira as citações antes de usar a resposta.")
 
 
 if __name__ == "__main__":

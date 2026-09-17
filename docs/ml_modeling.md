@@ -1,5 +1,4 @@
-# Modelo ML do Gustavo
-
+# Modelo ML
 Este documento registra a analise da branch `feature/modelo-de-ml`, commit
 `942d1e5e02c93a6d1dae36bf3adb80a240d2dd14`. Nenhuma alteracao de codigo ou de
 pipeline e necessaria para usar este documento.

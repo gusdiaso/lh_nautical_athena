@@ -152,42 +152,42 @@ with panel as (
         -- histórico da própria série — provavelmente inútil, testar (notebook 03, seção 8)
         , grouped.sum_12m
         , grouped.sum_3m
+        , grouped.months_with_sale_12m
+        , grouped.months_since_last_sale
+        , grouped.categoria_local_n_series
+        , grouped.produto_locais_n_locations
+        , grouped.seasonal_index_month_plus1
+        , grouped.seasonal_index_month_plus2
+
+        -- nível do grupo — essencial (notebook 03, seção 7)
+        , grouped.seasonal_index_month_plus3
+        , grouped.season_sum_next_3m
+        , grouped.trend_ready
+        , grouped.growth_12m
+
+        -- estação e tendência — essencial (notebook 03, seções 2, 5 e 6)
+        , grouped.trend_factor
+        , grouped.target_3m
+        , grouped.has_full_target_3m as is_target_complete
         , round(grouped.sum_12m / 12.0, 4) as avg_monthly_12m
         , round(grouped.sum_3m / 3.0, 4) as avg_monthly_3m
-        , grouped.months_with_sale_12m
         , case
             when grouped.months_with_sale_12m >= 5 then 'alta'
             when grouped.months_with_sale_12m >= 3 then 'media'
             when grouped.months_with_sale_12m >= 1 then 'baixa'
             else 'sem_venda'
         end as frequency_class
-        , grouped.months_since_last_sale
         , grouped.months_with_sale_12m = 0 as is_stopped_12m
 
-        -- nível do grupo — essencial (notebook 03, seção 7)
-        , round(grouped.categoria_local_avg_12m, 4) as categoria_local_avg_12m
-        , grouped.categoria_local_n_series
-        , round(grouped.produto_locais_avg_12m, 4) as produto_locais_avg_12m
-        , grouped.produto_locais_n_locations
-
-        -- estação e tendência — essencial (notebook 03, seções 2, 5 e 6)
-        , grouped.seasonal_index_month_plus1
-        , grouped.seasonal_index_month_plus2
-        , grouped.seasonal_index_month_plus3
-        , grouped.season_sum_next_3m
-        , grouped.trend_ready
-        , grouped.growth_12m
-        , grouped.trend_factor
-
         -- régua vencedora do notebook 03 (seção 14), entregue como feature/prior
+        , round(grouped.categoria_local_avg_12m, 4) as categoria_local_avg_12m
+
+        -- alvo e flag de treino × inferência
+        , round(grouped.produto_locais_avg_12m, 4) as produto_locais_avg_12m
         , round(
             grouped.categoria_local_avg_12m / 12.0 * grouped.season_sum_next_3m * grouped.trend_factor
             , 4
         ) as baseline_pred_categoria_local_idx_trend
-
-        -- alvo e flag de treino × inferência
-        , grouped.target_3m
-        , grouped.has_full_target_3m as is_target_complete
     from grouped
 )
 

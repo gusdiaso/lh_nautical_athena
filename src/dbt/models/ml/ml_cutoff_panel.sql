@@ -95,9 +95,9 @@ with monthly as (
         , months_with_sale_12m
         , cast(months_between(cutoff, last_sale_month) as int) as months_since_last_sale
         , months_counted_12m = 12
-            and window_start_12m = add_months(cutoff, -11) as has_full_history_12m
+        and window_start_12m = add_months(cutoff, -11) as has_full_history_12m
         , months_counted_future = 3
-            and window_end_future = add_months(cutoff, 3) as has_full_target_3m
+        and window_end_future = add_months(cutoff, 3) as has_full_target_3m
         , case
             when months_counted_future = 3 and window_end_future = add_months(cutoff, 3)
                 then target_3m_raw

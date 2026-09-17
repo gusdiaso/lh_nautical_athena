@@ -71,7 +71,7 @@ with totals as (
         , month_number_grid.month_number
         , make_date(
             year(month_number_grid.cutoff)
-                - case when month_number_grid.month_number > month(month_number_grid.cutoff) then 1 else 0 end
+            - case when month_number_grid.month_number > month(month_number_grid.cutoff) then 1 else 0 end
             , month_number_grid.month_number
             , 1
         ) as anchor_date
@@ -86,8 +86,8 @@ with totals as (
     from anchored
     left join running_by_month_number
         on
-            running_by_month_number.month_start_date = anchored.anchor_date
-            and running_by_month_number.month_number = anchored.month_number
+            anchored.anchor_date = running_by_month_number.month_start_date
+            and anchored.month_number = running_by_month_number.month_number
 )
 
 , seasonal_index as (
@@ -125,8 +125,8 @@ with totals as (
     from next_3_months
     inner join seasonal_index
         on
-            seasonal_index.cutoff = next_3_months.cutoff
-            and seasonal_index.month_number = next_3_months.target_month_number
+            next_3_months.cutoff = seasonal_index.cutoff
+            and next_3_months.target_month_number = seasonal_index.month_number
     group by next_3_months.cutoff
 )
 
@@ -151,21 +151,23 @@ with totals as (
 , final as (
     select
         season_sum.cutoff
-        , season_sum.month_numbers_with_history = 12 as seasonal_ready
         , season_sum.seasonal_index_month_plus1
         , season_sum.seasonal_index_month_plus2
         , season_sum.seasonal_index_month_plus3
         , season_sum.season_sum_next_3m
+        , season_sum.month_numbers_with_history = 12 as seasonal_ready
         , trend.months_counted_24m = 24 as trend_ready
-        , case when trend.months_counted_24m = 24
-            then trend.demand_last_12m / trend.demand_prev_12m
+        , case
+            when trend.months_counted_24m = 24
+                then trend.demand_last_12m / trend.demand_prev_12m
         end as growth_12m
-        , case when trend.months_counted_24m = 24
-            then power(trend.demand_last_12m / trend.demand_prev_12m, 7.5 / 12)
+        , case
+            when trend.months_counted_24m = 24
+                then power(trend.demand_last_12m / trend.demand_prev_12m, 7.5 / 12)
         end as trend_factor
     from season_sum
     inner join trend
-        on trend.cutoff = season_sum.cutoff
+        on season_sum.cutoff = trend.cutoff
 )
 
 select * from final

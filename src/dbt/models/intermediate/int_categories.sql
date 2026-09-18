@@ -62,6 +62,28 @@ with source as (
 
 )
 
+, new_categories as (
+
+    -- subcategorias novas de "Eletrônica Náutica" (5): antes as 4 famílias
+    -- abaixo (bússola, gps, transdutor/sonar, bateria) caíam todas juntas
+    -- direto em category_id=5, sem distinção entre si
+    select 15 as category_id, 'GPS & Plotters' as category_name
+        , 'gps-e-plotters' as slug, 5 as parent_category_id, true as is_active
+
+    union all
+
+    select 16, 'Sonares e Transdutores', 'sonares-e-transdutores', 5, true
+
+    union all
+
+    select 17, 'Instrumentos de Navegação', 'instrumentos-de-navegacao', 5, true
+
+    union all
+
+    select 18, 'Baterias e Sistemas Elétricos', 'baterias-e-sistemas-eletricos', 5, true
+
+)
+
 select
     category_id
     , category_name
@@ -70,4 +92,16 @@ select
     , is_active
 
 from corrected
+
+union all
+
+select
+    category_id
+    , category_name
+    , slug
+    , parent_category_id
+    , is_active
+
+from new_categories
+
 order by category_id

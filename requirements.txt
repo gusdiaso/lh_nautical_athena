@@ -8,7 +8,9 @@ chardet==7.4.3
 charset-normalizer==3.4.7
 click==8.3.3
 colorama==0.4.6
+contourpy==1.4.0
 cryptography==49.0.0
+cycler==0.12.1
 daff==1.4.2
 databricks-connect==18.3.1
 databricks-sdk==0.104.0
@@ -24,6 +26,7 @@ dbt-spark==1.10.3
 deepdiff==8.6.2
 diff_cover==10.3.0
 et_xmlfile==2.0.0
+fonttools==4.65.0
 google-auth==2.55.1
 googleapis-common-protos==1.75.0
 grpcio==1.81.1
@@ -40,10 +43,12 @@ jinja2-simple-tags==0.6.1
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
 keyring==25.5.0
+kiwisolver==1.5.1
 leather==0.4.1
 lz4==4.4.5
 MarkupSafe==3.0.3
 mashumaro==3.14
+matplotlib==3.11.2
 more-itertools==10.8.0
 msgpack==1.2.1
 networkx==3.6.1
@@ -55,6 +60,7 @@ packaging==25.0
 pandas==2.3.3
 parsedatetime==2.6
 pathspec==0.12.1
+pillow==12.3.0
 platformdirs==4.10.0
 pluggy==1.6.0
 protobuf==6.33.6
@@ -68,6 +74,7 @@ pydantic==2.12.5
 pydantic_core==2.41.5
 Pygments==2.20.0
 PyJWT==2.13.0
+pyparsing==3.3.2
 pytest==9.1.1
 python-dateutil==2.9.0.post0
 python-slugify==8.0.4

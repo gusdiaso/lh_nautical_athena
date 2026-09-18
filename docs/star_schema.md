@@ -30,7 +30,7 @@ Dimensão calendário compartilhada pelas fatos.
 | `semester_number` | Número do semestre. |
 | `year_number` | Ano da data. |
 | `is_weekend` | Indica fim de semana. |
-| `is_high_season` | Indica alta temporada náutica. |
+| `is_high_season` | Indica alta temporada náutica: meses cuja demanda média ao longo dos anos supera a média das 12 médias mensais (`int_high_season_months`). Com os dados atuais, novembro a abril. |
 
 ### dim_customers
 

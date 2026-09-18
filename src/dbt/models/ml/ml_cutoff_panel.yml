@@ -1,0 +1,99 @@
+version: 2
+
+models:
+  - name: ml_cutoff_panel
+    description: >
+      Uma linha por produto × loja × mês de corte, com as janelas
+      móveis do passado (12 e 3 meses) e o alvo (soma dos 3 meses
+      seguintes) — porta para SQL build_cutoff_panel de
+      src/analytics_ai/demand_baselines.py, para todo corte possível
+      do histórico (não só os 12 de teste + 24 de calibração do
+      notebook 03). Alimenta ml_features_produto_loja_mes.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - sk_product
+              - sk_location
+              - cutoff
+    columns:
+      - name: sk_product
+        description: "Chave da dimensão de produtos."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: sk_product
+
+      - name: sk_location
+        description: "Chave da dimensão de localizações."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: sk_location
+
+      - name: cutoff
+        description: "Mês de corte (primeiro dia do mês). Só entra informação até ele."
+        data_tests:
+          - not_null
+
+      - name: sum_12m
+        description: "Soma da demanda da própria série nos 12 meses até o corte."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+      - name: sum_3m
+        description: "Soma da demanda da própria série nos 3 meses até o corte."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+      - name: months_with_sale_12m
+        description: "Quantos dos 12 meses até o corte tiveram venda > 0 na própria série."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 12
+
+      - name: months_since_last_sale
+        description: >
+          Meses desde a última venda da série até o corte (0 = vendeu
+          no próprio mês de corte). Nulo se a série nunca vendeu num
+          mês completo até este corte.
+
+      - name: has_full_history_12m
+        description: >
+          true quando os 12 meses anteriores ao corte estão completos
+          e sem buracos (mesmo teste de window_ok do notebook 03).
+          Toda linha da tabela já tem has_full_history_12m = true.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true]
+
+      - name: has_full_target_3m
+        description: >
+          true quando os 3 meses seguintes ao corte já aconteceram
+          por inteiro. false = linha de inferência (target_3m nulo).
+        data_tests:
+          - not_null
+
+      - name: target_3m
+        description: >
+          Soma da demanda real da própria série nos 3 meses seguintes
+          ao corte. Nulo quando has_full_target_3m = false.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0

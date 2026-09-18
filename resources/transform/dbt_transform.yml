@@ -26,7 +26,8 @@ resources:
         Executa APOS extracao (bronze) — acionado pelo orchestrator_transform
         ou manualmente para reprocessamento.
         Fluxo: deps → create_mask_functions → intermediate_run →
-        intermediate_test → marts_run → marts_test → apply_masks.
+        intermediate_test → marts_run → marts_test → apply_masks e
+        ml (run + test) em paralelo.
         Staging e ephemeral (CTE) — e compilado junto com intermediate.
         Os models sensiveis (int_customers, int_employees, int_suppliers,
         dim_customers, dim_employees, dim_suppliers) tem post_hook que
@@ -34,6 +35,8 @@ resources:
         post_hook fecha essa janela de exposicao para a duracao de um
         ALTER TABLE. apply_masks no final e uma segunda camada de garantia, sem custo
         adicional (operacao de metadado).
+        A camada ml (schema ml) materializa as tabelas de apoio a Machine
+        Learning a partir da marts ja testada.
 
       max_concurrent_runs: 1
 
@@ -144,4 +147,35 @@ resources:
               - --target
               - ${var.dbt_target}
           timeout_seconds: 300
+          max_retries: 1
+
+        - task_key: ml_run
+          environment_key: default
+          description: >
+            Materializa as tabelas de apoio a Machine Learning
+            - Fundacao de dados da Modelagem Preditiva.
+          depends_on:
+            - task_key: marts_test
+          spark_python_task:
+            python_file: ../../src/dbt/run_dbt_step.py
+            parameters:
+              - --step
+              - ml_run
+              - --target
+              - ${var.dbt_target}
+          timeout_seconds: 3600
+          max_retries: 1
+
+        - task_key: ml_test
+          environment_key: default
+          depends_on:
+            - task_key: ml_run
+          spark_python_task:
+            python_file: ../../src/dbt/run_dbt_step.py
+            parameters:
+              - --step
+              - ml_test
+              - --target
+              - ${var.dbt_target}
+          timeout_seconds: 1800
           max_retries: 1

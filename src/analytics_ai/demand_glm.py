@@ -85,7 +85,7 @@ def _safe_log(x: np.ndarray) -> np.ndarray:
 def _zeros_column(x: np.ndarray) -> np.ndarray:
     """Coluna constante de zeros, para o modelo só de intercepto.
 
-    O scikit-learn recusa uma matriz sem nenhuma coluna, mas a etapa que só
+    O scikit-learn recusa uma matriz sem nenhuma coluna, mas o passo que só
     recalibra a régua não tem feature alguma. Uma coluna de zeros deixa o
     intercepto carregar todo o ajuste e recebe coeficiente zero.
     """
@@ -371,7 +371,7 @@ def build_pipeline(config: GlmConfig) -> Pipeline:
         config: Configuração do modelo.
 
     Returns:
-        Pipeline scikit-learn com as etapas `prep` e `model`.
+        Pipeline scikit-learn com os passos `prep` e `model`.
     """
 
     def _numerico(func) -> Pipeline:
@@ -741,11 +741,13 @@ def select_power(
     return tabela.sort_values("erro_categoria_local").reset_index(drop=True)
 
 
-# ── Etapas de features, na ordem prescrita pelo relatório ───────────
+# ── Passos de features, na ordem prescrita pelo relatório ──────────
 
-# Cada etapa acrescenta um grupo de informação ao anterior. A regra de decisão
-# é pré-registrada: só adotar uma etapa se ela melhorar o erro somado ou o
-# viés na maioria dos 12 cortes de teste.
+# Cada passo acrescenta um grupo de informação ao anterior. A regra de decisão
+# é pré-registrada: só adotar um passo se ele melhorar o erro somado ou o
+# viés na maioria dos 12 cortes de teste. Não confundir com as 4 macro-etapas
+# do projeto (EDA → régua → engenharia de features → modelo de ML) — estes
+# são os passos internos da modelagem, dentro da etapa 4.
 
 _HISTORICO_LOG1P = (
     "sum_12m",
@@ -765,8 +767,8 @@ FEATURE_STEPS: dict[str, GlmConfig] = {
     # A régua é o caso beta=(1,1,1) deste modelo, com intercepto -log(12).
     # Sem offset, sem penalidade e sem escala, para que os coeficientes sejam
     # lidos diretamente como elasticidades e o empate seja verificável.
-    "etapa1_nested": GlmConfig(
-        name="etapa1_nested",
+    "passo1_nested": GlmConfig(
+        name="passo1_nested",
         family="poisson",
         alpha=0.0,
         use_offset=False,
@@ -777,8 +779,8 @@ FEATURE_STEPS: dict[str, GlmConfig] = {
     # alguma, a hessiana do newton-cholesky fica singular, então usa lbfgs; o
     # alpha mínimo identifica o coeficiente da coluna morta sem tocar no
     # intercepto, que é o único parâmetro que importa aqui.
-    "etapa2_offset": GlmConfig(
-        name="etapa2_offset",
+    "passo2_offset": GlmConfig(
+        name="passo2_offset",
         family="poisson",
         alpha=1e-8,
         use_offset=True,
@@ -786,23 +788,23 @@ FEATURE_STEPS: dict[str, GlmConfig] = {
         max_iter=1000,
         tol=1e-12,
     ),
-    "etapa3_historico": GlmConfig(
-        name="etapa3_historico",
+    "passo3_historico": GlmConfig(
+        name="passo3_historico",
         family="poisson",
         use_offset=True,
         log1p_features=_HISTORICO_LOG1P,
         numeric_features=_HISTORICO_NUM,
     ),
-    "etapa4_categoricas_baratas": GlmConfig(
-        name="etapa4_categoricas_baratas",
+    "passo4_categoricas_baratas": GlmConfig(
+        name="passo4_categoricas_baratas",
         family="poisson",
         use_offset=True,
         log1p_features=_HISTORICO_LOG1P,
         numeric_features=_HISTORICO_NUM,
         categorical_features=("frequency_class", "location_type", "region"),
     ),
-    "etapa5_categoricas_caras": GlmConfig(
-        name="etapa5_categoricas_caras",
+    "passo5_categoricas_caras": GlmConfig(
+        name="passo5_categoricas_caras",
         family="poisson",
         use_offset=True,
         log1p_features=(*_HISTORICO_LOG1P, "sale_price"),

@@ -252,7 +252,7 @@ O modelo aprende apenas **o quanto corrigir a régua**. Três razões:
 
 O `scikit-learn` não tem parâmetro de offset, só peso de amostra. A equivalência usada é ajustar `alvo ÷ régua` com peso `régua^(2−power)` — exata, não aproximada, por a desviância de Tweedie ser homogênea de grau `2−power`. Para Poisson o peso é a própria régua. Há teste unitário fixando esse expoente, porque errá-lo produz um modelo que treina sem reclamar e sai calibrado errado.
 
-### 8.6 O que a Etapa 1 revelou
+### 8.6 O que o Passo 1 revelou
 
 Antes de usar o offset, testou-se deixar o modelo reencontrar a régua sozinho, com o logaritmo dos três ingredientes como features. A régua é o caso em que os três coeficientes valem 1 e o intercepto vale −log(12).
 
@@ -266,16 +266,16 @@ Isso não é erro de código — há um teste que, alimentando a régua como alv
 
 Regra fixada **antes** de olhar qualquer resultado: um grupo de informação por vez, mantido só se melhorar o erro somado por categoria × loja **ou** o viés em **7 ou mais dos 12 cortes de validação**.
 
-| Etapa | O que acrescenta | Cortes com erro menor | Cortes com viés menor | Veredito |
+| Passo | O que acrescenta | Cortes com erro menor | Cortes com viés menor | Veredito |
 |---|---|---|---|---|
 | 2 · régua como offset | recalibração multiplicativa | 7/12 | 7/12 | **Manter** |
 | 3 · histórico da própria série | `sum_12m`, `sum_3m`, `produto_locais_avg_12m`, meses com venda, recência, `is_stopped_12m`, tamanho dos grupos | 6/12 | 7/12 | **Manter** |
 | 4 · categóricas baratas | `frequency_class`, `location_type`, `region` | 3/12 | 2/12 | Descartar |
 | 5 · categóricas caras | `category_name`, `brand_name`, `sale_price` | 5/12 | 7/12 | Descartar |
 
-A etapa 5 passaria na regra pelo viés (7/12), mas ela é medida **contra a etapa 4**, que foi reprovada — e sem a etapa 4 a cadeia se interrompe antes. Como a etapa 5 também piora o erro somado em relação à etapa 3 (0,1316 contra 0,1300 na validação), ela sai junto.
+O passo 5 passaria na regra pelo viés (7/12), mas ele é medido **contra o passo 4**, que foi reprovado — e sem o passo 4 a cadeia se interrompe antes. Como o passo 5 também piora o erro somado em relação ao passo 3 (0,1316 contra 0,1300 na validação), ele sai junto.
 
-**Modelo final: etapa 3.** Ficou demonstrado formalmente o que os notebooks 01–03 sugeriam: atributos de produto e loja não acrescentam nada, porque o efeito de categoria × loja **já está dentro da régua**.
+**Modelo final: passo 3.** Ficou demonstrado formalmente o que os notebooks 01–03 sugeriam: atributos de produto e loja não acrescentam nada, porque o efeito de categoria × loja **já está dentro da régua**.
 
 Ficaram de fora do treino, por princípio: `sk_product`, `sk_location`, `sku`, `product_name`, `cutoff`, o próprio alvo e as flags que dependem do futuro. `avg_monthly_12m` e `avg_monthly_3m` foram excluídas por serem `sum_12m ÷ 12` e `sum_3m ÷ 3` — colineares exatas sob logaritmo.
 

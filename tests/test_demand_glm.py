@@ -167,7 +167,7 @@ class OffsetTest(unittest.TestCase):
     def test_piso_do_baseline_evita_log_de_zero(self):
         frame = _painel([dt.date(2024, 1, 1)], n_series=6)
         frame[BASELINE_COL] = 0.0
-        config = FEATURE_STEPS["etapa2_offset"]
+        config = FEATURE_STEPS["passo2_offset"]
         modelo = fit_glm(frame, config)
         pred = predict_total(modelo, frame)
         self.assertTrue(np.all(np.isfinite(pred)))
@@ -181,16 +181,16 @@ class OffsetTest(unittest.TestCase):
         frame = pd.DataFrame(
             {BASELINE_COL: e, "target_3m": rng.poisson(e * 1.37).astype(float)}
         )
-        modelo = fit_glm(frame, FEATURE_STEPS["etapa2_offset"])
+        modelo = fit_glm(frame, FEATURE_STEPS["passo2_offset"])
         fator = float(np.exp(modelo.pipeline.named_steps["model"].intercept_))
         esperado = float(frame["target_3m"].sum() / e.sum())
         self.assertAlmostEqual(esperado, fator, places=4)
 
 
 class NestedBaselineTest(unittest.TestCase):
-    """A régua é um caso particular da etapa 1 — e o código tem de saber disso."""
+    """A régua é um caso particular do passo 1 — e o código tem de saber disso."""
 
-    def test_etapa1_reproduz_a_regua_quando_ela_e_a_verdade(self):
+    def test_passo1_reproduz_a_regua_quando_ela_e_a_verdade(self):
         rng = np.random.default_rng(3)
         n = 3000
         nivel = rng.gamma(4.0, 3.0, size=n) + 1.0
@@ -206,7 +206,7 @@ class NestedBaselineTest(unittest.TestCase):
                 "target_3m": regua,
             }
         )
-        modelo = fit_glm(frame, FEATURE_STEPS["etapa1_nested"])
+        modelo = fit_glm(frame, FEATURE_STEPS["passo1_nested"])
         coef = dict(zip(modelo.feature_names, modelo.pipeline.named_steps["model"].coef_, strict=True))
         for nome, valor in coef.items():
             self.assertAlmostEqual(1.0, float(valor), places=3, msg=f"{nome} deveria valer 1")
@@ -219,16 +219,16 @@ class NestedBaselineTest(unittest.TestCase):
 class PipelineContractTest(unittest.TestCase):
     """Nenhuma coluna proibida chega ao modelo, por construção."""
 
-    def test_features_proibidas_fora_de_todas_as_etapas(self):
+    def test_features_proibidas_fora_de_todos_os_passos(self):
         for nome, config in FEATURE_STEPS.items():
-            with self.subTest(etapa=nome):
+            with self.subTest(passo=nome):
                 self.assertEqual(
                     set(), set(config.all_features) & set(EXCLUDED_FROM_TRAINING)
                 )
 
     def test_column_transformer_descarta_colunas_extras(self):
         frame = _painel([dt.date(2024, 1, 1)], n_series=8)
-        modelo = fit_glm(frame, FEATURE_STEPS["etapa3_historico"])
+        modelo = fit_glm(frame, FEATURE_STEPS["passo3_historico"])
         nomes = " ".join(modelo.feature_names)
         for proibida in ("sku", "product_name", "cutoff", "target_3m"):
             self.assertNotIn(proibida, nomes)
@@ -242,7 +242,7 @@ class PipelineContractTest(unittest.TestCase):
 
     def test_previsao_nunca_negativa_nem_nan(self):
         frame = _painel([dt.date(2024, 1, 1)], n_series=8)
-        modelo = fit_glm(frame, FEATURE_STEPS["etapa3_historico"])
+        modelo = fit_glm(frame, FEATURE_STEPS["passo3_historico"])
         extremo = frame.copy()
         extremo["sum_12m"] = 1e9
         pred = predict_total(modelo, extremo)
@@ -262,7 +262,7 @@ class PipelineContractTest(unittest.TestCase):
 
     def test_add_predictions_preserva_linhas(self):
         frame = _painel([dt.date(2024, 1, 1)], n_series=5)
-        modelo = fit_glm(frame, FEATURE_STEPS["etapa2_offset"])
+        modelo = fit_glm(frame, FEATURE_STEPS["passo2_offset"])
         saida = add_predictions(frame, modelo, "pred_glm")
         self.assertEqual(len(frame), len(saida))
         self.assertIn("pred_glm", saida.columns)

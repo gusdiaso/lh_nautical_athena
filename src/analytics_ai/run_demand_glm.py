@@ -44,7 +44,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Interpreta os argumentos da linha de comando."""
     parser = argparse.ArgumentParser(description="Treina o GLM de demanda e grava as previsões.")
     parser.add_argument("--model-name", default="glm_poisson", help="Rótulo e partição do modelo.")
-    parser.add_argument("--step", default="etapa3_historico", choices=sorted(FEATURE_STEPS))
+    parser.add_argument("--step", default="passo3_historico", choices=sorted(FEATURE_STEPS))
     parser.add_argument("--family", default="poisson", choices=("poisson", "tweedie"))
     parser.add_argument("--power", type=float, default=1.3, help="Potência do Tweedie.")
     parser.add_argument("--alpha", type=float, default=0.0, help="Regularização L2.")

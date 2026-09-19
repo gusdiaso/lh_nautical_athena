@@ -382,7 +382,7 @@ O ranking oficial usa o crescimento em **unidades**: é o que foi pedido, e o pe
 | Loja Mendonça | PDV | PI | Nordeste | Armazém Novaes | mesma UF |
 | Loja Oliveira | PDV | AL | Nordeste | Armazém Novaes | mesma região |
 
-**Centro de Distribuição — evolução nos três meses:**
+**Centro de Distribuição — demanda prevista em cada um dos três meses (unidades):**
 
 | CD | Set/2026 | Out/2026 | Nov/2026 | Var. 1→2 | Var. 2→3 | Cresc. 1→3 | Cresc. % | Rank |
 |---|---|---|---|---|---|---|---|---|
@@ -390,7 +390,7 @@ O ranking oficial usa o crescimento em **unidades**: é o que foi pedido, e o pe
 | Armazém Novaes | 1.439,9 | 2.216,5 | 2.732,5 | +776,6 (+53,9%) | +515,9 (+23,3%) | +1.292,5 | 89,8% | 2 |
 | Armazém Siqueira | 1.391,7 | 2.142,3 | 2.640,9 | +750,6 (+53,9%) | +498,7 (+23,3%) | +1.249,2 | 89,8% | 3 |
 
-**Ponto de Venda — evolução nos três meses:**
+**Ponto de Venda — demanda prevista em cada um dos três meses (unidades):**
 
 | PDV | CD associado | Set/2026 | Out/2026 | Nov/2026 | Var. 1→2 | Var. 2→3 | Cresc. 1→3 | Cresc. % | Rank |
 |---|---|---|---|---|---|---|---|---|---|
@@ -411,7 +411,7 @@ O ranking oficial usa o crescimento em **unidades**: é o que foi pedido, e o pe
 | Loja Mendonça | PDV | 5.394 | 6.371,0 | +977,0 | +18,1% | 2 |
 | Loja Leão | PDV | 5.374 | 6.299,4 | +925,4 | +17,2% | 3 |
 
-Aqui os locais se separam: de +3,9% a +31,5%. Nenhuma unidade cai. O CD vencedor muda porque o Camargo já vendia muito em set–nov/2025, e o salto relativo é menor; as lojas crescem mais que os armazéns pelo mesmo motivo — venderam menos em 2025 e a régua (média do grupo nos últimos 12 meses, corrigida por tendência) atribui a todas um nível parecido para 2026. Os rankings absoluto e percentual coincidem nas duas definições.
+Aqui os locais se separam: de +3,9% a +31,5%. Nenhuma unidade cai. O CD vencedor muda porque o Camargo já vendia muito em set–nov/2025, e o salto relativo é menor; as lojas crescem mais que os armazéns pelo mesmo motivo — venderam menos em 2025 e a régua (média do grupo nos últimos 12 meses, corrigida por tendência) atribui a todas um nível parecido para 2026. Frente a 2025, os rankings absoluto e percentual coincidem; dentro do horizonte, o ranking percentual é um empate entre as seis unidades.
 
 **Produtos responsáveis pelo crescimento.** Frente a 2025, o crescimento é **difuso**: no Armazém Novaes os 10 produtos que mais contribuem respondem por 13% dos +560 (são precisos 41 para chegar à metade); na Loja Oliveira, top 10 = 5% dos +1.535 e 113 produtos fazem metade. Os maiores "contribuintes" são todos produtos que **não venderam nada em set–nov/2025** e recebem ~7 unidades de previsão — o nível médio do grupo. É a limitação do §10 aparecendo: o modelo quase não diferencia produtos, então quem vendeu zero "cresce" até a média. A leitura útil é por categoria: no Novaes o crescimento vem de GPS & Plotters (22%), Motores (20%), Sonares e Transdutores (19%), Baterias (17%) e Instrumentos de Navegação (15%), com Pintura Marítima (−58) e Velas (−23) em queda; na Oliveira, de Instrumentos de Navegação (13%), GPS & Plotters (11%), Âncoras (10%), Velas (10%) e Sonares (9%), com todas as 12 categorias subindo. Nenhuma categoria domina.
 

@@ -15,6 +15,7 @@ import pandas as pd
 from src.analytics_ai.demand_growth import (
     CD,
     PDV,
+    _ranquear,
     concentracao,
     contribuicao_produtos,
     crescimento_vs_ano_anterior,
@@ -233,6 +234,35 @@ class TrajetoriaTest(unittest.TestCase):
         self.assertTrue(np.isnan(cds.loc["cd_a", "cresc_pct_1_3"]))
         self.assertEqual(cds.loc["cd_b", "rank_pct"], 1)
         self.assertEqual(cds.loc["cd_a", "rank_pct"], 2)
+
+    def test_percentuais_iguais_a_menos_de_ruido_empatam_e_seguem_o_desempate(self):
+        # Com share único o percentual é o mesmo em toda unidade; uma diferença
+        # de 1e-12 (acúmulo de ponto flutuante) não pode decidir o ranking.
+        frame = pd.DataFrame(
+            {"location_name": ["menor", "maior"], "cresc_pct_1_3": [89.76 + 1e-12, 89.76], "mes_3": [10.0, 20.0]}
+        )
+        ranqueado = _ranquear(frame, "cresc_pct_1_3", "rank_pct", "mes_3")
+        self.assertEqual(list(ranqueado.sort_values("rank_pct")["location_name"]), ["maior", "menor"])
+        # Uma diferença real continua mandando.
+        frame["cresc_pct_1_3"] = [89.77, 89.76]
+        ranqueado = _ranquear(frame, "cresc_pct_1_3", "rank_pct", "mes_3")
+        self.assertEqual(list(ranqueado.sort_values("rank_pct")["location_name"]), ["menor", "maior"])
+
+    def test_crescimento_zero(self):
+        enriquecido = enriquecer(
+            _mensal({"cd_a": {"p1": 30.0}, "cd_b": {"p1": 30.0}}, shares=(1 / 3, 1 / 3, 1 / 3)),
+            preparar_locais(_dim_locations()),
+        )
+        cds = trajetoria_por_unidade(enriquecido, CD)
+        np.testing.assert_allclose(cds["cresc_abs_1_3"], 0.0, atol=1e-12)
+        np.testing.assert_allclose(cds["cresc_pct_1_3"], 0.0, atol=1e-9)
+        self.assertEqual(list(cds["rank_abs"]), [1, 2])
+
+    def test_local_duplicado_na_dimensao_falha_em_vez_de_multiplicar(self):
+        locais = preparar_locais(_dim_locations())
+        duplicado = pd.concat([locais, locais.iloc[[0]]], ignore_index=True)
+        with self.assertRaises(pd.errors.MergeError):
+            enriquecer(_mensal(TOTAIS), duplicado)
 
     def test_pdv_carrega_o_cd_associado(self):
         pdvs = trajetoria_por_unidade(self.enriquecido, PDV).set_index("sk_location")

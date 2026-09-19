@@ -49,11 +49,19 @@ def _pct(numerador: pd.Series, base: pd.Series) -> pd.Series:
     )
 
 
+# Percentuais iguais por construção diferem na 12ª casa por acumulação de
+# ponto flutuante; sem arredondar, o ranking seria decidido por esse ruído.
+RANK_DECIMALS = 6
+
+
 def _ranquear(frame: pd.DataFrame, coluna: str, nome: str, desempate: str) -> pd.DataFrame:
     """Posição de cada linha ordenando por `coluna` (desc), `desempate` (desc) e nome (asc)."""
-    ordem = frame.sort_values(
-        [coluna, desempate, "location_name"], ascending=[False, False, True], na_position="last"
-    ).index
+    chave = frame[coluna].round(RANK_DECIMALS)
+    ordem = (
+        frame.assign(_chave=chave)
+        .sort_values(["_chave", desempate, "location_name"], ascending=[False, False, True], na_position="last")
+        .index
+    )
     frame[nome] = pd.Series(np.arange(1, len(frame) + 1), index=ordem).reindex(frame.index).astype(int)
     return frame
 
@@ -133,7 +141,7 @@ def enriquecer(mensal: pd.DataFrame, locais: pd.DataFrame) -> pd.DataFrame:
     if desconhecidos:
         raise ValueError(f"locais da previsão ausentes na dimensão: {desconhecidos}")
     atributos = locais[["sk_location", "location_type", "tipo", "state", "region", *COLUNAS_VINCULO]]
-    saida = mensal.merge(atributos, on="sk_location", how="inner")
+    saida = mensal.merge(atributos, on="sk_location", how="inner", validate="many_to_one")
     saida["mes_previsto"] = _as_date(saida["mes_previsto"])
     return saida
 
@@ -230,9 +238,9 @@ def contribuicao_produtos(
     tab["cresc_abs_1_3"] = tab["mes_3"] - tab["mes_1"]
     tab["cresc_ano_anterior_abs"] = tab["previsto"] - tab["realizado_ano_anterior"]
     nomes = sub[["sk_product", "sku"]].drop_duplicates("sk_product").merge(
-        produtos[["sk_product", "product_name", "category_name"]], on="sk_product", how="left"
+        produtos[["sk_product", "product_name", "category_name"]], on="sk_product", how="left", validate="one_to_one"
     )
-    tab = nomes.merge(tab.reset_index(), on="sk_product", how="left")
+    tab = nomes.merge(tab.reset_index(), on="sk_product", how="left", validate="one_to_one")
     return tab.sort_values(
         ["cresc_ano_anterior_abs", "previsto", "sku"], ascending=[False, False, True]
     ).reset_index(drop=True)

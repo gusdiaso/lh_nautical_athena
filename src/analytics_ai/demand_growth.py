@@ -15,7 +15,7 @@ abastecimento entre loja e armazém em nenhuma tabela; o vínculo usado aqui é
 geográfico (mesma UF, senão mesma região) e deve ser lido como hipótese.
 
 Módulo pandas puro: não abre sessão Spark. A leitura das tabelas fica no
-notebook 05.
+notebook 06.
 """
 
 from __future__ import annotations

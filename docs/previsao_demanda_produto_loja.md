@@ -417,7 +417,7 @@ Aqui os locais se separam: de +3,9% a +31,5%. Nenhuma unidade cai. O CD vencedor
 
 **Robustez:** o GLM Tweedie (`power` 1,3), que empatou com o Poisson no teste, aponta os mesmos vencedores nas duas definições — Camargo +1.336 e Oliveira +1.294 dentro do horizonte; Novaes +9,5% e Oliveira +31,4% frente a 2025.
 
-**Gráficos** (no notebook 05): evolução realizado + previsto por CD e por PDV, jun/2025 a nov/2026; ranking do crescimento em unidades com o percentual ao lado de cada barra; crescimento % frente a 2025 por unidade; decomposição do crescimento por categoria nos dois vencedores.
+**Gráficos** (no notebook 06): evolução realizado + previsto por CD e por PDV, jun/2025 a nov/2026; ranking do crescimento em unidades com o percentual ao lado de cada barra; crescimento % frente a 2025 por unidade; decomposição do crescimento por categoria nos dois vencedores.
 
 **Limitações desta análise:** (1) o vínculo PDV → CD é hipótese geográfica, não dado; (2) o crescimento percentual dentro do horizonte não discrimina por construção; (3) a previsão por local é quase uniforme, porque a régua fixa o nível por categoria × local e o modelo corrige pouco — diferenças pequenas entre unidades não devem ser lidas como sinal; (4) o realizado de 2025 tem a mesma cara de dado simulado que o resto do projeto (§10).
 
@@ -510,10 +510,10 @@ PYTHONPATH=. python -m src.analytics_ai.run_demand_glm --model-name glm_poisson
 | `src/analytics_ai/demand_predictions.py` | Leitura das features e gravação das tabelas de previsão no Unity Catalog |
 | `src/analytics_ai/run_demand_glm.py` | Execução ponta a ponta fora do notebook |
 | `tests/test_demand_glm.py` | Testes do offset, do recorte, da repartição mensal e dos contratos de métrica |
-| `notebooks/ml/05_crescimento_cd_pdv.ipynb` | Crescimento da demanda prevista por CD e PDV: trajetória nos 3 meses, comparação com 2025, produtos e categorias, robustez com o Tweedie |
+| `notebooks/ml/06_crescimento_cd_pdv.ipynb` | Crescimento da demanda prevista por CD e PDV: trajetória nos 3 meses, comparação com 2025, produtos e categorias, robustez com o Tweedie |
 | `src/analytics_ai/demand_growth.py` | Validação da tabela mensal, vínculo PDV → CD, fórmulas de crescimento e contribuições (pandas puro, sem Spark) |
 | `tests/test_demand_growth.py` | Testes das fórmulas de crescimento, do vínculo, dos casos de borda e da propriedade do índice único |
 | `dev_lh_nautical.ml.ml_forecast_demanda_3m` | Previsão do total de 3 meses, com a régua e o alvo real ao lado |
 | `dev_lh_nautical.ml.ml_forecast_demanda_mensal` | **A entrega:** previsão mês a mês por produto × loja |
 
-**Para atualizar os números deste documento:** rodar o job de transformação, executar os notebooks 01, 02, 03, 04 e 05 nessa ordem, e revisar o conteúdo acima.
+**Para atualizar os números deste documento:** rodar o job de transformação, executar os notebooks 01, 02, 03, 04 e 06 nessa ordem (o 05 é o XGBoost, documentado em `docs/xgboost_demand.md`), e revisar o conteúdo acima.

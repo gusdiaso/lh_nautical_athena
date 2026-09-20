@@ -425,7 +425,7 @@ lh_nautical/
 │       ├── eda_*.py                       # Análise exploratória da demanda (notebooks 01 a 04)
 │       ├── ml_config.py                   # Nomes das tabelas de ML
 │       └── run_demand_*.py                # Entrypoints de treino do GLM e do XGBoost
-├── notebooks/ml/                          # Análises e modelos de previsão de demanda (01 a 07)
+├── notebooks/ml/                          # Análises e modelos de previsão de demanda (01 a 08)
 ├── evaluation/
 │   └── rag_golden_dataset.jsonl           # 30 casos de avaliação do RAG
 ├── docs/                                  # Documentação

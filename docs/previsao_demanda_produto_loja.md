@@ -1,6 +1,6 @@
 # Previsão de demanda por produto × loja
 
-**Última atualização:** 20/09/2026 · dados de `dev_lh_nautical` até agosto/2026 · **as 4 etapas concluídas** (Etapa 4 com três modelos comparados: regressão linear, GLM e XGBoost).
+**Última atualização:** 20/09/2026 · dados de `dev_lh_nautical` até agosto/2026 · **as 4 etapas concluídas** (Etapa 4 com três modelos comparados: regressão linear, GLM e XGBoost) · análise de crescimento por CD e PDV (§8.6).
 
 Este documento explica, do início ao ponto atual, o trabalho de Machine Learning para prever quanto cada produto vende em cada loja: o problema, como foi pensado para resolver, as análises feitas, os principais achados e como a engenharia de features foi montada.
 
@@ -40,7 +40,7 @@ O trabalho foi dividido em 4 etapas, cada uma dependendo da anterior:
 | **1 · Conhecer os dados** ✅ | Entender por que a demanda tem tantos zeros, em que granularidade prever, e como as 6.054 séries se distribuem (produtos parecidos? concentração de volume? sazonalidade?) | Notebooks `01_eda_demand_zeros` e `02_distribuicao_produtos` (análise complementar: `03_sazonalidade_produto`) |
 | **2 · Criar uma régua de comparação** ✅ | Montar a previsão mais simples possível que já funcione bem, e medir o quanto ela erra. Essa régua vira a "nota mínima" que qualquer modelo de Machine Learning precisa superar para valer a pena existir | Notebook `04_medias_moveis` |
 | **3 · Engenharia de features** ✅ | Transformar o que a régua provou funcionar numa tabela de dados (dbt) pronta para alimentar modelos de Machine Learning, sem depender de código Python espalhado | `src/dbt/models/ml/` |
-| **4 · Modelos de Machine Learning** ✅ | Treinar modelos e comparar com a régua da Etapa 2, tanto por produto × loja quanto por categoria × loja | Notebooks `05_regressao_linear`, `05b_regressao_linear_validacao`, `06_modelo_glm_poisson` e `07_modelo_xgboost` |
+| **4 · Modelos de Machine Learning** ✅ | Treinar modelos e comparar com a régua da Etapa 2, tanto por produto × loja quanto por categoria × loja | Notebooks `05_regressao_linear`, `05b_regressao_linear_validacao`, `06_modelo_glm_poisson` e `07_modelo_xgboost` (análise complementar sobre a entrega do GLM: `08_crescimento_cd_pdv`) |
 
 **Por que essa ordem importa:** pular direto para um modelo de Machine Learning sem as etapas 1 e 2 é arriscado — sem saber como os dados se comportam, é fácil montar features que não fazem sentido, e sem uma régua de comparação não dá para saber se o modelo é realmente bom ou só parece bom.
 
@@ -60,6 +60,8 @@ O trabalho foi dividido em 4 etapas, cada uma dependendo da anterior:
 | **Viés** | Se a previsão erra sempre para o mesmo lado. Negativo = a previsão, no total, ficou abaixo do que foi vendido |
 | **Limite de venda** | Um teto: "a venda não deve passar disso". Ex.: limite de 9 em 10 = em 9 de cada 10 vezes, a venda real fica até esse valor |
 | **Acaso (ruído)** | Variação sem padrão, que não dá para prever — como o resultado de um dado |
+| **Centro de Distribuição (CD)** | Um armazém. Nas tabelas é o local com `location_type = warehouse`. São 3: Armazéns Camargo, Novaes e Siqueira |
+| **Ponto de Venda (PDV)** | Uma loja. Nas tabelas é o local com `location_type = store`. São 3: Lojas Leão, Mendonça e Oliveira |
 
 ## 4. Análises feitas e principais achados
 
@@ -454,6 +456,75 @@ Leitura do que aconteceu: a calibração é ajustada nos 6 cortes de validação
 
 A análise completa, com gráficos, está em `notebooks/ml/07_modelo_xgboost.ipynb` (que se apresenta como "Etapa 5" e não compara com os outros modelos; a comparação é a da seção 8.2). Diferentemente do GLM, o XGBoost não grava nas tabelas Delta: o runner produz quatro arquivos CSV (previsões de teste, previsões atuais, métricas e busca na validação). Instruções em [xgboost_demand.md](xgboost_demand.md).
 
+### 8.6 Crescimento da demanda por Centro de Distribuição e Ponto de Venda
+
+**Objetivo:** responder à pergunta do time — *qual centro de distribuição e qual ponto de venda têm o maior crescimento de demanda nos três meses previstos?* — a partir da entrega do §8.4 ("Previsão dos próximos 3 meses").
+
+**Resposta curta:** dentro dos três meses previstos, o CD que mais cresce é o **Armazém Camargo** (+1.338 unidades de setembro para novembro) e o PDV é a **Loja Oliveira** (+1.295). Mas o crescimento **percentual é o mesmo nas seis unidades — 89,8%** —, porque a repartição mensal usa um único perfil sazonal; dentro do horizonte, "quem mais cresce" é "quem tem mais volume". Comparando o trimestre previsto com o mesmo trimestre **realizado em 2025**, que retira a estação da conta, o CD que mais cresce passa a ser o **Armazém Novaes** (+9,6%) e o PDV continua sendo a **Loja Oliveira** (+31,5%).
+
+**Metodologia.** Fonte: `ml_forecast_demanda_mensal`, partição `glm_poisson` (o modelo final), corte de agosto/2026 — 18.162 linhas, uma por produto × local × mês, validadas antes de qualquer soma (um único corte, sem nulos, negativos ou duplicatas, três horizontes em toda série). CD e PDV vêm de `dim_locations.location_type` (`warehouse` / `store`); a tabela mensal não traz o tipo, então o cruzamento é por `sk_location`. Para cada unidade `u`, `D_u(k)` é a soma da demanda prevista de todos os produtos no mês `k`:
+
+```
+variação 1→2     = D(2) − D(1)        e em %:  (D(2) / D(1) − 1) × 100
+variação 2→3     = D(3) − D(2)
+crescimento 1→3  = D(3) − D(1)        ← resposta principal (em unidades)
+frente a 2025    = previsto set+out+nov/2026 − realizado set+out+nov/2025   ← complementar
+```
+
+O ranking oficial usa o crescimento em **unidades**: é o que foi pedido, e o percentual infla quem parte de base pequena (aqui ele nem sequer discrimina). Crescimento não é demanda acumulada — somar os três meses mede volume. O realizado vem de `ml_complete_monthly_demand`, que exclui meses parciais.
+
+**Período:** setembro, outubro e novembro de 2026 (mês 1, 2 e 3). Referência complementar: setembro a novembro de 2025.
+
+**Os locais e o vínculo PDV → CD.** Não existe nos dados nenhuma coluna ou tabela que diga qual armazém abastece qual loja (`stock_movements` só registra venda, compra e devolução, sem origem e destino). O vínculo abaixo é uma **hipótese de proximidade geográfica** — armazém da mesma UF; se não houver, da mesma região:
+
+| Local | Tipo | UF | Região | CD associado | Critério |
+|---|---|---|---|---|---|
+| Armazém Camargo | CD | PR | Sul | — | — |
+| Armazém Novaes | CD | PI | Nordeste | — | — |
+| Armazém Siqueira | CD | AP | Norte | — | não abastece nenhum PDV |
+| Loja Leão | PDV | PR | Sul | Armazém Camargo | mesma UF |
+| Loja Mendonça | PDV | PI | Nordeste | Armazém Novaes | mesma UF |
+| Loja Oliveira | PDV | AL | Nordeste | Armazém Novaes | mesma região |
+
+**Centro de Distribuição — demanda prevista em cada um dos três meses (unidades):**
+
+| CD | Set/2026 | Out/2026 | Nov/2026 | Var. 1→2 | Var. 2→3 | Cresc. 1→3 | Cresc. % | Rank |
+|---|---|---|---|---|---|---|---|---|
+| **Armazém Camargo** | 1.490,1 | 2.293,7 | 2.827,6 | +803,6 (+53,9%) | +533,9 (+23,3%) | **+1.337,6** | 89,8% | 1 |
+| Armazém Novaes | 1.439,9 | 2.216,5 | 2.732,5 | +776,6 (+53,9%) | +515,9 (+23,3%) | +1.292,5 | 89,8% | 2 |
+| Armazém Siqueira | 1.391,7 | 2.142,3 | 2.640,9 | +750,6 (+53,9%) | +498,7 (+23,3%) | +1.249,2 | 89,8% | 3 |
+
+**Ponto de Venda — demanda prevista em cada um dos três meses (unidades):**
+
+| PDV | CD associado | Set/2026 | Out/2026 | Nov/2026 | Var. 1→2 | Var. 2→3 | Cresc. 1→3 | Cresc. % | Rank |
+|---|---|---|---|---|---|---|---|---|---|
+| **Loja Oliveira** | Armazém Novaes | 1.443,2 | 2.221,6 | 2.738,7 | +778,4 (+53,9%) | +517,1 (+23,3%) | **+1.295,5** | 89,8% | 1 |
+| Loja Mendonça | Armazém Novaes | 1.435,9 | 2.210,3 | 2.724,8 | +774,4 (+53,9%) | +514,5 (+23,3%) | +1.288,9 | 89,8% | 2 |
+| Loja Leão | Armazém Camargo | 1.419,8 | 2.185,5 | 2.694,2 | +765,7 (+53,9%) | +508,7 (+23,3%) | +1.274,4 | 89,8% | 3 |
+
+**Leitura:** o Armazém Camargo e a Loja Oliveira lideram, mas por margens pequenas — 88 unidades entre o primeiro e o terceiro CD, 21 entre a primeira e a terceira loja, num trimestre de mais de 6.000 unidades por local. E o percentual é idêntico em todas: **89,76%**. Isso não é coincidência, é construção. O §8.4 reparte o total de 3 meses pelos índices sazonais da tabela de features, e esses índices são os mesmos para todas as séries de um corte (índice sazonal geral, decisão da Etapa 2). Então, para qualquer unidade, `D(3)/D(1) = índice₃/índice₁ = 1,898`, e o crescimento em unidades é o volume previsto vezes uma constante. **O ranking acima é o ranking de volume previsto** — legítimo como resposta, mas não diz onde a demanda acelera mais. A subida de 53,9% e depois 23,3% é a alta temporada chegando, igual em todo lugar.
+
+**Crescimento frente ao mesmo trimestre de 2025** — a comparação em que a estação não manda:
+
+| Unidade | Tipo | Realizado set–nov/2025 | Previsto set–nov/2026 | Crescimento | Cresc. % | Rank |
+|---|---|---|---|---|---|---|
+| **Armazém Novaes** | CD | 5.829 | 6.388,9 | **+559,9** | **+9,6%** | 1 |
+| Armazém Camargo | CD | 6.179 | 6.611,5 | +432,5 | +7,0% | 2 |
+| Armazém Siqueira | CD | 5.945 | 6.174,9 | +229,9 | +3,9% | 3 |
+| **Loja Oliveira** | PDV | 4.869 | 6.403,5 | **+1.534,5** | **+31,5%** | 1 |
+| Loja Mendonça | PDV | 5.394 | 6.371,0 | +977,0 | +18,1% | 2 |
+| Loja Leão | PDV | 5.374 | 6.299,4 | +925,4 | +17,2% | 3 |
+
+Aqui os locais se separam: de +3,9% a +31,5%. Nenhuma unidade cai. O CD vencedor muda porque o Camargo já vendia muito em set–nov/2025, e o salto relativo é menor; as lojas crescem mais que os armazéns pelo mesmo motivo — venderam menos em 2025 e a régua (média do grupo nos últimos 12 meses, corrigida por tendência) atribui a todas um nível parecido para 2026. Frente a 2025, os rankings absoluto e percentual coincidem; dentro do horizonte, o ranking percentual é um empate entre as seis unidades. **Concentração entre unidades:** dentro do horizonte cada CD responde por cerca de um terço do crescimento dos CDs (34,5%, 33,3% e 32,2%) — de novo o retrato do volume; frente a 2025 a concentração aparece: o Novaes responde por 45,8% do crescimento dos três CDs e a Oliveira por 44,6% do crescimento das três lojas.
+
+**Produtos responsáveis pelo crescimento.** Frente a 2025, o crescimento é **difuso**: no Armazém Novaes os 10 produtos que mais contribuem respondem por 13% dos +560 (são precisos 41 para chegar à metade); na Loja Oliveira, top 10 = 5% dos +1.535 e 113 produtos fazem metade. Os maiores "contribuintes" são todos produtos que **não venderam nada em set–nov/2025** e recebem ~7 unidades de previsão — o nível médio do grupo. É a limitação do §10 aparecendo: o modelo quase não diferencia produtos, então quem vendeu zero "cresce" até a média. A leitura útil é por categoria: no Novaes o crescimento vem de GPS & Plotters (22%), Motores (20%), Sonares e Transdutores (19%), Baterias (17%) e Instrumentos de Navegação (15%), com Pintura Marítima (−58) e Velas (−23) em queda; na Oliveira, de Instrumentos de Navegação (13%), GPS & Plotters (11%), Âncoras (10%), Velas (10%) e Sonares (9%), com todas as 12 categorias subindo. Nenhuma categoria domina.
+
+**Robustez:** o GLM Tweedie (`power` 1,3), que empatou com o Poisson no teste, aponta os mesmos vencedores nas duas definições — Camargo +1.336 e Oliveira +1.294 dentro do horizonte; Novaes +9,5% e Oliveira +31,4% frente a 2025.
+
+**Gráficos** (no notebook 08): evolução realizado + previsto por CD e por PDV, jun/2025 a nov/2026; ranking do crescimento em unidades com o percentual ao lado de cada barra; crescimento % frente a 2025 por unidade; decomposição do crescimento por categoria nos dois vencedores.
+
+**Limitações desta análise:** (1) o vínculo PDV → CD é hipótese geográfica, não dado; (2) o crescimento percentual dentro do horizonte não discrimina por construção; (3) a previsão por local é quase uniforme, porque a régua fixa o nível por categoria × local e o modelo corrige pouco — diferenças pequenas entre unidades não devem ser lidas como sinal; (4) o realizado de 2025 tem a mesma cara de dado simulado que o resto do projeto (§10).
+
 ---
 
 ## 9. Decisões tomadas
@@ -480,6 +551,8 @@ A análise completa, com gráficos, está em `notebooks/ml/07_modelo_xgboost.ipy
 | **Etapa 4:** escolher features e hiperparâmetros numa validação separada e abrir o teste uma vez | Escolher olhando o teste (como no notebook 05) | No notebook 05b, o vencedor da validação perdeu no teste; escolher no teste teria escondido o problema |
 | **Etapa 4:** manter a régua como base de planejamento e o GLM Poisson como candidato | Trocar a régua pela regressão linear ou pelo XGBoost | Só o GLM empata com a régua no erro somado, e é o único que elimina o viés (+0,1% contra −2,8%) |
 | **Etapa 4:** embargo de 3 meses entre blocos (regressão linear e XGBoost) | Cortar treino e validação sem folga | O alvo de um corte só é conhecido 3 meses depois; sem embargo o treino enxergaria o futuro |
+| **Crescimento por CD/PDV:** ranking pelo crescimento em unidades (mês 3 − mês 1), com a comparação a set–nov/2025 ao lado | Ranquear só pelo percentual | O percentual dentro do horizonte é o mesmo em todas as unidades (índice sazonal geral) e, em geral, infla quem parte de base pequena |
+| **Crescimento por CD/PDV:** vínculo PDV → CD por UF, senão por região | Não relacionar loja a armazém | Não há dado de abastecimento; a hipótese geográfica é declarada e conferível na tabela do §8.12 |
 
 ## 10. Limitações
 
@@ -491,6 +564,8 @@ A análise completa, com gráficos, está em `notebooks/ml/07_modelo_xgboost.ipy
 - **O modelo quase não diferencia produtos (Etapa 4):** a previsão varia de 5 a 7 unidades enquanto a venda real varia de 0 a 21. Não é defeito do GLM — é a ausência de informação que separe, antes da venda, quem venderá 0 de quem venderá 20. Melhorar isso exige dado novo (preço praticado, promoção, campanha, ruptura de estoque), não algoritmo mais sofisticado.
 - **A repartição mensal herda o índice sazonal geral:** como a estação é a mesma para todas as categorias (decisão da Etapa 2), a quebra mês a mês supõe o mesmo perfil sazonal em todo o catálogo. O erro medido não cresce ao longo dos 3 meses, mas a suposição existe.
 - **Sobreposição na fronteira dos recortes:** o último corte de treino tem alvo que invade a validação. Medido com 3 meses de embargo, o efeito é imaterial (11,77% nos dois casos), mas o recorte principal não aplica embargo.
+- **O crescimento percentual dentro do horizonte é igual em todas as unidades (89,8%):** consequência direta do índice sazonal geral. O ranking de crescimento por CD/PDV no horizonte equivale ao ranking de volume previsto; a comparação com o mesmo trimestre do ano anterior é a que discrimina.
+- **O vínculo PDV → CD é uma hipótese:** nenhuma tabela registra qual armazém abastece qual loja; o §8.6 usa proximidade geográfica (UF, depois região).
 - **O ganho do modelo está no viés, não no erro:** quem esperar uma queda grande do erro de previsão vai se decepcionar. O que o GLM entrega é uma previsão sem viés sistemático e a quebra mês a mês.
 - **Escolher numa validação curta engana:** a regressão linear do notebook 05b (80 candidatos, uma validação de 12 cortes) pareceu boa na validação e perdeu no teste; no XGBoost, a calibração ajustada em 6 cortes deixou viés de 0,0% na validação e −10,9% no teste.
 - **Os modelos compartilham o teste, não o treino:** os 12 cortes de teste são os mesmos, mas o tamanho da validação e o embargo diferem (linear: validação de 12 cortes e folga de 3 meses; GLM: validação de 12 cortes, sem embargo no recorte principal; XGBoost: validação de 6 cortes e embargo de 3 meses). A comparação do teste vale; a do processo de escolha, não.
@@ -533,6 +608,7 @@ A análise completa, com gráficos, está em `notebooks/ml/07_modelo_xgboost.ipy
 | `notebooks/ml/05_regressao_linear.ipynb` e `05b_regressao_linear_validacao.ipynb` | **Etapa 4:** regressão linear (4 conjuntos de features) e a mesma regressão com validação separada (80 candidatos) |
 | `notebooks/ml/06_modelo_glm_poisson.ipynb` | **Etapa 4:** escada de features, Poisson × Tweedie, teste final, diagnósticos e a previsão dos 3 meses |
 | `notebooks/ml/07_modelo_xgboost.ipynb` | **Etapa 4:** desenvolvimento do XGBoost e suas variantes (puro, calibrado, reconciliado, residual, `base_margin`, duas etapas) |
+| `notebooks/ml/08_crescimento_cd_pdv.ipynb` | Análise sobre a entrega do GLM: crescimento da demanda prevista por CD e PDV, trajetória nos 3 meses, comparação com 2025, produtos e categorias, robustez com o Tweedie |
 | `src/analytics_ai/demand_linear.py` | Notebooks 05 e 05b: grupos de features, leitura da tabela e ajuste da regressão linear (simples ou Ridge, com janela de treino opcional) |
 | `src/analytics_ai/demand_xgboost.py` e `run_demand_xgboost.py` | XGBoost (recorte temporal com embargo, conjuntos de features, calibração e variantes) e execução ponta a ponta com saída em CSV. Detalhes em [xgboost_demand.md](xgboost_demand.md) |
 | `src/analytics_ai/demand_plots.py` | Cores por tipo de método e o gráfico de comparação (erro por categoria × loja e viés), compartilhados a partir do notebook 05 |
@@ -540,10 +616,11 @@ A análise completa, com gráficos, está em `notebooks/ml/07_modelo_xgboost.ipy
 | `src/analytics_ai/demand_predictions.py` | Leitura das features e gravação das tabelas de previsão no Unity Catalog |
 | `src/analytics_ai/run_demand_glm.py` | Execução ponta a ponta fora do notebook |
 | `src/analytics_ai/ml_config.py` | Nomes das tabelas de ML por grão (`MlFeatureConfig`) e das tabelas do modelo (`MlModelConfig`), lidos de variáveis de ambiente com padrão do dbt |
-| `tests/test_demand_*.py`, `test_eda_seasonality.py`, `test_ml_config.py`, `test_run_demand_*.py` | 350 testes offline (sem Databricks) das métricas compartilhadas, da régua, da regressão linear, do GLM (offset, recorte, repartição mensal), do XGBoost, dos gráficos, da camada de gravação e dos runners. Rodam com `pytest tests/` |
+| `src/analytics_ai/demand_growth.py` | Validação da tabela mensal, vínculo PDV → CD, fórmulas de crescimento e contribuições (pandas puro, sem Spark) |
+| `tests/test_demand_*.py`, `test_eda_seasonality.py`, `test_ml_config.py`, `test_run_demand_*.py` | 378 testes offline (sem Databricks) das métricas compartilhadas, da régua, da regressão linear, do GLM (offset, recorte, repartição mensal), do XGBoost, do crescimento por CD e PDV, dos gráficos, da camada de gravação e dos runners. Rodam com `pytest tests/` |
 | `dev_lh_nautical.ml.ml_forecast_demanda_3m` | Previsão do total de 3 meses, com a régua e o alvo real ao lado |
 | `dev_lh_nautical.ml.ml_forecast_demanda_mensal` | **A entrega:** previsão mês a mês por produto × loja |
 
-**Para atualizar os números deste documento:** rodar o job de transformação, executar os notebooks 01 a 07 (incluindo o 05b) nessa ordem, e revisar o conteúdo acima.
+**Para atualizar os números deste documento:** rodar o job de transformação, executar os notebooks 01 a 08 (incluindo o 05b) nessa ordem, e revisar o conteúdo acima.
 
 **Documentos relacionados:** [dicionário das features](dicionario_features_ml_produto_loja_mes.md) (cada coluna da tabela `ml_features_produto_loja_mes`, com a origem da decisão) e [XGBoost](xgboost_demand.md) (execução e dependências).

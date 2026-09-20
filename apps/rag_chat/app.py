@@ -49,10 +49,18 @@ st.markdown(
       }
       h1, h2, h3 { color: #f3f8fc !important; letter-spacing: -0.025em; }
       .rag-eyebrow {
-        color: #83cefa; font-size: .78rem; font-weight: 700;
-        letter-spacing: .075em; text-transform: uppercase; margin-bottom: .3rem;
+        display: block; position: relative; z-index: 2; overflow: visible;
+        color: #b9e7ff !important; -webkit-text-fill-color: #b9e7ff !important;
+        font-size: .78rem; font-weight: 700; line-height: 1.4;
+        letter-spacing: .075em; text-transform: uppercase;
+        margin: 1rem 0 .8rem; padding-top: .35rem;
       }
       .rag-title-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+      .rag-main-title {
+        color: #f3f8fc !important; font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 700; line-height: 1.1; letter-spacing: -0.025em;
+        margin: 0; padding: 0;
+      }
       .rag-env {
         display: inline-block; white-space: nowrap; border: 1px solid #4e9cca;
         color: #dff3ff; background: #123e5e; border-radius: 999px;
@@ -121,11 +129,23 @@ st.markdown(
       }
       div[data-testid="stRadio"] label, div[data-testid="stCaptionContainer"] { color: var(--rag-muted); }
       div[data-testid="stChatInput"] {
-        border: 1px solid #438bb9; border-radius: .8rem; background: #123552;
+        border: 1px solid #438bb9 !important; border-radius: .8rem !important;
+        background: #123552 !important; overflow: hidden !important;
+        padding: 0 !important;
       }
-      div[data-testid="stChatInput"] textarea { color: #f1f7fc !important; }
+      div[data-testid="stChatInput"] > div,
+      div[data-testid="stChatInput"] [data-baseweb="textarea"] {
+        border-radius: .8rem !important; overflow: hidden !important;
+        background: #123552 !important;
+      }
+      div[data-testid="stChatInput"] textarea {
+        color: #f1f7fc !important; border-radius: .8rem 0 0 .8rem !important;
+      }
       div[data-testid="stChatInput"] textarea::placeholder { color: #b7d0e3 !important; }
-      div[data-testid="stChatInput"] button { color: #8dd5ff !important; }
+      div[data-testid="stChatInput"] button {
+        color: #8dd5ff !important; border-radius: 0 .8rem .8rem 0 !important;
+        background: #16466a !important; border: 0 !important;
+      }
       div[data-testid="stAlert"][kind="info"] {
         background: var(--rag-blue-soft); border-color: #68acd5;
       }
@@ -148,10 +168,13 @@ st.markdown(
 if "interactions" not in st.session_state:
     st.session_state.interactions = []
 
-st.markdown('<div class="rag-eyebrow">LH Nautical · RAG documental</div>', unsafe_allow_html=True)
 title_col, environment_col = st.columns([5, 1.5], vertical_alignment="center")
 with title_col:
-    st.title("Assistente de Documentação")
+    st.markdown(
+        '<div class="rag-eyebrow">LH Nautical · RAG documental</div>'
+        '<h1 class="rag-main-title">Assistente de Documentação</h1>',
+        unsafe_allow_html=True,
+    )
 with environment_col:
     st.markdown('<div class="rag-env">DEV · uso interno</div>', unsafe_allow_html=True)
 st.markdown('<div class="rag-subtitle">Pergunte sobre a documentação técnica do projeto.</div>', unsafe_allow_html=True)

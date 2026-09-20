@@ -609,6 +609,8 @@ Aqui os locais se separam: de +3,9% a +31,5%. Nenhuma unidade cai. O CD vencedor
 | `notebooks/ml/06_modelo_glm_poisson.ipynb` | **Etapa 4:** escada de features, Poisson × Tweedie, teste final, diagnósticos e a previsão dos 3 meses |
 | `notebooks/ml/07_modelo_xgboost.ipynb` | **Etapa 4:** desenvolvimento do XGBoost e suas variantes (puro, calibrado, reconciliado, residual, `base_margin`, duas etapas) |
 | `notebooks/ml/08_crescimento_cd_pdv.ipynb` | Análise sobre a entrega do GLM: crescimento da demanda prevista por CD e PDV, trajetória nos 3 meses, comparação com 2025, produtos e categorias, robustez com o Tweedie |
+| `notebooks/ml/09_expansao_rede_distribuicao.ipynb` | Análise independente do GLM: onde abrir o próximo ponto da rede (UF e tipo), distância real × ideal, ganho por candidato. Detalhes em [expansao_rede_distribuicao.md](expansao_rede_distribuicao.md) |
+| `src/analytics_ai/network_expansion.py` | Distâncias, ganho de um ponto novo, seleção gulosa, tipo (loja ou armazém) e ranking (pandas puro, sem Spark) |
 | `src/analytics_ai/demand_linear.py` | Notebooks 05 e 05b: grupos de features, leitura da tabela e ajuste da regressão linear (simples ou Ridge, com janela de treino opcional) |
 | `src/analytics_ai/demand_xgboost.py` e `run_demand_xgboost.py` | XGBoost (recorte temporal com embargo, conjuntos de features, calibração e variantes) e execução ponta a ponta com saída em CSV. Detalhes em [xgboost_demand.md](xgboost_demand.md) |
 | `src/analytics_ai/demand_plots.py` | Cores por tipo de método e o gráfico de comparação (erro por categoria × loja e viés), compartilhados a partir do notebook 05 |

@@ -1,0 +1,32 @@
+version: 2
+
+seeds:
+  - name: geo_uf_capital_coordinates
+    description: >
+      Coordenada da capital de cada uma das 27 UFs, usada como ponto
+      representativo da UF (cliente médio e unidade física) na análise de
+      expansão da rede. Os nomes de cidade das unidades em dim_locations
+      são fictícios e não existem no IBGE, então a localização de cada
+      unidade é a capital da sua UF.
+    columns:
+      - name: uf
+        data_tests:
+          - not_null
+          - unique
+      - name: capital_city
+        data_tests:
+          - not_null
+      - name: latitude
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: -34
+                max_value: 6
+      - name: longitude
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: -74
+                max_value: -32

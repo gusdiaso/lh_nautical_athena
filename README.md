@@ -429,9 +429,10 @@ lh_nautical/
 │       ├── run_rag_*.py                   # Entrypoints dos jobs RAG
 │       ├── demand_*.py                    # Régua, GLM, XGBoost, métricas e gravação das previsões
 │       ├── eda_*.py                       # Análise exploratória da demanda (notebooks 01 a 04)
+│       ├── network_expansion.py           # Expansão da rede: distância, ganho de um ponto novo, ranking
 │       ├── ml_config.py                   # Nomes das tabelas de ML
 │       └── run_demand_*.py                # Entrypoints de treino do GLM e do XGBoost
-├── notebooks/ml/                          # Análises e modelos de previsão de demanda (01 a 08)
+├── notebooks/ml/                          # Análises e modelos de previsão de demanda (01 a 08) e expansão da rede (09)
 ├── evaluation/
 │   └── rag_golden_dataset.jsonl           # 30 casos de avaliação do RAG
 ├── docs/                                  # Documentação

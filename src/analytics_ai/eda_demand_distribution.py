@@ -14,11 +14,13 @@ from collections.abc import Sequence
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 
-from src.analytics_ai.eda_demand_zeros import add_partial_period_flag
-
-DEFAULT_ID_COLS = ("sk_product", "sk_location")
-DEFAULT_TARGET_COL = "demand_quantity"
-DEFAULT_DATE_COL = "month_start_date"
+from src.analytics_ai.eda_common import (
+    DEFAULT_DATE_COL,
+    DEFAULT_ID_COLS,
+    DEFAULT_TARGET_COL,
+    complete_months,
+    pearson_correlation,
+)
 
 # Limites da curva ABC: A = séries que somam os primeiros 80% do volume,
 # B = os 15% seguintes, C = os 5% finais.
@@ -31,36 +33,6 @@ MIN_HISTORY_MONTHS = 12
 
 
 # ── Base ────────────────────────────────────────────────────────────
-
-
-def complete_months(monthly: DataFrame, date_col: str = DEFAULT_DATE_COL) -> DataFrame:
-    """Remove meses parciais (primeiro mês da série e último do dataset).
-
-    Args:
-        monthly: agg_demand_monthly (com days_in_period).
-        date_col: Coluna com o primeiro dia do mês.
-
-    Returns:
-        DataFrame só com meses completos.
-    """
-    return (
-        add_partial_period_flag(monthly, date_col, "month")
-        .filter(~F.col("is_partial_period"))
-        .drop("expected_days", "is_partial_period")
-    )
-
-
-def reference_month(complete: DataFrame, date_col: str = DEFAULT_DATE_COL):
-    """Último mês completo do dataset — a data de referência das janelas.
-
-    Args:
-        complete: Série mensal só com meses completos.
-        date_col: Coluna com o primeiro dia do mês.
-
-    Returns:
-        datetime.date do primeiro dia do mês de referência.
-    """
-    return complete.agg(F.max(date_col).alias("ref")).collect()[0]["ref"]
 
 
 def _window_filter(date_col: str, ref_month, start_offset: int, end_offset: int):
@@ -158,39 +130,18 @@ def add_abc_class(
     """
     ordered = Window.orderBy(F.desc(value_col)).rowsBetween(Window.unboundedPreceding, 0)
     total = profile.agg(F.sum(value_col).alias("t")).collect()[0]["t"]
-    cumulative = F.sum(value_col).over(ordered) / F.lit(total)
+    # Sem volume nenhum (tabela vazia ou tudo zero) a fatia não existe: nula, e
+    # todas as séries caem em "sem_venda" — em vez de dividir por zero.
+    denominator = F.lit(total) if total else F.lit(None).cast("double")
+    cumulative = F.sum(value_col).over(ordered) / denominator
     # A série entra na classe em que o volume acumulado ANTES dela ainda cabia.
-    previous = cumulative - F.col(value_col) / F.lit(total)
+    previous = cumulative - F.col(value_col) / denominator
     return profile.withColumn("cumulative_share", cumulative).withColumn(
         "abc_class",
         F.when(F.col(value_col) <= 0, "sem_venda")
         .when(previous < a_share, "A")
         .when(previous < b_share, "B")
         .otherwise("C"),
-    )
-
-
-def add_frequency_class(profile: DataFrame) -> DataFrame:
-    """Classe de frequência pelos meses com venda nos últimos 12 meses.
-
-    - alta: 5 ou mais meses com venda
-    - media: 3 a 4
-    - baixa: 1 a 2
-    - sem_venda: 0
-
-    Os cortes seguem a distribuição destas séries (mediana de 3 meses com
-    venda em 12; só ~0,2% vende em 9 meses ou mais), para que cada classe
-    tenha volume suficiente para comparar. A classificação XYZ por
-    coeficiente de variação não serve aqui: com ~80% de meses zerados,
-    coloca quase toda série na mesma classe.
-    """
-    months = F.col("months_with_sale_12m")
-    return profile.withColumn(
-        "frequency_class",
-        F.when(months >= 5, "alta")
-        .when(months >= 3, "media")
-        .when(months >= 1, "baixa")
-        .otherwise("sem_venda"),
     )
 
 
@@ -228,10 +179,12 @@ def segment_summary(segmented: DataFrame, group_cols: Sequence[str]) -> DataFram
     return (
         segmented.groupBy(*group_cols)
         .agg(F.count("*").alias("n_series"), F.sum("volume_12m").alias("volume_12m"))
-        .withColumn("share_series", F.round(F.col("n_series") / F.sum("n_series").over(total), 4))
+        .withColumn(
+            "share_series", F.round(F.try_divide(F.col("n_series"), F.sum("n_series").over(total)), 4)
+        )
         .withColumn(
             "share_volume_12m",
-            F.round(F.col("volume_12m") / F.sum("volume_12m").over(total), 4),
+            F.round(F.try_divide(F.col("volume_12m"), F.sum("volume_12m").over(total)), 4),
         )
         .orderBy(*group_cols)
     )
@@ -254,6 +207,8 @@ def pareto_points(
     """
     ranked = profile.withColumn("_rank", F.row_number().over(Window.orderBy(F.desc(value_col))))
     stats = ranked.agg(F.count("*").alias("n"), F.sum(value_col).alias("total")).collect()[0]
+    if not stats["total"]:
+        raise ValueError("perfil vazio ou sem volume: não há concentração para medir")
     rows = []
     for share in series_shares:
         top_n = max(1, int(round(stats["n"] * share)))
@@ -300,7 +255,7 @@ def seasonal_index_by(
     return (
         by_month.withColumn(
             "seasonal_index",
-            F.round(F.col("avg_monthly_demand") / F.mean("avg_monthly_demand").over(group_mean), 4),
+            F.round(F.try_divide(F.col("avg_monthly_demand"), F.mean("avg_monthly_demand").over(group_mean)), 4),
         )
         .withColumn("is_high_season", F.col("seasonal_index") > 1)
         .orderBy(*group_cols, "month_number")
@@ -318,7 +273,7 @@ def compare_to_global_season(by_group: DataFrame, global_season: DataFrame, grou
 
     Returns:
         Uma linha por grupo com correlation_with_global (1 = mesmo formato
-        de estação), max_abs_diff (maior distância de índice num mês),
+        de padrão sazonal), max_abs_diff (maior distância de índice num mês),
         peak_month, high_season_months e months_differing_from_global
         (meses em que a classificação alta/baixa discorda da geral).
     """
@@ -335,7 +290,7 @@ def compare_to_global_season(by_group: DataFrame, global_season: DataFrame, grou
         joined.withColumn("_rank", F.row_number().over(peak))
         .groupBy(group_col)
         .agg(
-            F.round(F.corr("seasonal_index", "global_index"), 3).alias("correlation_with_global"),
+            F.round(pearson_correlation("seasonal_index", "global_index"), 3).alias("correlation_with_global"),
             F.round(F.max(F.abs(F.col("seasonal_index") - F.col("global_index"))), 3).alias(
                 "max_abs_diff"
             ),
@@ -386,12 +341,15 @@ def year_over_year_growth(
     selling = F.col(target_col) > 0
     grouped = complete.groupBy(*group_cols) if group_cols else complete.groupBy()
     return grouped.agg(
-        F.sum(F.when(prev, F.col(target_col))).cast("double").alias("volume_prev_12m"),
-        F.sum(F.when(last, F.col(target_col))).cast("double").alias("volume_last_12m"),
+        # Grupo sem linha na janela = volume 0 (e não nulo), para o crescimento poder ser -100%.
+        F.coalesce(F.sum(F.when(prev, F.col(target_col))), F.lit(0)).cast("double").alias("volume_prev_12m"),
+        F.coalesce(F.sum(F.when(last, F.col(target_col))), F.lit(0)).cast("double").alias("volume_last_12m"),
         F.countDistinct(F.when(prev & selling, series_key)).alias("series_selling_prev_12m"),
         F.countDistinct(F.when(last & selling, series_key)).alias("series_selling_last_12m"),
     ).withColumn(
-        "growth", F.round(F.col("volume_last_12m") / F.col("volume_prev_12m") - 1, 4)
+        # Sem volume no ano anterior o crescimento é indefinido (nulo), não um erro.
+        "growth",
+        F.round(F.try_divide(F.col("volume_last_12m"), F.col("volume_prev_12m")) - 1, 4),
     )
 
 

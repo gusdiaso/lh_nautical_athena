@@ -14,11 +14,15 @@ from typing import TYPE_CHECKING
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 
+from src.analytics_ai.eda_common import (
+    DEFAULT_ID_COLS,
+    DEFAULT_TARGET_COL,
+    add_partial_period_flag,
+    pearson_correlation,
+)
+
 if TYPE_CHECKING:
     from src.analytics_ai.ml_config import MlFeatureConfig
-
-DEFAULT_ID_COLS = ("sk_product", "sk_location")
-DEFAULT_TARGET_COL = "demand_quantity"
 
 # Cortes clássicos de Syntetos-Boylan (2005).
 ADI_CUTOFF = 1.32
@@ -81,7 +85,7 @@ def zero_rate_by(
         grouped.withColumn("zero_rate", F.round(F.col("n_zero_rows") / F.col("n_rows"), 4))
         .withColumn(
             "share_of_zeros",
-            F.round(F.col("n_zero_rows") / F.sum("n_zero_rows").over(total_zeros), 4),
+            F.round(F.try_divide(F.col("n_zero_rows"), F.sum("n_zero_rows").over(total_zeros)), 4),
         )
         .orderBy(F.desc("zero_rate"))
     )
@@ -228,7 +232,7 @@ def zero_rows_from_trailing_dead_combinations(
         .withColumn("dead_after_days", F.lit(dead_after_days))
         .withColumn(
             "trailing_dead_share_of_zeros",
-            F.round(F.col("trailing_dead_zero_rows") / F.col("n_zero_rows"), 4),
+            F.round(F.try_divide(F.col("trailing_dead_zero_rows"), F.col("n_zero_rows")), 4),
         )
         .withColumn(
             "trailing_dead_share_of_rows",
@@ -321,42 +325,13 @@ def summarize_demand_patterns(patterns: DataFrame) -> DataFrame:
         )
         .withColumn(
             "share_of_zero_periods",
-            F.round(F.col("n_zero_periods") / F.sum("n_zero_periods").over(total), 4),
+            F.round(F.try_divide(F.col("n_zero_periods"), F.sum("n_zero_periods").over(total)), 4),
         )
         .orderBy(F.desc("n_combinations"))
     )
 
 
 # ── Comparação entre grãos ──────────────────────────────────────────
-
-
-def add_partial_period_flag(df: DataFrame, date_col: str, grain: str) -> DataFrame:
-    """Marca períodos parciais (menos dias agregados que o período do calendário).
-
-    O período da primeira venda de cada combinação e o último período do
-    dataset podem estar incompletos. O grão diário não tem períodos
-    parciais nem a coluna days_in_period.
-
-    Args:
-        df: Série de demanda (weekly/monthly/quarterly com days_in_period).
-        date_col: Coluna com o primeiro dia do período.
-        grain: day | week | month | quarter.
-
-    Returns:
-        DataFrame com expected_days e is_partial_period.
-    """
-    if grain == "day":
-        return df.withColumn("expected_days", F.lit(1)).withColumn(
-            "is_partial_period", F.lit(False)
-        )
-    expected = {
-        "week": F.lit(7),
-        "month": F.dayofmonth(F.last_day(F.col(date_col))),
-        "quarter": F.datediff(F.add_months(F.col(date_col), 3), F.col(date_col)),
-    }[grain]
-    return df.withColumn("expected_days", expected).withColumn(
-        "is_partial_period", F.col("days_in_period") < F.col("expected_days")
-    )
 
 
 def series_autocorrelation(
@@ -391,7 +366,7 @@ def series_autocorrelation(
         lagged = lagged.withColumn(f"_lag_{lag}", F.lag(target_col, lag).over(window))
     return lagged.groupBy(*id_cols).agg(
         F.count("*").alias("n_periods"),
-        *[F.corr(target_col, f"_lag_{lag}").alias(f"acf_lag_{lag}") for lag in lags],
+        *[pearson_correlation(target_col, f"_lag_{lag}").alias(f"acf_lag_{lag}") for lag in lags],
     )
 
 
@@ -557,9 +532,9 @@ def seasonal_signal_share(
         "_y", F.col(target_col).cast("double")
     )
     overall_mean = with_month.agg(F.mean("_y").alias("m")).collect()[0]["m"]
-    season_index = with_month.groupBy("_month").agg(
-        (F.mean("_y") / F.lit(overall_mean)).alias("_season_index")
-    )
+    # Sem demanda nenhuma não há índice sazonal: nulo, em vez de dividir por zero.
+    overall = F.lit(overall_mean) if overall_mean else F.lit(None).cast("double")
+    season_index = with_month.groupBy("_month").agg((F.mean("_y") / overall).alias("_season_index"))
     series_mean = with_month.groupBy(*id_cols).agg(F.mean("_y").alias("_series_mean"))
 
     fitted = (
@@ -574,7 +549,7 @@ def seasonal_signal_share(
     )
     return per_series.agg(
         F.count("*").alias("n_series"),
-        F.round(1 - F.sum("sse") / F.sum("sst"), 4).alias("r2_seasonal"),
+        F.round(1 - F.try_divide(F.sum("sse"), F.sum("sst")), 4).alias("r2_seasonal"),
         F.round(
             F.percentile_approx(F.when(F.col("sst") > 0, 1 - F.col("sse") / F.col("sst")), 0.5),
             4,
@@ -732,7 +707,7 @@ def order_status_filter_impact(
         .withColumn("share_of_items", F.round(F.col("n_items") / F.sum("n_items").over(total), 4))
         .withColumn(
             "share_of_quantity",
-            F.round(F.col("total_quantity") / F.sum("total_quantity").over(total), 4),
+            F.round(F.try_divide(F.col("total_quantity"), F.sum("total_quantity").over(total)), 4),
         )
         .orderBy(F.desc("included_in_demand"), F.desc("n_items"))
     )

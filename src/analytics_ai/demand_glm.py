@@ -16,7 +16,7 @@ média global.
 
 Este módulo é pandas/numpy/scikit-learn puro: não lê nem escreve no Databricks.
 A camada Spark vive em `demand_predictions.py`, e as métricas são as mesmas de
-`demand_baselines.py` — nenhum erro é recalculado aqui.
+`demand_common.py` — nenhum erro é recalculado aqui.
 """
 
 from __future__ import annotations
@@ -35,9 +35,10 @@ from sklearn.linear_model import PoissonRegressor, TweedieRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
-from src.analytics_ai.demand_baselines import (
+from src.analytics_ai.demand_common import (
     HORIZON,
     add_months,
+    as_bool,
     comparison_scorecard,
     error_table,
 )
@@ -267,8 +268,8 @@ def split_panel(
     frame = prepare_features(features)
     frame[CUTOFF_COL] = pd.to_datetime(frame[CUTOFF_COL]).dt.date
 
-    completo = frame["is_target_complete"].fillna(False).astype(bool)
-    pronto = frame["trend_ready"].fillna(False).astype(bool)
+    completo = as_bool(frame["is_target_complete"])
+    pronto = as_bool(frame["trend_ready"])
 
     fim_treino = add_months(train_end, -embargo_cutoffs)
     e_treino = completo & pronto & (frame[CUTOFF_COL] <= fim_treino)
@@ -288,7 +289,7 @@ def split_panel(
         ("teste", splits.test),
         ("inferencia", splits.inference),
     ):
-        sem_tendencia = int((~parte["trend_ready"].fillna(False).astype(bool)).sum())
+        sem_tendencia = int((~as_bool(parte["trend_ready"])).sum())
         if sem_tendencia:
             raise ValueError(
                 f"{sem_tendencia} linhas sem trend_ready no split '{nome}'; "
@@ -698,7 +699,7 @@ def select_power(
     de que nenhum hiperparâmetro é escolhido olhando o teste.
 
     `power = 1.0` é tratado como Poisson. A comparação entre potências usa
-    `erro_categoria_local` e `desvio_poisson`, nunca a desviância da própria
+    `wape_categoria_local` e `desvio_poisson`, nunca a desviância da própria
     família: potências diferentes vivem em escalas diferentes.
 
     Args:
@@ -709,7 +710,10 @@ def select_power(
         alphas: Valores de regularização a testar.
 
     Returns:
-        Uma linha por combinação, ordenada por erro_categoria_local.
+        Uma linha por combinação, ordenada por wape_categoria_local, com as
+        colunas de `comparison_scorecard` (wape_produto, wape_categoria_local,
+        wape_local, mae_produto, rmse_produto, vies, desvio_poisson) mais
+        familia, power, alpha e dispersao_treino.
     """
     linhas = []
     for power in powers:
@@ -727,18 +731,18 @@ def select_power(
                     "familia": familia,
                     "power": power,
                     "alpha": alpha,
-                    "erro_produto": placar["erro_produto"],
-                    "erro_categoria_local": placar["erro_categoria_local"],
-                    "erro_local": placar["erro_local"],
+                    "wape_produto": placar["wape_produto"],
+                    "wape_categoria_local": placar["wape_categoria_local"],
+                    "wape_local": placar["wape_local"],
+                    "mae_produto": placar["mae_produto"],
+                    "rmse_produto": placar["rmse_produto"],
                     "vies": placar["vies"],
-                    "erro_medio_unidades": placar["erro_medio_unidades"],
-                    "raiz_erro_quadratico": placar["raiz_erro_quadratico"],
                     "desvio_poisson": placar["desvio_poisson"],
                     "dispersao_treino": round(modelo.dispersao_pearson, 3),
                 }
             )
     tabela = pd.DataFrame(linhas)
-    return tabela.sort_values("erro_categoria_local").reset_index(drop=True)
+    return tabela.sort_values("wape_categoria_local").reset_index(drop=True)
 
 
 # ── Passos de features, na ordem prescrita pelo relatório ──────────

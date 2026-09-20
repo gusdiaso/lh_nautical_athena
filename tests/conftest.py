@@ -1,101 +1,164 @@
-"""Este arquivo configura o pytest, inicializa o Databricks Connect e fornece fixtures para Spark e carregamento de dados de teste."""
+"""Fixtures compartilhadas dos testes: painel sintético, resultado do XGBoost e gravadores falsos.
 
-import csv
-import json
-import os
-import sys
-import pathlib
-from contextlib import contextmanager
+Os testes cobrem só a lógica em pandas/Python: nenhum abre sessão Spark, JVM ou
+Databricks. As sessões Spark são substituídas por objetos falsos que registram o que
+receberam (`RecordingSpark`).
+"""
 
-try:
-    import pytest
-    from databricks.connect import DatabricksSession
-    from databricks.sdk import WorkspaceClient
-    from pyspark.sql import SparkSession
-except ImportError:
-    raise ImportError(
-        "Dependências de teste não encontradas.\n\n"
-        "Execute os testes com 'uv run pytest'. Veja http://docs.astral.sh/uv para mais informações sobre uv."
-    )
+from __future__ import annotations
+
+import pandas as pd
+import pytest
+
+
+# ── Spark falso que registra a escrita, sem sessão Spark ───────────────
+
+
+class RecordingWriter:
+    """Registra a cadeia de escrita do DataFrameWriter, sem gravar nada."""
+
+    def __init__(self):
+        self.calls = []
+
+    def format(self, name):
+        self.calls.append(("format", name))
+        return self
+
+    def mode(self, name):
+        self.calls.append(("mode", name))
+        return self
+
+    def option(self, key, value):
+        self.calls.append(("option", key, value))
+        return self
+
+    def partitionBy(self, *columns):  # noqa: N802 - nome da API do Spark
+        self.calls.append(("partitionBy", *columns))
+        return self
+
+    def saveAsTable(self, name):  # noqa: N802 - nome da API do Spark
+        self.calls.append(("saveAsTable", name))
+
+
+class RecordingFrame:
+    """O que `createDataFrame` recebeu (dados e schema) e o registro da cadeia de escrita."""
+
+    def __init__(self, data, schema):
+        self.data = data
+        self.schema = schema
+        self.write = RecordingWriter()
+
+
+class RecordingSpark:
+    """Guarda o que recebe em `createDataFrame` e serve tabelas fixas por nome.
+
+    Nenhuma escrita chega ao Unity Catalog e não há sessão Spark.
+    """
+
+    def __init__(self, tables=None):
+        self.tables = tables or {}
+        self.created = []
+        self.table_requests = []
+
+    def createDataFrame(self, data, schema=None):  # noqa: N802 - nome da API do Spark
+        frame = RecordingFrame(data, schema)
+        self.created.append(frame)
+        return frame
+
+    def table(self, name):
+        self.table_requests.append(name)
+        return self.tables[name]
+
+
+class FakeTable:
+    """Tabela do Spark que devolve um pandas com metadados do Databricks Connect em `.attrs`."""
+
+    def __init__(self, frame):
+        self.frame = frame
+
+    def toPandas(self):  # noqa: N802 - nome da API do Spark
+        out = self.frame.copy()
+        out.attrs["metricas_do_connect"] = object()  # o Databricks Connect pendura isto em .attrs
+        return out
 
 
 @pytest.fixture()
-def spark() -> SparkSession:
-    """Fornece uma fixture SparkSession para testes.
-
-    Exemplo mínimo:
-        def test_uses_spark(spark):
-            df = spark.createDataFrame([(1,)], ["x"])
-            assert df.count() == 1
-
-    Returns:
-        Instância SparkSession conectada ao Databricks.
-    """
-    return DatabricksSession.builder.getOrCreate()
+def recorder():
+    """Spark falso com escrita registrada, sem tabelas."""
+    return RecordingSpark()
 
 
 @pytest.fixture()
-def load_fixture(spark: SparkSession):
-    """Fornece uma callable para carregar JSON ou CSV do diretório fixtures/.
+def make_recording_spark():
+    """Fábrica de `RecordingSpark` com tabelas servidas por nome: `make_recording_spark({"a.b.c": fake_table(df)})`."""
+    return lambda tables=None: RecordingSpark(tables)
 
-    Exemplo de uso:
 
-        def test_using_fixture(load_fixture):
-            data = load_fixture("my_data.json")
-            assert data.count() >= 1
+@pytest.fixture()
+def fake_table():
+    """Classe `FakeTable`: `fake_table(pandas_df)`."""
+    return FakeTable
 
-    Returns:
-        Callable que carrega arquivos de fixture em DataFrames.
+
+def build_demand_panel(n_months: int = 72, n_series: int = 10, seed: int = 0) -> pd.DataFrame:
+    """Painel sintético de `ml_features_produto_loja_mes`, com todas as colunas do XGBoost.
+
+    Um corte por mês desde jan/2019; os 3 últimos cortes não têm alvo (inferência) e a
+    tendência só existe a partir do 24º mês, como na tabela dbt. Determinístico.
     """
+    import datetime as dt
 
-    def _loader(filename: str):
-        path = pathlib.Path(__file__).parent.parent / "fixtures" / filename
-        suffix = path.suffix.lower()
-        if suffix == ".json":
-            rows = json.loads(path.read_text())
-            return spark.createDataFrame(rows)
-        if suffix == ".csv":
-            with path.open(newline="") as f:
-                rows = list(csv.DictReader(f))
-            return spark.createDataFrame(rows)
-        raise ValueError(f"Tipo de fixture não suportado para: {filename}")
+    import numpy as np
 
-    return _loader
+    from src.analytics_ai.demand_common import add_months
+
+    rng = np.random.default_rng(seed)
+    rows = []
+    for i in range(n_months):
+        cutoff = add_months(dt.date(2019, 1, 1), i)
+        for s in range(n_series):
+            level = 2.0 + s
+            season = 1.0 + 0.3 * np.sin(2 * np.pi * cutoff.month / 12)
+            base = level / 12 * 3 * season
+            complete = i <= n_months - 4
+            rows.append(
+                {
+                    "cutoff": cutoff,
+                    "sk_product": f"p{s}",
+                    "sk_location": f"l{s % 2}",
+                    "category_name": f"c{s % 3}",
+                    "is_target_complete": complete,
+                    "trend_ready": i >= 23,
+                    "target_3m": float(rng.poisson(base)) if complete else np.nan,
+                    "sum_3m": float(rng.poisson(level / 4)),
+                    "sum_12m": float(rng.poisson(level)),
+                    "produto_locais_avg_12m": level,
+                    "categoria_local_avg_12m": level + 1,
+                    "season_sum_next_3m": 3 * season,
+                    "growth_12m": 1.0 + 0.01 * s,
+                    "trend_factor": 1.0,
+                    "baseline_pred_categoria_local_idx_trend": base,
+                    "avg_monthly_3m": level / 4,
+                    "avg_monthly_12m": level / 12,
+                    "months_with_sale_12m": float(rng.integers(0, 13)),
+                    "months_since_last_sale": float(rng.integers(0, 6)),
+                    "is_stopped_12m": False,
+                    "produto_locais_n_locations": 2.0,
+                    "categoria_local_n_series": 5.0,
+                }
+            )
+    return pd.DataFrame(rows)
 
 
-def _enable_fallback_compute():
-    """Habilita compute serverless se nenhum compute for especificado."""
-    conf = WorkspaceClient().config
-    if conf.serverless_compute_id or conf.cluster_id or os.environ.get("SPARK_REMOTE"):
-        return
-
-    url = "https://docs.databricks.com/dev-tools/databricks-connect/cluster-config"
-    print("nenhum compute especificado, usando serverless compute", file=sys.stderr)
-    print(f"  veja {url} para configuração manual", file=sys.stdout)
-
-    os.environ["DATABRICKS_SERVERLESS_COMPUTE_ID"] = "auto"
+@pytest.fixture(scope="session")
+def demand_panel() -> pd.DataFrame:
+    """Painel sintético compartilhado (não modifique: use `.copy()`)."""
+    return build_demand_panel()
 
 
-@contextmanager
-def _allow_stderr_output(config: pytest.Config):
-    """Habilita temporariamente a captura de saída do pytest."""
-    capman = config.pluginmanager.get_plugin("capturemanager")
-    if capman:
-        with capman.global_and_fixture_disabled():
-            yield
-    else:
-        yield
+@pytest.fixture(scope="session")
+def xgboost_result(demand_panel) -> dict:
+    """Resultado de `demand_xgboost.run` sobre o painel sintético (roda uma vez por sessão)."""
+    from src.analytics_ai.demand_xgboost import run
 
-
-def pytest_configure(config: pytest.Config):
-    """Configura a sessão do pytest."""
-    with _allow_stderr_output(config):
-        _enable_fallback_compute()
-
-        # Inicializa a sessão Spark de forma eager, para que esteja disponível
-        # mesmo quando SparkSession.builder.getOrCreate() é usado. Para
-        # DB Connect 15+, validamos a compatibilidade de versão com o cluster remoto.
-        if hasattr(DatabricksSession.builder, "validateSession"):
-            DatabricksSession.builder.validateSession().getOrCreate()
-        else:
-            DatabricksSession.builder.getOrCreate()
+    return run(demand_panel.copy())

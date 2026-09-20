@@ -15,7 +15,7 @@ abastecimento entre loja e armazém em nenhuma tabela; o vínculo usado aqui é
 geográfico (mesma UF, senão mesma região) e deve ser lido como hipótese.
 
 Módulo pandas puro: não abre sessão Spark. A leitura das tabelas fica no
-notebook 06.
+notebook 08.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 
-from src.analytics_ai.demand_baselines import add_months
+from src.analytics_ai.demand_common import add_months
 
 CD = "warehouse"
 PDV = "store"

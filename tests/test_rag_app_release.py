@@ -1,4 +1,5 @@
 """Artifact tests using only local files and an isolated Python subprocess."""
+import contextlib
 import importlib.util
 import hashlib
 import json
@@ -7,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 from apps.rag_chat.prepare_release import FILES, build_release
 
@@ -41,17 +43,29 @@ class RagReleaseTest(unittest.TestCase):
             self.assertNotIn(b"sensitive-test-sentinel", data)
         self.assertEqual(json.loads((self.output / "release.json").read_text()), manifest)
 
-    def test_missing_file_and_symlink_fail_before_writing(self):
-        path = self.source / "src/analytics_ai/rag_service.py"
-        data = path.read_bytes()
-        path.unlink()
+    def test_missing_file_fails_before_writing(self):
+        (self.source / "src/analytics_ai/rag_service.py").unlink()
         with self.assertRaises(ValueError):
             build_release(self.source, self.output)
         self.assertFalse(self.output.exists())
-        outside = self.base / "outside.py"
-        outside.write_bytes(data)
-        path.symlink_to(outside)
-        with self.assertRaises(ValueError):
+
+    def test_symlink_fails_before_writing(self):
+        path = self.source / "src/analytics_ai/rag_service.py"
+        real_is_symlink = Path.is_symlink
+        patches = contextlib.nullcontext()
+        try:
+            outside = self.base / "outside.py"
+            outside.write_bytes(path.read_bytes())
+            path.unlink()
+            path.symlink_to(outside)
+        except OSError:
+            # Windows sem modo desenvolvedor/admin não cria symlink: simula o
+            # symlink no arquivo permitido, exercitando o mesmo ramo do packager.
+            path.write_bytes(outside.read_bytes())
+            patches = mock.patch.object(
+                Path, "is_symlink", autospec=True,
+                side_effect=lambda p: p == path or real_is_symlink(p))
+        with patches, self.assertRaisesRegex(ValueError, "Symlink not allowed"):
             build_release(self.source, self.output)
         self.assertFalse(self.output.exists())
 
@@ -75,7 +89,7 @@ sys.path.insert(0, str(root))
 for path in (root / "src/analytics_ai").glob("*.py"):
     module = importlib.import_module("src.analytics_ai." + path.stem)
     assert pathlib.Path(module.__file__).is_relative_to(root)
-compile((root / "apps/rag_chat/app.py").read_text(), "app.py", "exec")
+compile((root / "apps/rag_chat/app.py").read_text(encoding="utf-8"), "app.py", "exec")
 '''
         subprocess.run([sys.executable, "-I", "-S", "-B", "-c", script, str(self.output)],
                        cwd=self.base, check=True, capture_output=True, text=True)
@@ -83,7 +97,7 @@ compile((root / "apps/rag_chat/app.py").read_text(), "app.py", "exec")
     def test_descriptor_references_packaged_entrypoint_and_resources(self):
         build_release(self.source, self.output)
         # PyYAML is intentionally not needed by the packager or its core tests.
-        content = (self.output / "app.yaml").read_text()
+        content = (self.output / "app.yaml").read_text(encoding="utf-8")
         self.assertIn("apps/rag_chat/app.py", content)
         self.assertIn("valueFrom: documentary-index", content)
         self.assertIn("valueFrom: generation-endpoint", content)

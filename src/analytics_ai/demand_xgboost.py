@@ -8,7 +8,7 @@ from collections.abc import Mapping
 import numpy as np
 import pandas as pd
 
-from src.analytics_ai.demand_baselines import HORIZON, add_months, cutoff_months
+from src.analytics_ai.demand_common import HORIZON, add_months, as_bool, cutoff_months
 from src.analytics_ai.ml_config import MlFeatureConfig
 
 TARGET = "target_3m"
@@ -108,14 +108,14 @@ def temporal_split(panel: pd.DataFrame, validation_months: int = 6, test_months:
     Para avaliar um corte T, o treino termina em T-3, pois só então os três
     meses de seu alvo já aconteceram. O mesmo embargo vale na validação e no
     ajuste final anterior ao teste. Os 12 últimos cortes rotulados ficam no
-    teste, como na régua do notebook 03.
+    teste, como na régua do notebook 04.
     """
     if validation_months < 1 or test_months < 1:
         raise ValueError("validation_months e test_months devem ser positivos")
     data = panel.copy()
     data["cutoff"] = pd.to_datetime(data["cutoff"]).dt.date
-    labeled = data.loc[data["is_target_complete"]].copy()
-    eligible = labeled.loc[labeled["trend_ready"]].copy()
+    labeled = data.loc[as_bool(data["is_target_complete"])].copy()
+    eligible = labeled.loc[as_bool(labeled["trend_ready"])].copy()
     last_cutoff = eligible["cutoff"].max()
     if pd.isna(last_cutoff):
         raise ValueError("Não há cortes rotulados com tendência disponível")
@@ -271,8 +271,8 @@ def reconstruct_residual(frame: pd.DataFrame, residual: np.ndarray, shift: float
 
 
 def metric_table(frame: pd.DataFrame, forecasts: Mapping[str, str] | None = None) -> pd.DataFrame:
-    """Mesmas linhas para modelo e régua; WAPE/viés como demand_baselines."""
-    from src.analytics_ai.demand_baselines import aggregated_error_table, error_table
+    """Mesmas linhas para modelo e régua; WAPE/viés como demand_common."""
+    from src.analytics_ai.demand_common import aggregated_error_table, error_table
 
     frame = frame.copy()
     forecasts = forecasts or {"XGBoost puro": "pred_xgboost", "Régua": BASELINE}
@@ -321,7 +321,8 @@ def reconcile_to_baseline_total(frame: pd.DataFrame, prediction_column: str = "p
     predictions = np.maximum(working[prediction_column].to_numpy(dtype=float), 0.0)
     baseline = np.maximum(working[BASELINE].to_numpy(dtype=float), 0.0)
     reconciled = np.zeros(len(working), dtype=float)
-    for _, group in working.groupby(["cutoff", "category_name", "sk_location"], sort=False):
+    # dropna=False: uma série sem categoria (nula) continua num grupo, em vez de sumir e ficar em zero.
+    for _, group in working.groupby(["cutoff", "category_name", "sk_location"], sort=False, dropna=False):
         positions = group.index.to_numpy()
         xgb_total = predictions[positions].sum()
         baseline_total = baseline[positions].sum()
@@ -342,7 +343,7 @@ MOVING_BASELINES = {
 
 
 def add_moving_average_baselines(frame: pd.DataFrame) -> pd.DataFrame:
-    """Reconstrói as réguas do notebook 03 com colunas existentes no painel."""
+    """Reconstrói as réguas do notebook 04 com colunas existentes no painel."""
     result = frame.copy()
     result["pred_mm3"] = result["sum_3m"].astype(float)
     result["pred_mm12"] = result["sum_12m"].astype(float) / 12.0 * HORIZON
@@ -610,7 +611,7 @@ def run(panel: pd.DataFrame) -> dict:
         [metric_table(part, forecasts).assign(cutoff=cutoff) for cutoff, part in test_predictions.groupby("cutoff", sort=True)]
     ).reset_index().set_index(["cutoff", "modelo"])
 
-    inference = panel.loc[~panel["is_target_complete"] & panel["trend_ready"]].copy()
+    inference = panel.loc[~as_bool(panel["is_target_complete"]) & as_bool(panel["trend_ready"])].copy()
     inference["cutoff"] = pd.to_datetime(inference["cutoff"]).dt.date
     latest = inference["cutoff"].max()
     if pd.isna(latest):
@@ -620,7 +621,7 @@ def run(panel: pd.DataFrame) -> dict:
     forecast_train = panel.copy()
     forecast_train["cutoff"] = pd.to_datetime(forecast_train["cutoff"]).dt.date
     forecast_train = forecast_train.loc[
-        forecast_train["is_target_complete"] & forecast_train["trend_ready"]
+        as_bool(forecast_train["is_target_complete"]) & as_bool(forecast_train["trend_ready"])
         & (forecast_train["cutoff"] <= forecast_train_end)
     ]
     if forecast_train.empty:

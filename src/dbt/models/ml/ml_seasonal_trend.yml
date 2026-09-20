@@ -6,7 +6,7 @@ models:
       Índice sazonal dos 3 meses seguintes e fator de tendência,
       recalculados em cada corte com dados só até o próprio corte
       (sem usar o futuro) — porta para SQL seasonal_index_at e
-      trend_factor_at de src/analytics_ai/demand_baselines.py.
+      trend_factor_at de src/analytics_ai/demand_moving_average.py.
       Alimenta ml_features_produto_loja_mes.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
@@ -50,7 +50,7 @@ models:
       - name: season_sum_next_3m
         description: >
           Soma dos índices sazonais dos 3 meses previstos —
-          ingrediente das réguas MM12 × índice do notebook 03.
+          ingrediente das réguas MM12 × índice do notebook 04.
         data_tests:
           - not_null
 

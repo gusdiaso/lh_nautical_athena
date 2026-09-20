@@ -325,7 +325,7 @@ lh_nautical/
 │   │   ├── macros/                        # Funções reutilizáveis
 │   │   ├── tests/ (245+ testes)           # Testes de qualidade
 │   │   └── run_dbt_step.py                # Wrapper para execução dbt
-│   └── analytics_ai/                      # ML e Gen AI (futuro)
+│   └── analytics_ai/                      # Previsão de demanda (ML) e RAG documental (Gen AI)
 ├── docs/                                  # Documentação completa
 └── tests/                                 # Testes Python
 ```
@@ -355,4 +355,4 @@ lh_nautical/
 
 ---
 
-> **Status atual:** Pipeline implementado e em operação. Próximos passos incluem dashboards de BI, modelos de Machine Learning para previsão de demanda e churn, e assistentes inteligentes com Gen AI.
+> **Status atual:** Pipeline implementado e em operação. A previsão de demanda por produto × loja já foi construída e avaliada em desenvolvimento (regressão linear, GLM e XGBoost contra uma régua simples; ver `docs/previsao_demanda_produto_loja.md`). Próximos passos incluem dashboards de BI, a decisão do modelo de previsão em produção, modelo de churn e assistentes inteligentes com Gen AI.

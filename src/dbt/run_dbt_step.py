@@ -52,22 +52,33 @@ def _find_bundle_root() -> str | None:
 
 def _load_secrets(target: str):
     env_map = dict(_SECRET_ENV_MAP)
+    # Em prod o profiles.yml exige DBT_DATABRICKS_TOKEN_PROD; sem ele o dbt
+    # falha no parse com uma mensagem que nao aponta o secret ausente.
+    required = set()
     if target == "prod":
         env_map["DBT_DATABRICKS_TOKEN_PROD"] = "dbt_databricks_token_prod"
+        required.add("DBT_DATABRICKS_TOKEN_PROD")
 
     try:
         from databricks.sdk.runtime import dbutils
-        for env_var, secret_key in env_map.items():
-            if env_var not in os.environ:
-                try:
-                    value = dbutils.secrets.get(
-                        scope=SECRET_SCOPE, key=secret_key)
-                    if value:
-                        os.environ[env_var] = value
-                except Exception:
-                    pass
     except ImportError:
-        pass
+        return
+
+    for env_var, secret_key in env_map.items():
+        if env_var in os.environ:
+            continue
+        try:
+            value = dbutils.secrets.get(scope=SECRET_SCOPE, key=secret_key)
+        except Exception as exc:
+            if env_var in required:
+                raise RuntimeError(
+                    f"Secret '{SECRET_SCOPE}/{secret_key}' nao encontrado ou "
+                    f"sem permissao de leitura (necessario para "
+                    f"--target {target}): {exc}"
+                ) from exc
+            continue
+        if value:
+            os.environ[env_var] = value
 
 
 def main():

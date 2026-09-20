@@ -5,11 +5,11 @@
 --
 -- Índice sazonal e fator de tendência recalculados EM CADA CORTE,
 -- só com meses até o próprio corte — porta para SQL o que os
--- notebooks 01-03 fazem em pandas (seasonal_index_at / trend_factor_at
--- em src/analytics_ai/demand_baselines.py), agora para todo corte
+-- notebooks 01, 02 e 04 fazem em pandas (seasonal_index_at / trend_factor_at
+-- em src/analytics_ai/demand_moving_average.py), agora para todo corte
 -- possível do histórico, não só os 12 de teste + 24 de calibração
--- usados na avaliação do notebook 03. É o ingrediente de
--- estação/tendência da tabela final de features (ml_features_produto_loja_mes).
+-- usados na avaliação do notebook 04. É o ingrediente de
+-- sazonalidade/tendência da tabela final de features (ml_features_produto_loja_mes).
 --
 -- Índice sazonal (mesma regra de int_high_season_months, mas ponto
 -- no tempo): para cada mês do ano (1-12), a média da demanda total
@@ -26,13 +26,13 @@
 -- sem procurar a linha mais próxima.
 --
 -- season_sum_next_3m é o ingrediente sazonal das réguas do notebook
--- 03 (MM12 × soma dos índices dos 3 meses previstos).
+-- 04 (MM12 × soma dos índices dos 3 meses previstos).
 --
 -- Fator de tendência: crescimento dos 12 meses até o corte sobre os
 -- 12 anteriores, elevado a 7,5/12 — a distância, em meses, entre o
 -- centro da janela da MM12 (5,5 meses antes do corte) e o centro
 -- dos 3 meses previstos (2 meses depois do corte). Mesma constante
--- MM12_LAG_MONTHS do notebook 03. trend_ready = false (e
+-- MM12_LAG_MONTHS do notebook 04. trend_ready = false (e
 -- growth_12m/trend_factor nulos) nos cortes que ainda não têm 24
 -- meses de histórico.
 -- ============================================================

@@ -6,9 +6,9 @@ models:
       Uma linha por produto × loja × mês de corte, com as janelas
       móveis do passado (12 e 3 meses) e o alvo (soma dos 3 meses
       seguintes) — porta para SQL build_cutoff_panel de
-      src/analytics_ai/demand_baselines.py, para todo corte possível
+      src/analytics_ai/demand_moving_average.py, para todo corte possível
       do histórico (não só os 12 de teste + 24 de calibração do
-      notebook 03). Alimenta ml_features_produto_loja_mes.
+      notebook 04). Alimenta ml_features_produto_loja_mes.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -74,7 +74,7 @@ models:
       - name: has_full_history_12m
         description: >
           true quando os 12 meses anteriores ao corte estão completos
-          e sem buracos (mesmo teste de window_ok do notebook 03).
+          e sem buracos (mesmo teste de window_ok do notebook 04).
           Toda linha da tabela já tem has_full_history_12m = true.
         data_tests:
           - not_null

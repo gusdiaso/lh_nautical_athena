@@ -459,6 +459,25 @@ def poisson_deviance(actual: pd.Series, pred: pd.Series) -> float:
     return float(np.mean(2 * (term - (y - mu))))
 
 
+def root_mean_squared_error(actual: pd.Series, pred: pd.Series) -> float:
+    """Raiz do erro quadrático médio (RMSE), em unidades do alvo.
+
+    Penaliza erros grandes mais que o erro médio absoluto, por elevar cada
+    desvio ao quadrado. Com demanda muito assimétrica (metade das linhas em
+    zero e cauda longa), fica bem acima do erro médio em unidades — a
+    diferença entre os dois mede o peso da cauda.
+
+    Args:
+        actual: Venda real.
+        pred: Previsão, na mesma ordem de `actual`.
+
+    Returns:
+        RMSE em unidades vendidas.
+    """
+    erro = pred.to_numpy(dtype=float) - actual.to_numpy(dtype=float)
+    return float(np.sqrt(np.mean(erro**2)))
+
+
 def comparison_scorecard(
     df: pd.DataFrame,
     forecasts: Mapping[str, str],
@@ -474,8 +493,9 @@ def comparison_scorecard(
     - erro_produto: WAPE por produto × local
     - erro_categoria_local e erro_local: WAPE depois de somar
     - vies: (total previsto − total vendido) ÷ total vendido
-    - erro_medio_unidades: erro médio absoluto por produto, em unidades
+    - erro_medio_unidades: erro médio absoluto por produto, em unidades (MAE)
     - desvio_poisson: erro por produto que não premia prever abaixo
+    - raiz_erro_quadratico: RMSE, em unidades — pesa mais os erros grandes
 
     Returns:
         Uma linha por previsão.
@@ -492,10 +512,21 @@ def comparison_scorecard(
                 "vies": (df[col].sum() - actual.sum()) / actual.sum(),
                 "erro_medio_unidades": (df[col] - actual).abs().mean(),
                 "desvio_poisson": poisson_deviance(actual, df[col]),
+                "raiz_erro_quadratico": root_mean_squared_error(actual, df[col]),
             }
         )
     table = pd.DataFrame(rows).set_index("previsao")
-    return table.round({"erro_produto": 4, "erro_categoria_local": 4, "erro_local": 4, "vies": 4, "erro_medio_unidades": 2, "desvio_poisson": 3})
+    return table.round(
+        {
+            "erro_produto": 4,
+            "erro_categoria_local": 4,
+            "erro_local": 4,
+            "vies": 4,
+            "erro_medio_unidades": 2,
+            "desvio_poisson": 3,
+            "raiz_erro_quadratico": 2,
+        }
+    )
 
 
 def past_volume_quintiles(df: pd.DataFrame, actual_col: str = "target_3m") -> pd.DataFrame:

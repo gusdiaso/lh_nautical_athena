@@ -123,3 +123,54 @@ class MlFeatureConfig:
             "mensal": cls.from_environment_monthly(),
             "trimestral": cls.from_environment_quarterly(),
         }
+
+
+@dataclass(frozen=True)
+class MlModelConfig:
+    """Nomes das tabelas usadas pelos modelos treinados da Etapa 4.
+
+    Separado de `MlFeatureConfig` porque aquele é parametrizado por grão
+    (diário, semanal, mensal, trimestral) e estas tabelas existem em um
+    grão só: produto × loja × mês de corte.
+
+    Attributes:
+        catalog: Catálogo Unity Catalog (dev_lh_nautical | prod_lh_nautical).
+        schema: Schema das tabelas de ML materializadas pelo dbt.
+        features_table: Tabela de features que alimenta o modelo.
+        forecast_table: Tabela de previsão do total de 3 meses.
+        forecast_monthly_table: Tabela de previsão mês a mês.
+    """
+
+    catalog: str
+    schema: str
+    features_table: str
+    forecast_table: str
+    forecast_monthly_table: str
+
+    @property
+    def features_source(self) -> str:
+        """Nome completo da tabela de features (catalog.schema.table)."""
+        return f"{self.catalog}.{self.schema}.{self.features_table}"
+
+    @property
+    def forecast_target(self) -> str:
+        """Nome completo da tabela de previsão do total de 3 meses."""
+        return f"{self.catalog}.{self.schema}.{self.forecast_table}"
+
+    @property
+    def forecast_monthly_target(self) -> str:
+        """Nome completo da tabela de previsão mês a mês."""
+        return f"{self.catalog}.{self.schema}.{self.forecast_monthly_table}"
+
+    @classmethod
+    def from_environment(cls) -> MlModelConfig:
+        """Configuração lida das variáveis de ambiente, com defaults do dbt."""
+        return cls(
+            catalog=os.getenv("ML_CATALOG", "dev_lh_nautical"),
+            schema=os.getenv("ML_SCHEMA", "ml"),
+            features_table=os.getenv("ML_FEATURES_TABLE", "ml_features_produto_loja_mes"),
+            forecast_table=os.getenv("ML_FORECAST_TABLE", "ml_forecast_demanda_3m"),
+            forecast_monthly_table=os.getenv(
+                "ML_FORECAST_MONTHLY_TABLE", "ml_forecast_demanda_mensal"
+            ),
+        )

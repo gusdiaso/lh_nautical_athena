@@ -35,19 +35,19 @@ class RagEvaluationDatasetTest(unittest.TestCase):
         cls.cases = load_golden_dataset(DATASET_PATH, REPOSITORY_ROOT)
 
     def test_dataset_schema_sources_sections_and_composition_are_valid(self):
-        self.assertEqual(len(self.cases), 30)
-        self.assertEqual(len({case.id for case in self.cases}), 30)
+        self.assertEqual(len(self.cases), 35)
+        self.assertEqual(len({case.id for case in self.cases}), 35)
 
     def test_suite_selection_has_ten_smoke_and_all_full_cases(self):
         self.assertEqual(len(select_suite(self.cases, "smoke")), 10)
-        self.assertEqual(len(select_suite(self.cases, "full")), 30)
+        self.assertEqual(len(select_suite(self.cases, "full")), 35)
 
     def test_behavior_composition_matches_initial_plan(self):
         behaviors = {behavior: sum(case.expected_behavior == behavior for case in self.cases) for behavior in {
             "answer", "insufficient_context", "refuse_warehouse_data", "refuse_adversarial"
         }}
         self.assertEqual(behaviors, {
-            "answer": 24,
+            "answer": 29,
             "insufficient_context": 3,
             "refuse_warehouse_data": 2,
             "refuse_adversarial": 1,
@@ -55,9 +55,9 @@ class RagEvaluationDatasetTest(unittest.TestCase):
 
     def test_primary_category_composition_matches_requested_mix(self):
         expected = {
-            "technical_focused": 12,
-            "troubleshooting": 6,
-            "synthesis": 6,
+            "technical_focused": 14,
+            "troubleshooting": 7,
+            "synthesis": 8,
             "insufficient_context": 3,
             "warehouse_refusal": 2,
             "adversarial": 1,
@@ -95,8 +95,8 @@ class RagEvaluationDatasetTest(unittest.TestCase):
 
     def test_coverage_report_exposes_requested_dimensions(self):
         report = coverage_report(self.cases, REPOSITORY_ROOT)
-        self.assertEqual(report["total_cases"], 30)
-        self.assertEqual(report["by_suite"], {"full": 30, "smoke": 10})
+        self.assertEqual(report["total_cases"], 35)
+        self.assertEqual(report["by_suite"], {"full": 35, "smoke": 10})
         self.assertIn("single_document", report["by_scope"])
         self.assertIn("multi_document", report["by_scope"])
         self.assertIn("documents_used", report)
@@ -244,8 +244,8 @@ class RemoteRagEvaluationTest(unittest.TestCase):
         full = run_remote_evaluation(
             self.cases, "full", executor, "run-full", now=self._now
         )
-        self.assertEqual(full.total, 30)
-        self.assertEqual(len(calls), 30)
+        self.assertEqual(full.total, 35)
+        self.assertEqual(len(calls), 35)
 
     def test_special_behaviors_are_classified_deterministically(self):
         from src.analytics_ai.rag_prompt import (

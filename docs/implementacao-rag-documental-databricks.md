@@ -241,7 +241,9 @@ A sanitizacao mascara padroes relacionados a API keys, tokens, secrets, senhas, 
 
 ## 13. Chunking e metadados
 
-O tamanho inicial e 800 caracteres com overlap de 80. A divisao tenta respeitar quebras de paragrafo, linhas e espacos. O inicio real de cada chunk e usado para identificar a secao Markdown correspondente.
+Cada documento Markdown e dividido primeiro por cabecalho (qualquer nivel), e so depois em janelas de ate 800 caracteres com overlap de 80. Nenhum chunk atravessa um cabecalho. O corpo de cada chunk comeca com uma linha `CONTEXTO: Documento > Secao > Subsecao`, com o caminho de titulos ate a secao, para que a busca vetorial e o modelo saibam de onde o trecho veio mesmo quando o texto nao repete o assunto.
+
+A divisao respeita quebras de paragrafo, linhas e espacos; um chunk que comeca dentro de uma tabela Markdown repete o cabecalho da tabela, e o overlap abre em linha ou palavra inteira. O campo `section` guarda o titulo da secao folha, que e o que as citacoes referenciam.
 
 O hash do conteudo participa do identificador estavel. O timestamp de alteracao e metadado de auditoria, nao identidade do chunk. Assim, pequenas variacoes de timestamp nao alteram a identidade quando o conteudo e o caminho permanecem iguais.
 

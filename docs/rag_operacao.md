@@ -99,7 +99,7 @@ ORDER BY run_timestamp DESC;
 2. `rag_health_check` imediatamente depois da ingestão, para confirmar
    prontidão e ausência de deriva.
 3. `rag_evaluation` com a suíte `smoke` (10 casos) antes de qualquer
-   demonstração; a suíte `full` (30 casos) antes de uma entrega.
+   demonstração; a suíte `full` (35 casos) antes de uma entrega.
 4. `rag_health_check` com `fail_on=degraded` como último passo antes de
    apresentar.
 5. `rag_demo` apenas para a demonstração ao vivo, com pergunta documental.

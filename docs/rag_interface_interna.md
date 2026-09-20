@@ -45,9 +45,11 @@ Erros de serviços recebem mensagem genérica e ID, sem detalhes de exceções q
 possam conter credenciais. Não há diagnóstico técnico detalhado persistido nesta
 versão. Um erro não é classificado como ausência de documentação.
 
-## Databricks App (preparação, ainda sem deploy)
+## Databricks App (empacotamento da release)
 
-A preparação é exclusivamente local e não utiliza CLI/API Databricks:
+A aplicação publicada e seus recursos estão descritos em
+[`rag_app_producao.md`](rag_app_producao.md). Esta seção cobre só o
+empacotamento local da release, que não utiliza CLI/API Databricks:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -B apps/rag_chat/prepare_release.py

@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-O Golden Dataset registra perguntas realistas e expectativas verificáveis para medir a RAG documental sem transformar uma resposta de referência em comparação literal. A versão inicial possui 30 casos, todos na suíte `full`, dos quais 10 formam a suíte rápida `smoke`.
+O Golden Dataset registra perguntas realistas e expectativas verificáveis para medir a RAG documental sem transformar uma resposta de referência em comparação literal. A versão inicial tinha 30 casos; com a inclusão das documentações de previsão de demanda e de operação do RAG no corpus, são 35, todos na suíte `full`, dos quais 10 formam a suíte rápida `smoke`.
 
 O corpus avaliado é sempre a allowlist `DEFAULT_ALLOWED_PATHS` de `src/analytics_ai/rag_documents.py`. Fontes fora dela não são aceitas pelo validador, ainda que existam no repositório.
 
@@ -25,7 +25,7 @@ Cada linha de `evaluation/rag_golden_dataset.jsonl` é um objeto JSON independen
 
 ## Validação local
 
-Validar os 30 casos e imprimir a cobertura completa:
+Validar os 35 casos e imprimir a cobertura completa:
 
 ```bash
 PYTHONPATH=src python -m analytics_ai.rag_evaluation validate --suite full
@@ -177,7 +177,7 @@ Após o deploy do bundle, execute primeiro os 10 casos rápidos:
 databricks bundle run rag_evaluation -t dev --params suite=smoke,run_label=pre-release
 ```
 
-Para os 30 casos:
+Para os 35 casos:
 
 ```bash
 databricks bundle run rag_evaluation -t dev --params suite=full,run_label=release-candidate

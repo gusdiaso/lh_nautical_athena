@@ -22,6 +22,8 @@ EXPECTED_BEHAVIORS = frozenset(
     {"answer", "insufficient_context", "refuse_warehouse_data", "refuse_adversarial"}
 )
 DIFFICULTIES = frozenset({"medium", "hard"})
+# 30 casos originais + 5 sobre as docs de ML e de operação do RAG incluídas no corpus.
+EXPECTED_CASE_COUNT = 35
 SCOPES = frozenset({"single_document", "multi_document", "out_of_scope", "adversarial"})
 PRIMARY_CATEGORIES = frozenset(
     {
@@ -497,7 +499,7 @@ def _generated_document_sections(repository_root: Path) -> dict[str, set[str]]:
     return generated
 
 
-def load_golden_dataset(path: Path, repository_root: Path, expected_count: int = 30) -> list[GoldenCase]:
+def load_golden_dataset(path: Path, repository_root: Path, expected_count: int = EXPECTED_CASE_COUNT) -> list[GoldenCase]:
     """Load JSONL and validate schema, composition, sources, and stable corpus sections."""
     errors: list[str] = []
     cases: list[GoldenCase] = []

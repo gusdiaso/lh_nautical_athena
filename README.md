@@ -2,7 +2,16 @@
 
 ## Descrição do Projeto
 
-O **LH Nautical** é um pipeline de dados completo construído no ecossistema **Databricks**, seguindo a **Arquitetura Medalhão** (Bronze → Silver → Gold). O projeto extrai dados de um ERP SQL Server (24 tabelas de domínio náutico/comercial) e cotações de moedas USD/EUR da API do Banco Central, salvando tudo como tabelas **Delta Lake** no Unity Catalog.
+O **LH Nautical** é uma plataforma de dados completa construída no ecossistema **Databricks** para uma rede de varejo náutico com 3 armazéns (centros de distribuição) e 3 lojas. O projeto cobre quatro frentes, em sequência:
+
+| Frente | O que faz | Onde está |
+|--------|-----------|-----------|
+| **Ingestão** | Extrai 24 tabelas de um ERP SQL Server e cotações USD/EUR da API do Banco Central para tabelas **Delta Lake** (camada Bronze) | `src/ingestion/` |
+| **Transformação** | dbt aplica a **Arquitetura Medalhão** (Bronze → Silver → Gold) e entrega um modelo dimensional com 6 dimensões e 6 fatos, mais tabelas de demanda e features para ML (schema `ml`) | `src/dbt/` |
+| **Previsão de demanda (ML)** | Prevê a venda dos próximos 3 meses por produto × loja com uma régua estatística e três modelos comparados (Regressão Linear, GLM Poisson/Tweedie, XGBoost), e analisa o crescimento por centro de distribuição e loja | `src/analytics_ai/demand_*.py`, `notebooks/ml/` |
+| **RAG documental (Gen AI)** | Responde perguntas em linguagem natural sobre a documentação técnica do projeto, com citações verificáveis, sem acesso ao Data Warehouse | `src/analytics_ai/rag_*.py`, `apps/rag_chat/` |
+
+Tudo roda no Unity Catalog (`dev_lh_nautical` / `prod_lh_nautical`), é declarado como código (Databricks Asset Bundles) e é validado por testes de qualidade no dbt e por testes Python offline.
 
 ### Solução de Ingestão
 
@@ -48,7 +57,7 @@ O dbt lê as tabelas Bronze via `{{ source('bronze', 'nome_tabela') }}` e aplica
 | **Gold / Marts** | Modelos dimensionais prontos para análise | Implementado |
 | **RAG Documental** | Busca em linguagem natural na documentação do projeto (Gen AI) | Implementado |
 | **Dashboards** | Visualizações e relatórios | Futuro |
-| **Machine Learning** | Previsão de demanda por produto × loja (regressão linear, GLM e XGBoost comparados contra uma régua simples); churn fica para o futuro | Em andamento (dev) |
+| **Machine Learning** | Previsão de demanda por produto × loja para os próximos 3 meses (régua estatística + Regressão Linear, GLM Poisson/Tweedie e XGBoost comparados); crescimento por centro de distribuição e loja | Implementado |
 
 ---
 
@@ -56,7 +65,8 @@ O dbt lê as tabelas Bronze via `{{ source('bronze', 'nome_tabela') }}` e aplica
 
 - [Dependências do Projeto](#dependências-do-projeto)
 - [Configuração do Ambiente de Desenvolvimento](#configuração-do-ambiente-de-desenvolvimento)
-- [Pipeline Completo (Ingestão → Transformação)](#passo-a-passo-pipeline-completo-ingestão--transformação)
+- [Pipeline Completo (Ingestão → Transformação → Orquestração → ML → RAG)](#passo-a-passo-pipeline-completo)
+- [Previsão de Demanda (ML)](#previsão-de-demanda-ml)
 - [RAG Documental](#rag-documental)
 - [Comandos Úteis](#comandos-úteis)
 - [Estrutura do Projeto](#estrutura-do-projeto)
@@ -82,6 +92,7 @@ Todas as dependências Python estão em [`requirements.txt`](requirements.txt) n
 | **Retry Automático** | `tenacity` | 9.1 |
 | **Linter SQL** | `sqlfluff`, `sqlfluff-templater-dbt` | 4.2 |
 | **Testes** | `pytest` | 9.1 |
+| **Machine Learning** | `scikit-learn` (GLM Poisson/Tweedie), `xgboost`, `matplotlib` (gráficos dos notebooks) | 1.9, 3.0, 3.11 |
 | **Databricks SQL** | `databricks-sql-connector` | 4.2 |
 | **Utilidades** | `python-slugify`, `openpyxl`, `deepdiff`, `tqdm` | — |
 
@@ -92,6 +103,13 @@ Definidos em [`packages.yml`](packages.yml):
 | Pacote | Versão | Uso |
 |--------|--------|-----|
 | `dbt-labs/dbt_utils` | 1.1.1 | Macros utilitárias (generate_surrogate_key, date_spine, etc.) |
+
+### Ambientes separados
+
+| Ambiente | Arquivo | Por quê |
+|----------|---------|---------|
+| Aplicação RAG (Streamlit) | [`apps/rag_chat/requirements.txt`](apps/rag_chat/requirements.txt) | A App do Databricks instala só o que a interface precisa |
+| Jobs RAG no Databricks | `resources/rag/*.yml` (bibliotecas do job) | O SDK `databricks-ai-search` exige `protobuf < 6` e o dbt exige `protobuf >= 6`; por isso ele não entra no `requirements.txt` |
 
 ---
 
@@ -186,7 +204,9 @@ pytest tests/ -v
 
 ---
 
-## Passo a Passo: Pipeline Completo (Ingestão → Transformação)
+## Passo a Passo: Pipeline Completo
+
+Ordem de execução de ponta a ponta: **ingestão → transformação → orquestração → previsão de demanda → RAG**. Os passos 1 a 6 preparam o Data Warehouse; o 7 automatiza isso; o 8 e o 9 dependem das tabelas Gold e `ml` já materializadas.
 
 ### 1. Deploy do Bundle
 
@@ -262,6 +282,70 @@ dbt docs serve   # Acessar em http://localhost:8080
 | **Staging** | — | — | Injetado como CTE nos modelos Intermediate (não materializado) |
 | **Intermediate** | `dev_lh_nautical` | `silver` | 24 tabelas limpas, validadas e enriquecidas |
 | **Gold / Marts** | `dev_lh_nautical` | `gold` | 6 dimensões + 6 fatos (modelo dimensional) |
+| **ML** | `dev_lh_nautical` | `ml` | Demanda agregada (dia/semana/mês/trimestre), índice sazonal e tendência por corte, painel de cortes, tabela de features e tabelas de previsão |
+
+### 7. Orquestração (execução automática)
+
+O job `orchestrator_transform` encadeia tudo o que está acima — extração → validação → column masking → `dbt build` — e roda todo dia às 23:00. Para disparar manualmente:
+
+```bash
+databricks bundle run orchestrator_transform --target dev
+```
+
+Detalhes das dependências entre jobs em [`docs/orquestracao_transform.md`](docs/orquestracao_transform.md).
+
+### 8. Previsão de demanda (ML)
+
+Com a camada Gold pronta, os modelos dbt do diretório `ml/` constroem a tabela de features e os scripts treinam e gravam as previsões:
+
+```bash
+# Tabelas de demanda, sazonalidade/tendência e features (schema ml)
+dbt build --select ml
+
+# GLM Poisson (modelo candidato): treina, prevê e grava as duas tabelas Delta de previsão
+PYTHONPATH=. python -m src.analytics_ai.run_demand_glm --model-name glm_poisson
+
+# Variante Tweedie, na mesma tabela, em partição própria
+PYTHONPATH=. python -m src.analytics_ai.run_demand_glm --model-name glm_tweedie --family tweedie --power 1.3
+
+# XGBoost (escreve CSVs de teste, previsão, métricas e busca de validação)
+PYTHONPATH=. python -m src.analytics_ai.run_demand_xgboost
+```
+
+Localmente os scripts usam Databricks Connect (`DATABRICKS_PROFILE`); no workspace, os notebooks `notebooks/ml/01` a `08` reproduzem análise, modelos e a análise de crescimento por CD/PDV, nessa ordem. Veja [Previsão de Demanda (ML)](#previsão-de-demanda-ml).
+
+### 9. RAG documental
+
+Depois de qualquer mudança na documentação: copiar os arquivos para o Volume, reindexar e conferir a saúde do índice (comandos em [RAG Documental](#rag-documental)).
+
+---
+
+## Previsão de Demanda (ML)
+
+**Pergunta de negócio:** quanto cada produto vai vender em cada loja nos próximos 3 meses, e qual centro de distribuição cresce mais.
+
+**Como foi resolvido.** A demanda por produto × loja × mês tem 79% de meses sem venda, então o alvo passou a ser a **soma dos 3 meses seguintes** (50% de zeros). A análise exploratória (notebooks 01 a 04) mostrou que o sinal previsível está no nível **categoria × loja**, com sazonalidade forte e crescimento de ~15% ao ano — e que o histórico de um produto isolado quase não prevê o futuro dele. Isso virou uma **régua** (média da categoria na loja × índice sazonal × fator de tendência) e uma tabela de features (`ml_features_produto_loja_mes`, 33 colunas) sobre a qual três modelos foram comparados em 12 cortes temporais de teste (06/2025 a 05/2026), sempre com validação separada e leitura única do teste.
+
+| Modelo | Erro por produto × loja (WAPE) | Erro por categoria × loja | Viés | Veredito |
+|--------|-------------------------------|---------------------------|------|----------|
+| Régua (referência) | 86,6% | 11,9% | −2,8% | A nota a superar |
+| Regressão Linear | 85,8% | 12,6% | −7,7% | Não supera a régua |
+| **GLM Poisson** | 87,0% | **11,8%** | **+0,1%** | Empata no erro e elimina o viés — modelo candidato |
+| GLM Tweedie (power 1,3) | 87,0% | 11,8% | −0,05% | Igual ao Poisson |
+| XGBoost calibrado | 85,9% | 15,6% | −10,9% | Não supera a régua |
+
+**Leitura:** nenhum modelo reduz o erro de forma relevante — o que separa um produto que vende 0 de um que vende 20 não está nos dados antes da venda. O GLM Poisson é o candidato por entregar a mesma precisão da régua **sem viés** e com a previsão mês a mês pronta. Os dois modelos que parecem melhores por produto (Linear, XGBoost) estão prevendo sistematicamente abaixo do real.
+
+**Crescimento por centro de distribuição e loja (set–nov/2026):** em unidades, o Armazém Camargo e a Loja Oliveira lideram, mas o crescimento percentual é o mesmo em todas as unidades (89,8%) por construção do índice sazonal; frente ao mesmo trimestre de 2025, o CD que mais cresce é o **Armazém Novaes** (+9,6%) e a loja é a **Oliveira** (+31,5%).
+
+| Onde está | Conteúdo |
+|-----------|----------|
+| [`docs/previsao_demanda_produto_loja.md`](docs/previsao_demanda_produto_loja.md) | Relatório completo: problema, análises, régua, features, os três modelos, crescimento por CD/PDV, decisões e limitações |
+| [`docs/dicionario_features_ml_produto_loja_mes.md`](docs/dicionario_features_ml_produto_loja_mes.md) | Dicionário das 33 colunas da tabela de features |
+| [`docs/xgboost_demand.md`](docs/xgboost_demand.md) | Recorte, variantes e execução do XGBoost |
+| `notebooks/ml/01` a `08` | EDA (01–03), régua (04), Regressão Linear (05, 05b), GLM (06), XGBoost (07), crescimento por CD/PDV (08) |
+| `dev_lh_nautical.ml.ml_forecast_demanda_3m` / `ml_forecast_demanda_mensal` | Tabelas Delta de previsão, particionadas por `model_name` |
+| `tests/test_demand_*.py`, `test_eda_seasonality.py`, `test_ml_config.py` | Testes offline (pandas puro) da régua, do GLM, do XGBoost, da análise de crescimento e das configurações |
 
 ---
 
@@ -290,13 +374,33 @@ databricks bundle run rag_ingestion -t dev
 # Verificação operacional e de isolamento
 databricks bundle run rag_health_check -t dev
 
-# Avaliação: 10 casos rápidos ou os 30 casos completos
+# Avaliação: 10 casos rápidos ou os 35 casos completos
 databricks bundle run rag_evaluation -t dev --params suite=smoke
 databricks bundle run rag_evaluation -t dev --params suite=full
 
 # Demonstração
 databricks bundle run rag_demo -t dev
 ```
+
+### Corpus indexado e como atualizá-lo
+
+O corpus é a allowlist `DEFAULT_ALLOWED_PATHS` em [`src/analytics_ai/rag_documents.py`](src/analytics_ai/rag_documents.py): o `README.md`, o `src/dbt/README.md` e os documentos de `docs/` sobre ingestão, dbt, modelo dimensional, orquestração, CI/CD, previsão de demanda e o próprio RAG. Cada arquivo é dividido por cabeçalho Markdown em chunks de até 800 caracteres, que carregam o caminho de títulos (`CONTEXTO: Documento > Seção > Subseção`) e repetem o cabeçalho de uma tabela quando a cortam — por isso os documentos usam títulos descritivos e seções curtas.
+
+O job de ingestão lê o Volume `/Volumes/dev_lh_nautical/rag/documents`, que precisa espelhar o repositório. Depois de alterar ou incluir um documento:
+
+```bash
+# 1. Copiar os arquivos alterados para o Volume (mesmo caminho relativo do repositório)
+databricks fs cp README.md dbfs:/Volumes/dev_lh_nautical/rag/documents/README.md --overwrite
+databricks fs cp docs/previsao_demanda_produto_loja.md dbfs:/Volumes/dev_lh_nautical/rag/documents/docs/previsao_demanda_produto_loja.md --overwrite
+
+# 2. Reindexar (sobrescreve a tabela de chunks e sincroniza o índice)
+databricks bundle run rag_ingestion -t dev
+
+# 3. Conferir prontidão, deriva de linhas e isolamento
+databricks bundle run rag_health_check -t dev
+```
+
+Um documento novo só entra no índice se estiver na allowlist **e** no Volume. A avaliação (`rag_evaluation`) referencia pares documento/seção do Golden Dataset — renomear um desses títulos quebra a suíte, então mudanças de cabeçalho passam por `python -m analytics_ai.rag_evaluation validate`.
 
 ### Validação local (sem Databricks)
 
@@ -431,17 +535,11 @@ lh_nautical/
 │       ├── eda_*.py                       # Análise exploratória da demanda (notebooks 01 a 04)
 │       ├── ml_config.py                   # Nomes das tabelas de ML
 │       └── run_demand_*.py                # Entrypoints de treino do GLM e do XGBoost
-├── notebooks/ml/                          # Análises e modelos de previsão de demanda (01 a 08)
+├── notebooks/ml/                          # 01-03 EDA · 04 régua · 05/05b Linear · 06 GLM · 07 XGBoost · 08 crescimento CD/PDV
+├── apps/rag_chat/                         # Interface Streamlit do RAG (app.py, app.yaml, prepare_release.py)
 ├── evaluation/
-│   └── rag_golden_dataset.jsonl           # 30 casos de avaliação do RAG
-├── docs/                                  # Documentação
-│   ├── dictionary.md                      # Dicionário de dados
-│   ├── extract_lh_nautical.md             # Docs extração SQL Server
-│   ├── extract_exchange_rates.md          # Docs extração API BCB
-│   ├── dab_configuration.md               # Configuração DAB
-│   ├── ci_cd_pipeline.md                  # CI/CD e Service Principal
-│   ├── dbt_configuration.md               # Configuração do dbt
-│   └── macros.md                          # Documentação das macros
+│   └── rag_golden_dataset.jsonl           # 35 casos de avaliação do RAG
+├── docs/                                  # Documentação (30 arquivos; ver seção Documentação)
 └── tests/
     ├── test_rag_*.py                      # Testes offline do RAG (sem Databricks)
     ├── test_demand_*.py, test_ml_config.py, test_run_demand_*.py, test_eda_seasonality.py  # Testes offline de ML
@@ -487,34 +585,61 @@ SQL Server (ERP)                API PTAX (BCB)
 
 ## Documentação
 
+Tudo em `docs/`. Os documentos marcados com ✦ fazem parte do corpus do RAG.
+
+**Projeto e arquitetura**
+
 | Documento | Descrição |
 |-----------|-----------|
-| `docs/dictionary.md` | Dicionário de dados (24 tabelas fonte + exchange_rates, colunas, relacionamentos) |
-| `docs/documento_projeto_lh_nautical.md` | Documento oficial do projeto — visão executiva completa |
-| `docs/orquestracao_transform.md` | Orquestração dos jobs e dependências entre camadas |
-| `docs/star_schema.md` | Modelo dimensional completo (Star Schema) |
-| `docs/relatorio_analise_projeto.md` | Relatório técnico detalhado com decisões e regras de negócio |
-| `docs/extract_lh_nautical.md` | Detalhes da extração SQL Server → Bronze |
-| `docs/extract_exchange_rates.md` | Detalhes da extração API BCB → Bronze |
-| `docs/staging.md` | Camada Staging do dbt |
-| `docs/intermediate.md` | Camada Intermediate do dbt |
-| `docs/marts.md` | Camada Marts e modelo dimensional |
-| `docs/marts_tests.md` | Estratégia de testes da camada Marts |
-| `docs/dab_configuration.md` | Configuração do DAB e governança |
-| `docs/ci_cd_pipeline.md` | CI/CD completo: como colocar dbt no pipeline |
-| `docs/dbt_configuration.md` | Configuração do dbt e profiles |
-| `docs/macros.md` | Documentação das macros dbt |
-| `docs/star_schema.md` | Modelo dimensional (Star Schema) |
-| `docs/planejamento_dbt.md` | Planejamento e convenções do projeto dbt |
-| `docs/transform_after_extract.md` | Como rodar transformação logo após extração |
-| `docs/implementacao-rag-documental-databricks.md` | Arquitetura completa do RAG documental, decisões e limitações |
-| `docs/rag_mvp.md` | Escopo e estado do MVP do RAG |
-| `docs/rag_evaluation.md` | Golden Dataset, métricas e groundedness |
-| `docs/rag_operacao.md` | Operação do RAG: health check, ciclo de vida e falhas |
-| `docs/rag_seguranca.md` | Menor privilégio e isolamento do Data Warehouse |
-| `docs/previsao_demanda_produto_loja.md` | Previsão de demanda: problema, análises, régua, features e comparação dos modelos |
-| `docs/dicionario_features_ml_produto_loja_mes.md` | Dicionário das 33 colunas da tabela de features de ML |
-| `docs/xgboost_demand.md` | XGBoost de demanda: recorte, variantes, resultado e execução |
+| `docs/documento_projeto_lh_nautical.md` ✦ | Documento oficial do projeto — visão executiva completa |
+| `docs/relatorio_analise_projeto.md` ✦ | Relatório técnico detalhado com decisões e regras de negócio |
+| `docs/planejamento_dbt.md` | Planejamento, cronograma e convenções do projeto dbt |
+| `docs/relatorio_resultados_dbt.md` | Resultados da implementação e validação das melhorias do dbt |
+
+**Ingestão e orquestração**
+
+| Documento | Descrição |
+|-----------|-----------|
+| `docs/extract_lh_nautical.md` ✦ | Extração SQL Server → Bronze (uso, retry, troubleshooting) |
+| `docs/extract_exchange_rates.md` ✦ | Extração API BCB → Bronze |
+| `docs/orquestracao_transform.md` ✦ | Orquestração dos jobs e dependências entre camadas |
+| `docs/transform_after_extract.md` ✦ | Como rodar a transformação logo após a extração |
+| `docs/dab_configuration.md` ✦ | Configuração do DAB, targets e governança |
+| `docs/ci_cd_pipeline.md` ✦ | CI/CD completo e Service Principal de produção |
+
+**Modelagem dbt e dados**
+
+| Documento | Descrição |
+|-----------|-----------|
+| `docs/dictionary.md` ✦ | Dicionário de dados (24 tabelas fonte + exchange_rates, colunas, relacionamentos) |
+| `docs/star_schema.md` ✦ | Modelo dimensional completo (Star Schema) |
+| `docs/mapeamento_dependencias.md` ✦ | Dependências entre modelos, por camada e ordem de execução |
+| `docs/dbt_configuration.md` ✦ | Configuração do dbt, profiles e macro de schema |
+| `docs/staging.md` ✦ · `docs/intermediate.md` ✦ · `docs/marts.md` ✦ | As três camadas do dbt |
+| `docs/marts_tests.md` ✦ | Estratégia de testes da camada Marts |
+| `docs/macros.md` ✦ | Documentação das macros dbt |
+| `src/dbt/README.md` ✦ | Guia do projeto dbt |
+
+**Previsão de demanda (ML)**
+
+| Documento | Descrição |
+|-----------|-----------|
+| `docs/previsao_demanda_produto_loja.md` ✦ | Problema, análises, régua, features, comparação dos modelos e crescimento por CD/PDV |
+| `docs/dicionario_features_ml_produto_loja_mes.md` ✦ | Dicionário das 33 colunas da tabela de features |
+| `docs/xgboost_demand.md` ✦ | XGBoost de demanda: recorte, variantes, resultado e execução |
+
+**RAG documental**
+
+| Documento | Descrição |
+|-----------|-----------|
+| `docs/implementacao-rag-documental-databricks.md` ✦ | Arquitetura completa do RAG, decisões e limitações |
+| `docs/rag_evaluation.md` ✦ | Golden Dataset, métricas e groundedness |
+| `docs/rag_operacao.md` ✦ | Operação: health check, ciclo de vida e falhas |
+| `docs/rag_seguranca.md` ✦ | Menor privilégio e isolamento do Data Warehouse |
+| `docs/rag_interface_interna.md` ✦ | Interface Streamlit e empacotamento da release |
+| `docs/rag_app_producao.md` ✦ | Aplicação publicada no Databricks Apps e seus recursos |
+| `docs/rag_mvp.md` | Escopo do MVP inicial |
+| `docs/rag_operacao_seguranca_changelog.md` | Changelog da branch de operação e segurança |
 
 > ℹ️ A tabela `fiscal_invoices` é extraída para Bronze mas não possui modelo dbt, pois não integra o modelo dimensional atual.
 

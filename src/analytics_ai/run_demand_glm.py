@@ -20,7 +20,7 @@ import datetime as dt
 
 import pandas as pd
 
-from src.analytics_ai.demand_baselines import comparison_scorecard
+from src.analytics_ai.demand_common import comparison_scorecard
 from src.analytics_ai.demand_glm import (
     BASELINE_COL,
     FEATURE_STEPS,
@@ -71,6 +71,10 @@ def main(argv: list[str] | None = None) -> None:
         f"descartadas={splits.n_discarded:,}"
     )
 
+    if splits.inference.empty:
+        # Sem corte de inferência não há o que prever, e gravar um quadro vazio apagaria as linhas do modelo.
+        raise ValueError("nenhuma linha de inferência (corte sem alvo completo): nada a prever")
+
     glm_config = dataclasses.replace(
         FEATURE_STEPS[args.step],
         name=args.model_name,
@@ -106,10 +110,13 @@ def main(argv: list[str] | None = None) -> None:
 
     agora = dt.datetime.now()
     power = None if args.family == "poisson" else args.power
+    # Com --fit-on completo o modelo já viu as linhas de teste: são linhas de treino, e rotulá-las
+    # "teste" contaminaria qualquer avaliação fora da amostra feita depois sobre a tabela.
+    split_teste = "teste" if args.fit_on == "treino" else "treino"
     tabela_3m = pd.concat(
         [
             build_forecast_3m_frame(
-                teste, "pred_glm", args.model_name, args.family, power, args.alpha, "teste", agora
+                teste, "pred_glm", args.model_name, args.family, power, args.alpha, split_teste, agora
             ),
             build_forecast_3m_frame(
                 inferencia,

@@ -4,15 +4,15 @@
 -- uma linha por produto (SKU) × loja × mês (primeiro dia do mês)
 --
 -- Base compartilhada da engenharia de features de Machine Learning
--- (Etapa 3 do plano de previsão, notebooks 01-03 em notebooks/ml).
+-- (Etapa 3 do plano de previsão, notebooks 01, 02 e 04 em notebooks/ml).
 -- Remove os meses parciais de agg_demand_monthly antes de qualquer
 -- janela móvel: o primeiro mês de cada combinação produto × loja
 -- (começa no dia da primeira venda, nunca é um mês cheio) e o
 -- último mês do dataset (pode estar pela metade). Os dois
 -- distorceriam MM12/MM3, o índice sazonal e a tendência se
--- entrassem nas contas — mesmo critério usado nos notebooks 01-03
+-- entrassem nas contas — mesmo critério usado nos notebooks 01, 02 e 04
 -- (add_partial_period_flag / complete_months em
--- src/analytics_ai/eda_demand_zeros.py e eda_demand_distribution.py).
+-- src/analytics_ai/eda_common.py).
 --
 -- days_in_period < dias do calendário no mês ⇒ mês parcial.
 -- ============================================================

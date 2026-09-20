@@ -96,6 +96,14 @@ def _write(spark: SparkSession, frame: pd.DataFrame, schema: StructType, table: 
     faltando = [c for c in colunas if c not in frame.columns]
     if faltando:
         raise ValueError(f"colunas ausentes para gravar em {table}: {faltando}")
+    # `replaceWhere` monta o predicado em SQL: uma aspa no nome quebraria a instrução.
+    if "'" in model_name:
+        raise ValueError(f"model_name não pode conter aspas simples: {model_name!r}")
+    if not (frame["model_name"] == model_name).all():
+        raise ValueError(f"o quadro tem linhas de outro model_name além de '{model_name}'; nada foi gravado")
+    # Um quadro vazio apagaria as linhas do modelo (replaceWhere) sem gravar nada no lugar.
+    if frame.empty:
+        raise ValueError(f"quadro vazio para '{model_name}' em {table}: gravar apagaria as linhas do modelo")
 
     sdf: DataFrame = spark.createDataFrame(frame[colunas], schema=schema)
     (

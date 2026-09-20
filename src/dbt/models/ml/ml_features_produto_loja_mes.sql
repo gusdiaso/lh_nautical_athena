@@ -5,34 +5,34 @@
 --
 -- Tabela final de features de Machine Learning (Etapa 3 do plano
 -- de previsão) — alimenta os modelos da Etapa 4. Junta o painel de
--- corte (ml_cutoff_panel), a estação/tendência ponto-no-tempo
+-- corte (ml_cutoff_panel), a sazonalidade/tendência ponto-no-tempo
 -- (ml_seasonal_trend) e os atributos de produto/loja, e calcula
--- os níveis de grupo que os notebooks 01-03 (notebooks/ml)
+-- os níveis de grupo que os notebooks 01, 02 e 04 (notebooks/ml)
 -- comprovaram serem o sinal mais forte.
 --
 -- O que cada bloco de colunas representa, e o veredito dos
--- notebooks 01-03 sobre ele (conclusão do notebook 03):
+-- notebooks 01, 02 e 04 sobre ele (conclusão do notebook 04):
 --
 -- - Nível do grupo (categoria_local_avg_12m, produto_locais_avg_12m)
---   — ESSENCIAL: prevê melhor que a própria série (notebook 03,
+--   — ESSENCIAL: prevê melhor que a própria série (notebook 04,
 --   seção 7), porque a venda de um produto isolado é quase acaso
 --   (seção 8 — correlação ano a ano ≈ 0) e a categoria numa loja
---   concentra o sinal real de estação (notebook 01, seção B5: R²
---   sazonal de 3,8% por série contra 60,5% por categoria × loja).
--- - Estação e tendência (seasonal_index_month_plus1..3,
+--   concentra o sinal real de sazonalidade (notebook 01, seção B5: R²
+--   sazonal de 3,8% por série contra 55,1% por categoria × loja).
+-- - Sazonalidade e tendência (seasonal_index_month_plus1..3,
 --   season_sum_next_3m, growth_12m, trend_factor) — ESSENCIAL:
---   removem o viés de época (notebook 03, seção 5) e de crescimento,
+--   removem o viés de época (notebook 04, seção 5) e de crescimento,
 --   +15%/ano (seção 6). Recalculados por corte, sem usar o futuro
 --   (ml_seasonal_trend).
 -- - Histórico da própria série (sum_12m, sum_3m,
 --   months_with_sale_12m, months_since_last_sale, frequency_class)
 --   — PROVAVELMENTE INÚTIL, mantido para o modelo testar e
---   confirmar (notebook 03, seção 8).
+--   confirmar (notebook 04, seção 8).
 -- - Atributos (category_name, brand_name, location_name,
 --   location_type, region, sale_price) — BAIXA PRIORIDADE: todas as
 --   categorias e locais vendem de forma parecida (notebook 02).
 -- - baseline_pred_categoria_local_idx_trend — a régua vencedora do
---   notebook 03 (seção 14: WAPE 86,6% por produto, 10,7% por
+--   notebook 04 (seção 14: WAPE 86,6% por produto, 11,9% por
 --   categoria × local, 6,1% por local, viés −2,8%), entregue como
 --   feature/prior: o modelo só se justifica se aprender a corrigir
 --   o resíduo dela, não se reaprender a mesma conta do zero.
@@ -149,7 +149,7 @@ with panel as (
         , grouped.location_type
         , grouped.region
 
-        -- histórico da própria série — provavelmente inútil, testar (notebook 03, seção 8)
+        -- histórico da própria série — provavelmente inútil, testar (notebook 04, seção 8)
         , grouped.sum_12m
         , grouped.sum_3m
         , grouped.months_with_sale_12m
@@ -159,13 +159,13 @@ with panel as (
         , grouped.seasonal_index_month_plus1
         , grouped.seasonal_index_month_plus2
 
-        -- nível do grupo — essencial (notebook 03, seção 7)
+        -- nível do grupo — essencial (notebook 04, seção 7)
         , grouped.seasonal_index_month_plus3
         , grouped.season_sum_next_3m
         , grouped.trend_ready
         , grouped.growth_12m
 
-        -- estação e tendência — essencial (notebook 03, seções 2, 5 e 6)
+        -- sazonalidade e tendência — essencial (notebook 04, seções 2, 5 e 6)
         , grouped.trend_factor
         , grouped.target_3m
         , grouped.has_full_target_3m as is_target_complete
@@ -179,7 +179,7 @@ with panel as (
         end as frequency_class
         , grouped.months_with_sale_12m = 0 as is_stopped_12m
 
-        -- régua vencedora do notebook 03 (seção 14), entregue como feature/prior
+        -- régua vencedora do notebook 04 (seção 14), entregue como feature/prior
         , round(grouped.categoria_local_avg_12m, 4) as categoria_local_avg_12m
 
         -- alvo e flag de treino × inferência

@@ -4,16 +4,16 @@
 -- uma linha por produto (SKU) × loja × mês de corte (mês completo)
 --
 -- Porta para SQL o build_cutoff_panel de
--- src/analytics_ai/demand_baselines.py: para cada corte, soma os
+-- src/analytics_ai/demand_moving_average.py: para cada corte, soma os
 -- 12 e os 3 meses anteriores da própria série (sum_12m, sum_3m),
 -- conta os meses com venda no último ano, mede há quantos meses
 -- não vende e soma o alvo (target_3m = total dos 3 meses seguintes
 -- ao corte). Roda para TODO corte possível do histórico, não só os
 -- 12 de teste + 24 de calibração usados na avaliação do notebook
--- 03 — é a base de treino/inferência para o modelo de ML.
+-- 04 — é a base de treino/inferência para o modelo de ML.
 --
 -- has_full_history_12m confirma que a janela de 12 meses anteriores
--- não tem buracos (mesmo teste de window_ok do notebook 03); só
+-- não tem buracos (mesmo teste de window_ok do notebook 04); só
 -- essas linhas seguem para a tabela final — sem 12 meses cheios,
 -- sum_12m e months_with_sale_12m não são comparáveis entre séries.
 --

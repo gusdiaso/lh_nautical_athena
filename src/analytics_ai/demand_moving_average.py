@@ -1,10 +1,11 @@
-"""Médias móveis como régua da previsão de 3 meses (Etapa 2 do plano de previsão).
+"""Médias móveis como régua da previsão de 3 meses (notebook 04, Etapa 2 do plano).
 
 Monta um painel com uma linha por série produto × loja × mês de corte, com as
 somas móveis do passado e o alvo (total dos 3 meses seguintes), e calcula as
-réguas de previsão e os erros. Tudo usa só meses completos de
-agg_demand_monthly; o índice sazonal e a tendência são recalculados em cada
-corte com dados até o próprio corte, para não usar informação do futuro.
+réguas de previsão, a persistência de volume e as faixas de venda. Tudo usa só
+meses completos de agg_demand_monthly; o índice sazonal e a tendência são
+recalculados em cada corte com dados até o próprio corte, para não usar
+informação do futuro.
 """
 
 from __future__ import annotations
@@ -17,35 +18,12 @@ import pandas as pd
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 
-DEFAULT_ID_COLS = ("sk_product", "sk_location")
-DEFAULT_TARGET_COL = "demand_quantity"
-DEFAULT_DATE_COL = "month_start_date"
-HORIZON = 3
+from src.analytics_ai.demand_common import HORIZON, add_months
+from src.analytics_ai.eda_common import DEFAULT_DATE_COL, DEFAULT_ID_COLS, DEFAULT_TARGET_COL
 
 # Distância, em meses, entre o centro da janela da MM12 (5,5 meses antes do
 # corte) e o centro dos 3 meses previstos (2 meses depois do corte).
 MM12_LAG_MONTHS = 7.5
-
-
-def add_months(month: dt.date, n: int) -> dt.date:
-    """Soma n meses a uma data que é sempre o dia 1 do mês."""
-    index = month.year * 12 + month.month - 1 + n
-    return dt.date(index // 12, index % 12 + 1, 1)
-
-
-def cutoff_months(last_complete_month: dt.date, n_cutoffs: int = 12, horizon: int = HORIZON) -> list[dt.date]:
-    """Os n últimos meses de corte cujo alvo de `horizon` meses já aconteceu.
-
-    Args:
-        last_complete_month: Último mês completo do dataset.
-        n_cutoffs: Quantidade de cortes.
-        horizon: Meses somados no alvo.
-
-    Returns:
-        Lista de meses de corte, do mais antigo ao mais recente.
-    """
-    last_cutoff = add_months(last_complete_month, -horizon)
-    return [add_months(last_cutoff, -k) for k in range(n_cutoffs - 1, -1, -1)]
 
 
 # ── Painel ──────────────────────────────────────────────────────────
@@ -146,9 +124,11 @@ def seasonal_index_at(totals: pd.DataFrame, cutoff: dt.date) -> dict[int, float]
         Dicionário mês do ano (1–12) → índice.
     """
     past = totals[pd.to_datetime(totals["month"]) <= pd.Timestamp(cutoff)]
-    by_month = past.groupby(pd.to_datetime(past["month"]).dt.month)["demand"].mean()
+    by_month = past.groupby(pd.to_datetime(past["month"]).dt.month)[
+        "demand"].mean()
     if len(by_month) < 12:
-        raise ValueError(f"corte {cutoff}: faltam meses do ano para o índice sazonal")
+        raise ValueError(
+            f"corte {cutoff}: faltam meses do ano para o índice sazonal")
     return (by_month / by_month.mean()).to_dict()
 
 
@@ -163,9 +143,14 @@ def trend_factor_at(totals: pd.DataFrame, cutoff: dt.date, lag_months: float = M
         (crescimento anual, fator de correção).
     """
     months = pd.to_datetime(totals["month"])
-    cut, minus_12, minus_24 = (pd.Timestamp(add_months(cutoff, -n)) for n in (0, 12, 24))
+    cut, minus_12, minus_24 = (pd.Timestamp(
+        add_months(cutoff, -n)) for n in (0, 12, 24))
     last = totals[(months > minus_12) & (months <= cut)]["demand"].sum()
     prev = totals[(months > minus_24) & (months <= minus_12)]["demand"].sum()
+    if prev <= 0:
+        # Sem os 12 meses anteriores não há crescimento: dividir daria infinito,
+        # que contaminaria em silêncio todas as previsões com tendência.
+        raise ValueError(f"corte {cutoff}: sem venda nos 12 meses anteriores para calcular a tendência")
     growth = last / prev
     return float(growth), float(growth ** (lag_months / 12))
 
@@ -205,7 +190,8 @@ def add_forecasts(
     per_cutoff = []
     for cutoff in sorted(df["cutoff"].unique()):
         index = seasonal_index_at(totals, cutoff)
-        target_months = [add_months(cutoff, k).month for k in range(1, horizon + 1)]
+        target_months = [add_months(
+            cutoff, k).month for k in range(1, horizon + 1)]
         growth, factor = trend_factor_at(totals, cutoff)
         per_cutoff.append(
             {
@@ -215,7 +201,8 @@ def add_forecasts(
                 "trend_factor": factor,
             }
         )
-    df = df.merge(pd.DataFrame(per_cutoff), on="cutoff")
+    per_cutoff_columns = ["cutoff", "season_sum", "growth_12m", "trend_factor"]
+    df = df.merge(pd.DataFrame(per_cutoff, columns=per_cutoff_columns), on="cutoff")
 
     df["pred_mm12"] = df["sum_12m"] / 12 * horizon
     df["pred_mm3"] = df["sum_3m"] / 3 * horizon
@@ -223,80 +210,12 @@ def add_forecasts(
     df["pred_mm12_idx_trend"] = df["pred_mm12_idx"] * df["trend_factor"]
     for name, cols in group_cols.items():
         keys = ["cutoff", *cols]
-        group_mean = df.groupby(keys)["sum_12m"].transform("sum") / df.groupby(keys)["sum_12m"].transform("size")
+        group_mean = df.groupby(keys)["sum_12m"].transform(
+            "sum") / df.groupby(keys)["sum_12m"].transform("size")
         df[f"pred_{name}_idx"] = group_mean / 12 * df["season_sum"]
-        df[f"pred_{name}_idx_trend"] = df[f"pred_{name}_idx"] * df["trend_factor"]
+        df[f"pred_{name}_idx_trend"] = df[f"pred_{name}_idx"] * \
+            df["trend_factor"]
     return df
-
-
-# ── Erro ────────────────────────────────────────────────────────────
-
-
-def error_table(
-    df: pd.DataFrame,
-    forecasts: Mapping[str, str],
-    by: Sequence[str] = (),
-    actual_col: str = "target_3m",
-    reference: str | None = "MM12",
-) -> pd.DataFrame:
-    """WAPE, viés e erro relativo de cada régua, no total ou por grupo.
-
-    - WAPE = soma |previsto − real| ÷ soma real
-    - viés = (soma previsto − soma real) ÷ soma real
-    - erro relativo = WAPE da régua ÷ WAPE da régua de referência
-
-    Args:
-        df: Painel com as previsões.
-        forecasts: Rótulo → coluna de previsão.
-        by: Colunas de agrupamento; vazio = total.
-        actual_col: Coluna do valor real.
-        reference: Rótulo da régua de referência (None, ou ausente em
-            `forecasts`, para não calcular).
-
-    Returns:
-        Uma linha por grupo × régua com n, wape, vies e erro_relativo.
-    """
-    groups = df.groupby(list(by)) if by else [((), df)]
-    rows = []
-    for key, part in groups:
-        key = key if isinstance(key, tuple) else (key,)
-        actual = part[actual_col].sum()
-        for label, col in forecasts.items():
-            rows.append(
-                {
-                    **dict(zip(by, key, strict=True)),
-                    "regua": label,
-                    "n": len(part),
-                    "wape": (part[col] - part[actual_col]).abs().sum() / actual,
-                    "vies": (part[col].sum() - actual) / actual,
-                }
-            )
-    table = pd.DataFrame(rows)
-    if reference is not None and reference in forecasts:
-        ref = table[table["regua"] == reference].set_index(list(by))["wape"] if by else None
-        if by:
-            table["erro_relativo"] = table["wape"] / table.set_index(list(by)).index.map(ref)
-        else:
-            table["erro_relativo"] = table["wape"] / table.loc[table["regua"] == reference, "wape"].iloc[0]
-    for col in ("wape", "vies", "erro_relativo"):
-        if col in table:
-            table[col] = table[col].round(4)
-    return table
-
-
-def aggregated_error_table(
-    df: pd.DataFrame,
-    forecasts: Mapping[str, str],
-    level: Sequence[str],
-    actual_col: str = "target_3m",
-) -> pd.DataFrame:
-    """Erro depois de somar séries num nível (ex.: loja × categoria × corte).
-
-    Mede a previsão onde ela é usada na prática: o erro de cada série se
-    compensa em parte quando as séries são somadas.
-    """
-    summed = df.groupby(["cutoff", *level], as_index=False)[[actual_col, *forecasts.values()]].sum()
-    return error_table(summed, forecasts, actual_col=actual_col)
 
 
 # ── Persistência ────────────────────────────────────────────────────
@@ -322,8 +241,10 @@ def year_over_year_persistence(
         segundo (ao acaso seria igual a `top_share`).
     """
     ref = F.lit(last_month).cast("date")
-    in_last = (F.col(date_col) > F.add_months(ref, -12)) & (F.col(date_col) <= ref)
-    in_prev = (F.col(date_col) > F.add_months(ref, -24)) & (F.col(date_col) <= F.add_months(ref, -12))
+    in_last = (F.col(date_col) > F.add_months(
+        ref, -12)) & (F.col(date_col) <= ref)
+    in_prev = (F.col(date_col) > F.add_months(ref, -24)
+               ) & (F.col(date_col) <= F.add_months(ref, -12))
     q = F.col(target_col).cast("double")
     volumes = (
         complete_monthly.groupBy(*unit_cols)
@@ -337,12 +258,17 @@ def year_over_year_persistence(
     n_top = int(round(len(volumes) * top_share))
     top_prev = set(volumes.nlargest(n_top, "ano_anterior").index)
     top_last = set(volumes.nlargest(n_top, "ultimo_ano").index)
+    # Com menos de 2 unidades a correlação não existe; com n_top = 0 (poucas
+    # unidades para a fatia pedida) não há "topo" para medir a permanência.
+    has_pairs = len(volumes) >= 2
+    pearson = float(np.corrcoef(volumes["ano_anterior"], volumes["ultimo_ano"])[0, 1]) if has_pairs else float("nan")
+    # Spearman = Pearson sobre as posições no ranking (sem depender do scipy).
+    spearman = float(volumes["ano_anterior"].rank().corr(volumes["ultimo_ano"].rank())) if has_pairs else float("nan")
     return {
         "n_unidades": len(volumes),
-        "correlacao_pearson": round(float(np.corrcoef(volumes["ano_anterior"], volumes["ultimo_ano"])[0, 1]), 3),
-        # Spearman = Pearson sobre as posições no ranking (sem depender do scipy).
-        "correlacao_spearman": round(float(volumes["ano_anterior"].rank().corr(volumes["ultimo_ano"].rank())), 3),
-        "permanencia_no_topo": round(len(top_prev & top_last) / n_top, 3),
+        "correlacao_pearson": round(pearson, 3),
+        "correlacao_spearman": round(spearman, 3),
+        "permanencia_no_topo": round(len(top_prev & top_last) / n_top, 3) if n_top else float("nan"),
         "permanencia_ao_acaso": top_share,
     }
 
@@ -378,15 +304,24 @@ def fit_interval_buckets(
         Uma linha por faixa com lower, upper (limites da previsão), n e q_<p>
         para cada quantil (ex.: q_90).
     """
-    edges = np.unique(np.quantile(calibration[pred_col], np.linspace(0, 1, n_buckets + 1)))
-    buckets = np.clip(np.searchsorted(edges, calibration[pred_col], side="right") - 1, 0, len(edges) - 2)
+    if calibration.empty:
+        raise ValueError("calibração vazia: não há previsões para montar as faixas")
+    edges = np.unique(np.quantile(
+        calibration[pred_col], np.linspace(0, 1, n_buckets + 1)))
+    if len(edges) == 1:
+        # Previsão igual em todas as linhas (ex.: tudo zero): uma faixa só.
+        edges = np.repeat(edges, 2)
+    buckets = np.clip(np.searchsorted(
+        edges, calibration[pred_col], side="right") - 1, 0, len(edges) - 2)
     rows = []
     for b in range(len(edges) - 1):
         actual = calibration.loc[buckets == b, actual_col]
         if actual.empty:
             continue
-        row = {"bucket": b, "lower": edges[b], "upper": edges[b + 1], "n": len(actual)}
-        row.update({f"q_{round(q * 100)}": float(actual.quantile(q)) for q in quantiles})
+        row = {"bucket": b, "lower": edges[b],
+               "upper": edges[b + 1], "n": len(actual)}
+        row.update({f"q_{round(q * 100)}": float(actual.quantile(q))
+                   for q in quantiles})
         rows.append(row)
     return pd.DataFrame(rows)
 
@@ -402,7 +337,8 @@ def apply_interval_buckets(df: pd.DataFrame, buckets: pd.DataFrame, pred_col: st
     """
     out = df.copy()
     position = np.clip(
-        np.searchsorted(buckets["lower"].to_numpy(), out[pred_col].to_numpy(), side="right") - 1,
+        np.searchsorted(buckets["lower"].to_numpy(),
+                        out[pred_col].to_numpy(), side="right") - 1,
         0,
         len(buckets) - 1,
     )
@@ -441,92 +377,6 @@ def interval_coverage(
         )
     return pd.DataFrame(rows)
 
-
-# ── Base de comparação ──────────────────────────────────────────────
-
-
-def poisson_deviance(actual: pd.Series, pred: pd.Series) -> float:
-    """Desvio de Poisson médio: erro por produto que não premia prever abaixo.
-
-    É minimizado pela média verdadeira (ao contrário do WAPE por produto,
-    minimizado pela mediana, que com muitos zeros fica abaixo da média).
-    Menor é melhor; só serve para comparar previsões do mesmo alvo.
-    """
-    y = actual.to_numpy(dtype=float)
-    mu = np.clip(pred.to_numpy(dtype=float), 1e-6, None)
-    with np.errstate(divide="ignore", invalid="ignore"):
-        term = np.where(y > 0, y * np.log(y / mu), 0.0)
-    return float(np.mean(2 * (term - (y - mu))))
-
-
-def root_mean_squared_error(actual: pd.Series, pred: pd.Series) -> float:
-    """Raiz do erro quadrático médio (RMSE), em unidades do alvo.
-
-    Penaliza erros grandes mais que o erro médio absoluto, por elevar cada
-    desvio ao quadrado. Com demanda muito assimétrica (metade das linhas em
-    zero e cauda longa), fica bem acima do erro médio em unidades — a
-    diferença entre os dois mede o peso da cauda.
-
-    Args:
-        actual: Venda real.
-        pred: Previsão, na mesma ordem de `actual`.
-
-    Returns:
-        RMSE em unidades vendidas.
-    """
-    erro = pred.to_numpy(dtype=float) - actual.to_numpy(dtype=float)
-    return float(np.sqrt(np.mean(erro**2)))
-
-
-def comparison_scorecard(
-    df: pd.DataFrame,
-    forecasts: Mapping[str, str],
-    group_level: Sequence[str] = ("category_name", "sk_location"),
-    location_level: Sequence[str] = ("sk_location",),
-    actual_col: str = "target_3m",
-) -> pd.DataFrame:
-    """Quadro padrão para comparar qualquer previsão com a régua.
-
-    Todas as previsões precisam estar no mesmo painel (mesmas linhas de
-    série × corte). Métricas:
-
-    - erro_produto: WAPE por produto × local
-    - erro_categoria_local e erro_local: WAPE depois de somar
-    - vies: (total previsto − total vendido) ÷ total vendido
-    - erro_medio_unidades: erro médio absoluto por produto, em unidades (MAE)
-    - desvio_poisson: erro por produto que não premia prever abaixo
-    - raiz_erro_quadratico: RMSE, em unidades — pesa mais os erros grandes
-
-    Returns:
-        Uma linha por previsão.
-    """
-    rows = []
-    for label, col in forecasts.items():
-        actual = df[actual_col]
-        rows.append(
-            {
-                "previsao": label,
-                "erro_produto": (df[col] - actual).abs().sum() / actual.sum(),
-                "erro_categoria_local": aggregated_error_table(df, {label: col}, list(group_level), actual_col)["wape"].iloc[0],
-                "erro_local": aggregated_error_table(df, {label: col}, list(location_level), actual_col)["wape"].iloc[0],
-                "vies": (df[col].sum() - actual.sum()) / actual.sum(),
-                "erro_medio_unidades": (df[col] - actual).abs().mean(),
-                "desvio_poisson": poisson_deviance(actual, df[col]),
-                "raiz_erro_quadratico": root_mean_squared_error(actual, df[col]),
-            }
-        )
-    table = pd.DataFrame(rows).set_index("previsao")
-    return table.round(
-        {
-            "erro_produto": 4,
-            "erro_categoria_local": 4,
-            "erro_local": 4,
-            "vies": 4,
-            "erro_medio_unidades": 2,
-            "desvio_poisson": 3,
-            "raiz_erro_quadratico": 2,
-        }
-    )
 
 
 def past_volume_quintiles(df: pd.DataFrame, actual_col: str = "target_3m") -> pd.DataFrame:

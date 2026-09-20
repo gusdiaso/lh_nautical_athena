@@ -8,7 +8,7 @@ models:
       pronta para treinar/avaliar os modelos da Etapa 4. Junta
       ml_cutoff_panel, ml_seasonal_trend, dim_products e
       dim_locations, e adiciona os níveis de grupo (categoria × loja,
-      produto nos 6 locais) que os notebooks 01-03 (notebooks/ml)
+      produto nos 6 locais) que os notebooks 01, 02 e 04 (notebooks/ml)
       comprovaram serem o sinal mais forte. Ver o cabeçalho do .sql
       para o veredito de cada bloco de features.
     data_tests:
@@ -74,7 +74,7 @@ models:
         description: >
           Soma da demanda da própria série nos 12 meses até o corte —
           histórico da própria série, provavelmente inútil isolado
-          (notebook 03, seção 8), mantido para o modelo testar.
+          (notebook 04, seção 8), mantido para o modelo testar.
         data_tests:
           - not_null
           - dbt_utils.accepted_range:
@@ -90,7 +90,7 @@ models:
                 min_value: 0
 
       - name: avg_monthly_12m
-        description: "sum_12m ÷ 12 — a MM12 da própria série (régua baseline do notebook 03)."
+        description: "sum_12m ÷ 12 — a MM12 da própria série (régua baseline do notebook 04)."
         data_tests:
           - not_null
 
@@ -129,7 +129,7 @@ models:
       - name: categoria_local_avg_12m
         description: >
           Média de sum_12m entre as séries da mesma categoria × loja
-          neste corte — nível de grupo ESSENCIAL (notebook 03, seção
+          neste corte — nível de grupo ESSENCIAL (notebook 04, seção
           7): prevê melhor que a própria série.
         data_tests:
           - not_null
@@ -146,7 +146,7 @@ models:
         description: >
           Média de sum_12m do mesmo produto nos locais em que ele
           vende neste corte — empata com a categoria × loja e não
-          melhora sobre ela (notebook 03, seções 7 e 8).
+          melhora sobre ela (notebook 04, seções 7 e 8).
         data_tests:
           - not_null
           - dbt_utils.accepted_range:
@@ -174,7 +174,7 @@ models:
           - not_null
 
       - name: season_sum_next_3m
-        description: "Soma dos três índices sazonais acima — ESSENCIAL (notebook 03, seção 5)."
+        description: "Soma dos três índices sazonais acima — ESSENCIAL (notebook 04, seção 5)."
         data_tests:
           - not_null
 
@@ -188,16 +188,16 @@ models:
 
       - name: trend_factor
         description: >
-          Fator de correção de tendência — ESSENCIAL (notebook 03,
-          seção 6): remove o viés de ~-9% que o crescimento de
+          Fator de correção de tendência — ESSENCIAL (notebook 04,
+          seção 6): remove o viés de ~-12% que o crescimento de
           ~15%/ano causa em qualquer média do passado. Nulo quando
           trend_ready = false.
 
       - name: baseline_pred_categoria_local_idx_trend
         description: >
           categoria_local_avg_12m ÷ 12 × season_sum_next_3m ×
-          trend_factor — a régua vencedora do notebook 03 (seção 14:
-          WAPE 86,6% por produto, 10,7% por categoria × local, 6,1%
+          trend_factor — a régua vencedora do notebook 04 (seção 14:
+          WAPE 86,6% por produto, 11,9% por categoria × local, 6,1%
           por local, viés −2,8%). Entregue como feature/prior: o
           modelo só se justifica se melhorar sobre isto.
 

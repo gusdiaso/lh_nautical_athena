@@ -48,7 +48,7 @@ O dbt lê as tabelas Bronze via `{{ source('bronze', 'nome_tabela') }}` e aplica
 | **Gold / Marts** | Modelos dimensionais prontos para análise | Implementado |
 | **RAG Documental** | Busca em linguagem natural na documentação do projeto (Gen AI) | Implementado |
 | **Dashboards** | Visualizações e relatórios | Futuro |
-| **Machine Learning** | Modelos preditivos (previsão de demanda, churn) | Futuro |
+| **Machine Learning** | Previsão de demanda por produto × loja (regressão linear, GLM e XGBoost comparados contra uma régua simples); churn fica para o futuro | Em andamento (dev) |
 
 ---
 
@@ -407,10 +407,11 @@ lh_nautical/
 │   │   ├── models/
 │   │   │   ├── staging/                   # Cópia organizada dos dados brutos
 │   │   │   ├── intermediate/              # Limpeza e validação
-│   │   │   └── marts/                     # Modelo dimensional (Gold)
+│   │   │   ├── marts/                     # Modelo dimensional (Gold)
+│   │   │   └── ml/                        # Demanda agregada e features de ML (schema ml)
 │   │   ├── macros/                        # Funções reutilizáveis
 │   │   └── tests/                         # Testes de qualidade
-│   └── analytics_ai/                      # RAG documental (Gen AI)
+│   └── analytics_ai/                      # RAG documental (Gen AI) e previsão de demanda (ML)
 │       ├── rag_documents.py               # Allowlist, sanitização e chunking
 │       ├── rag_prompt.py                  # Guardrails e contexto delimitado
 │       ├── rag_databricks.py              # Delta, índice Delta Sync e retrieval
@@ -419,7 +420,12 @@ lh_nautical/
 │       ├── rag_evaluation.py              # Golden Dataset e métricas
 │       ├── rag_groundedness.py            # LLM-as-a-judge de fundamentação
 │       ├── rag_operations.py              # Saúde do índice e isolamento
-│       └── run_rag_*.py                   # Entrypoints dos jobs RAG
+│       ├── run_rag_*.py                   # Entrypoints dos jobs RAG
+│       ├── demand_*.py                    # Régua, GLM, XGBoost, métricas e gravação das previsões
+│       ├── eda_*.py                       # Análise exploratória da demanda (notebooks 01 a 04)
+│       ├── ml_config.py                   # Nomes das tabelas de ML
+│       └── run_demand_*.py                # Entrypoints de treino do GLM e do XGBoost
+├── notebooks/ml/                          # Análises e modelos de previsão de demanda (01 a 07)
 ├── evaluation/
 │   └── rag_golden_dataset.jsonl           # 30 casos de avaliação do RAG
 ├── docs/                                  # Documentação
@@ -432,6 +438,7 @@ lh_nautical/
 │   └── macros.md                          # Documentação das macros
 └── tests/
     ├── test_rag_*.py                      # Testes offline do RAG (sem Databricks)
+    ├── test_demand_*.py, test_ml_config.py, test_run_demand_*.py, test_eda_seasonality.py  # Testes offline de ML
     ├── notebooks/                         # Notebooks de teste
     └── sql/                               # Scripts SQL de teste
 ```
@@ -499,6 +506,9 @@ SQL Server (ERP)                API PTAX (BCB)
 | `docs/rag_evaluation.md` | Golden Dataset, métricas e groundedness |
 | `docs/rag_operacao.md` | Operação do RAG: health check, ciclo de vida e falhas |
 | `docs/rag_seguranca.md` | Menor privilégio e isolamento do Data Warehouse |
+| `docs/previsao_demanda_produto_loja.md` | Previsão de demanda: problema, análises, régua, features e comparação dos modelos |
+| `docs/dicionario_features_ml_produto_loja_mes.md` | Dicionário das 33 colunas da tabela de features de ML |
+| `docs/xgboost_demand.md` | XGBoost de demanda: recorte, variantes, resultado e execução |
 
 > ℹ️ A tabela `fiscal_invoices` é extraída para Bronze mas não possui modelo dbt, pois não integra o modelo dimensional atual.
 

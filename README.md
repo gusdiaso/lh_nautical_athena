@@ -162,6 +162,12 @@ databricks secrets create-scope --scope lh_nautical
 
 # Adicionar senha do SQL Server
 databricks secrets put --scope lh_nautical --key secret_lh_nautical_bd
+
+# Tokens usados pelo job dbt_transform (src/dbt/run_dbt_step.py).
+# O secret _prod é obrigatório para --target prod.
+databricks secrets put-secret lh_nautical dbt_http_path
+databricks secrets put-secret lh_nautical dbt_databricks_token
+databricks secrets put-secret lh_nautical dbt_databricks_token_prod
 ```
 
 ### Verificar Configuração

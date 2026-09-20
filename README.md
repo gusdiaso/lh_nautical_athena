@@ -312,7 +312,7 @@ PYTHONPATH=. python -m src.analytics_ai.run_demand_glm --model-name glm_tweedie 
 PYTHONPATH=. python -m src.analytics_ai.run_demand_xgboost
 ```
 
-Localmente os scripts usam Databricks Connect (`DATABRICKS_PROFILE`); no workspace, os notebooks `notebooks/ml/01` a `08` reproduzem análise, modelos e a análise de crescimento por CD/PDV, nessa ordem. Veja [Previsão de Demanda (ML)](#previsão-de-demanda-ml).
+Localmente os scripts usam Databricks Connect (`DATABRICKS_PROFILE`); no workspace, os notebooks em `notebooks/ml/` (01 a 08) reproduzem análise, modelos e a análise de crescimento por CD/PDV, nessa ordem. Veja [Previsão de Demanda (ML)](#previsão-de-demanda-ml).
 
 ### 9. RAG documental
 
@@ -343,7 +343,7 @@ Depois de qualquer mudança na documentação: copiar os arquivos para o Volume,
 | [`docs/previsao_demanda_produto_loja.md`](docs/previsao_demanda_produto_loja.md) | Relatório completo: problema, análises, régua, features, os três modelos, crescimento por CD/PDV, decisões e limitações |
 | [`docs/dicionario_features_ml_produto_loja_mes.md`](docs/dicionario_features_ml_produto_loja_mes.md) | Dicionário das 33 colunas da tabela de features |
 | [`docs/xgboost_demand.md`](docs/xgboost_demand.md) | Recorte, variantes e execução do XGBoost |
-| `notebooks/ml/01` a `08` | EDA (01–03), régua (04), Regressão Linear (05, 05b), GLM (06), XGBoost (07), crescimento por CD/PDV (08) |
+| `notebooks/ml/` (01 a 08) | EDA (01–03), régua (04), Regressão Linear (05, 05b), GLM (06), XGBoost (07), crescimento por CD/PDV (08) |
 | `dev_lh_nautical.ml.ml_forecast_demanda_3m` / `ml_forecast_demanda_mensal` | Tabelas Delta de previsão, particionadas por `model_name` |
 | `tests/test_demand_*.py`, `test_eda_seasonality.py`, `test_ml_config.py` | Testes offline (pandas puro) da régua, do GLM, do XGBoost, da análise de crescimento e das configurações |
 

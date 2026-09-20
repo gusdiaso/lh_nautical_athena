@@ -140,6 +140,7 @@ de um painel de custos não significa ausência de limite, então o ciclo de vid
 | `probe question was refused` | a pergunta do probe caiu no guardrail | corrigir o parâmetro `probe_question`, não o guardrail |
 | `warehouse isolation is broken` | privilégio indevido na identidade | tratar como incidente de segurança: ver [rag_seguranca.md](rag_seguranca.md) |
 | `isolation inconclusive` | erro que não é de permissão | reexecutar; se persistir, verificar conectividade antes de concluir qualquer coisa |
+| `VECTOR_SEARCH_SOURCE_HISTORY_OUT_OF_RETENTION` nos eventos do pipeline do índice (`Index is online, however latest pipeline update failed`) | o índice tenta retomar do change feed da tabela de chunks e o histórico já foi limpo (ingestões muito espaçadas) | tentar primeiro um *full refresh* do pipeline do índice (`pipelines start-update --full-refresh`); se não resolver, recriar o índice. A tabela é gravada com retenção de 90 dias para evitar recorrência |
 
 Regras que não mudam: nunca excluir um índice funcional antes de o substituto
 estar pronto e validado; nunca recriar índice enquanto `ready=false`; corrigir

@@ -31,6 +31,27 @@ class Interaction:
     feedback: str | None = None
 
 
+CONTEXT_PREFIX = "CONTEXTO: "
+
+
+def describe_chunk(chunk, rank: int) -> dict:
+    """Presentation-ready view of a retrieved chunk.
+
+    The heading breadcrumb is embedded in the content as a first
+    ``CONTEXTO:`` line at ingestion time; here it is lifted out so the UI can
+    show it as a title and render the body on its own.
+    """
+    content = chunk.content
+    breadcrumb = chunk.section
+    body = content
+    first_line, _, rest = content.partition("\n")
+    if first_line.startswith(CONTEXT_PREFIX):
+        breadcrumb = first_line[len(CONTEXT_PREFIX):].strip() or chunk.section
+        body = rest.lstrip("\n")
+    return dict(rank=rank, document=chunk.source_path, section=chunk.section,
+                breadcrumb=breadcrumb, body=body, content=content)
+
+
 def export_interactions(interactions: list[Interaction]) -> str:
     return json.dumps({"schema_version": 1, "interactions": [asdict(i) for i in interactions]},
                       ensure_ascii=False, indent=2)
@@ -59,8 +80,7 @@ class RagService:
                 index, chat = self.clients()
                 chunks = retrieve_chunks(index, interaction.question, self.max_results,
                                          filters={"status": "approved"})
-            interaction.retrieved = [dict(document=c.source_path, section=c.section, content=c.content)
-                                     for c in chunks]
+            interaction.retrieved = [describe_chunk(c, rank) for rank, c in enumerate(chunks, start=1)]
             generated = generate_answer(chat, interaction.question, chunks, self.model)
             interaction.answer = generated.answer
             if normalize_deterministic_response(generated.answer) == normalize_deterministic_response(NO_DOCUMENTATION_RESPONSE):

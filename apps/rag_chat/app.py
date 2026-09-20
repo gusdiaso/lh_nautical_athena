@@ -86,6 +86,20 @@ st.markdown(
       div[data-testid="stExpander"] {
         border: 1px solid #a6cde5; border-radius: .55rem; background: var(--rag-blue-soft);
       }
+      /* Streamlit paints <details>/<summary> with the theme's dark secondary
+         background on top of the wrapper, which hid the dark header text. */
+      div[data-testid="stExpander"] details,
+      div[data-testid="stExpander"] summary,
+      div[data-testid="stExpander"] summary:hover,
+      div[data-testid="stExpander"] summary:focus,
+      div[data-testid="stExpander"] summary:focus-visible,
+      div[data-testid="stExpander"] details[open] summary {
+        background: var(--rag-blue-soft) !important;
+        background-color: var(--rag-blue-soft) !important;
+      }
+      div[data-testid="stExpander"] summary svg {
+        fill: #102b43 !important; color: #102b43 !important;
+      }
       /* Keep all document-expander copy readable on the light-blue surface. */
       div[data-testid="stExpander"] summary,
       div[data-testid="stExpander"] summary *,

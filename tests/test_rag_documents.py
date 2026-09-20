@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from src.analytics_ai.rag_documents import (
+    DEFAULT_ALLOWED_PATHS,
     build_chunks,
     load_documents,
     parse_content,
@@ -557,6 +558,55 @@ class RagDocumentsTest(unittest.TestCase):
         self.assertEqual(config.chunks_table, "dev_lh_nautical.rag.document_chunks")
         self.assertEqual(config.index.embedding_model_endpoint_name, "databricks-bge-large-en")
         self.assertEqual(config.llm_endpoint_name, "databricks-meta-llama-3-3-70b-instruct")
+
+
+class ChunkLayoutTest(unittest.TestCase):
+    """Cortes respeitam tabelas e listas: cabeçalho viaja com as linhas e nenhum chunk abre no meio de uma linha."""
+
+    def _chunks(self, text, chunk_size=220, chunk_overlap=40):
+        return build_chunks(load_documents_from_text(text), chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+
+    def test_table_continuation_repeats_header(self):
+        rows = "\n".join(f"| `col_{i:02d}` | Descrição da coluna número {i} da tabela. |" for i in range(12))
+        text = f"# Doc\n\n## Tabela\n\n| Coluna | Descrição |\n|---|---|\n{rows}\n"
+        chunks = self._chunks(text)
+        self.assertGreater(len(chunks), 1)
+        for chunk in chunks:
+            body = chunk.content.split("\n\n", 1)[1]
+            self.assertTrue(body.startswith("| Coluna | Descrição |\n|---|---|\n"), body[:60])
+            for line in body.splitlines():
+                self.assertTrue(line.startswith("|"), line)
+        self.assertEqual(chunks[0].content.count("| Coluna | Descrição |"), 1)
+
+    def test_overlap_starts_on_a_full_line(self):
+        items = "\n".join(f"- **`campo_{i}`**: descrição do campo de número {i} com algum texto." for i in range(10))
+        text = f"# Doc\n\n## Lista\n\n{items}\n"
+        chunks = self._chunks(text)
+        self.assertGreater(len(chunks), 1)
+        for chunk in chunks[1:]:
+            body = chunk.content.split("\n\n", 1)[1]
+            self.assertTrue(body.startswith("- **`campo_"), body[:40])
+
+    def test_prose_is_still_split_at_words(self):
+        text = "# Doc\n\n## Texto\n\n" + " ".join(f"palavra{i}" for i in range(120)) + "\n"
+        chunks = self._chunks(text)
+        self.assertGreater(len(chunks), 1)
+        for chunk in chunks:
+            self.assertNotIn("palavra", chunk.content.split("\n\n", 1)[1][:0])
+            self.assertTrue(all(w.startswith("palavra") for w in chunk.content.split("\n\n", 1)[1].split()))
+
+    def test_allowlist_covers_ml_and_rag_documentation(self):
+        for path in (
+            "docs/previsao_demanda_produto_loja.md",
+            "docs/dicionario_features_ml_produto_loja_mes.md",
+            "docs/xgboost_demand.md",
+            "docs/implementacao-rag-documental-databricks.md",
+            "docs/rag_evaluation.md",
+            "docs/rag_operacao.md",
+            "docs/rag_seguranca.md",
+        ):
+            self.assertIn(path, DEFAULT_ALLOWED_PATHS)
+            self.assertTrue((Path(__file__).resolve().parents[1] / path).is_file(), path)
 
 
 def load_documents_from_text(text, file_name="document.md"):

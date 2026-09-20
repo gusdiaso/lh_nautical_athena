@@ -40,3 +40,10 @@ python -m pytest -q unit_tests/test_demand_xgboost.py
 O acesso remoto usa o perfil Databricks configurado no ambiente local ou no
 Runtime do Databricks. Credenciais e arquivos `.env` não fazem parte do
 versionamento do modelo.
+
+## Notebook narrativo
+
+O desenvolvimento completo e os resultados da execução atual estão documentados
+em `notebooks/ml/05_modelo_xgboost.ipynb`. O notebook reutiliza o pipeline do
+módulo e apresenta as versões pura, calibrada, reconciliada, residual,
+`base_margin` e duas etapas, sem comparar outros modelos.

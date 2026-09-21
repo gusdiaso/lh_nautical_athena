@@ -2,7 +2,7 @@
 
 ## Descrição do Projeto
 
-O **LH Nautical** é uma plataforma de dados completa construída no ecossistema **Databricks** para uma rede de varejo náutico com 3 armazéns (centros de distribuição) e 3 lojas. O projeto cobre quatro frentes, em sequência:
+A **LH Nautical** é uma rede de varejo náutico com 3 armazéns (centros de distribuição) e 3 lojas. Este repositório contém a plataforma de dados construída para ela no ecossistema **Databricks**, cobrindo quatro frentes, em sequência:
 
 | Frente | O que faz | Onde está |
 |--------|-----------|-----------|

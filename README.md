@@ -343,7 +343,8 @@ Depois de qualquer mudança na documentação: copiar os arquivos para o Volume,
 | [`docs/previsao_demanda_produto_loja.md`](docs/previsao_demanda_produto_loja.md) | Relatório completo: problema, análises, régua, features, os três modelos, crescimento por CD/PDV, decisões e limitações |
 | [`docs/dicionario_features_ml_produto_loja_mes.md`](docs/dicionario_features_ml_produto_loja_mes.md) | Dicionário das 33 colunas da tabela de features |
 | [`docs/xgboost_demand.md`](docs/xgboost_demand.md) | Recorte, variantes e execução do XGBoost |
-| `notebooks/ml/` (01 a 08) | EDA (01–03), régua (04), Regressão Linear (05, 05b), GLM (06), XGBoost (07), crescimento por CD/PDV (08) |
+| [`docs/expansao_rede_distribuicao.md`](docs/expansao_rede_distribuicao.md) | Expansão da rede: onde abrir o próximo ponto de distribuição (notebook 09, `network_expansion.py`) |
+| `notebooks/ml/` (01 a 08) | EDA (01–03), régua (04), Regressão Linear (05, 05b), GLM (06), XGBoost (07), crescimento por CD/PDV (08), expansão da rede (09) |
 | `dev_lh_nautical.ml.ml_forecast_demanda_3m` / `ml_forecast_demanda_mensal` | Tabelas Delta de previsão, particionadas por `model_name` |
 | `tests/test_demand_*.py`, `test_eda_seasonality.py`, `test_ml_config.py` | Testes offline (pandas puro) da régua, do GLM, do XGBoost, da análise de crescimento e das configurações |
 
@@ -533,13 +534,14 @@ lh_nautical/
 │       ├── run_rag_*.py                   # Entrypoints dos jobs RAG
 │       ├── demand_*.py                    # Régua, GLM, XGBoost, métricas e gravação das previsões
 │       ├── eda_*.py                       # Análise exploratória da demanda (notebooks 01 a 04)
+│       ├── network_expansion.py           # Expansão da rede: distância, ganho de um ponto novo, ranking
 │       ├── ml_config.py                   # Nomes das tabelas de ML
 │       └── run_demand_*.py                # Entrypoints de treino do GLM e do XGBoost
-├── notebooks/ml/                          # 01-03 EDA · 04 régua · 05/05b Linear · 06 GLM · 07 XGBoost · 08 crescimento CD/PDV
+├── notebooks/ml/                          # 01-03 EDA · 04 régua · 05/05b Linear · 06 GLM · 07 XGBoost · 08 crescimento CD/PDV · 09 expansão da rede
 ├── apps/rag_chat/                         # Interface Streamlit do RAG (app.py, app.yaml, prepare_release.py)
 ├── evaluation/
 │   └── rag_golden_dataset.jsonl           # 35 casos de avaliação do RAG
-├── docs/                                  # Documentação (30 arquivos; ver seção Documentação)
+├── docs/                                  # Documentação (31 arquivos; ver seção Documentação)
 └── tests/
     ├── test_rag_*.py                      # Testes offline do RAG (sem Databricks)
     ├── test_demand_*.py, test_ml_config.py, test_run_demand_*.py, test_eda_seasonality.py  # Testes offline de ML
@@ -627,6 +629,7 @@ Tudo em `docs/`. Os documentos marcados com ✦ fazem parte do corpus do RAG.
 | `docs/previsao_demanda_produto_loja.md` ✦ | Problema, análises, régua, features, comparação dos modelos e crescimento por CD/PDV |
 | `docs/dicionario_features_ml_produto_loja_mes.md` ✦ | Dicionário das 33 colunas da tabela de features |
 | `docs/xgboost_demand.md` ✦ | XGBoost de demanda: recorte, variantes, resultado e execução |
+| `docs/expansao_rede_distribuicao.md` ✦ | Expansão da rede: onde abrir o próximo ponto de distribuição (UF e tipo), distância e ganho por candidato |
 
 **RAG documental**
 

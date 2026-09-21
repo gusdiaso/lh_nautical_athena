@@ -33,6 +33,7 @@ DEFAULT_ALLOWED_PATHS: tuple[str, ...] = (
     "docs/previsao_demanda_produto_loja.md",
     "docs/dicionario_features_ml_produto_loja_mes.md",
     "docs/xgboost_demand.md",
+    "docs/expansao_rede_distribuicao.md",
     "docs/implementacao-rag-documental-databricks.md",
     "docs/rag_evaluation.md",
     "docs/rag_operacao.md",

@@ -15,6 +15,9 @@ STEPS = {
     "deps": ["deps"],
     # Cria (idempotente) as funcoes de mascara antes de qualquer model rodar.
     "create_mask_functions": ["run-operation", "create_mask_functions"],
+    # Carrega os seeds (seeds/) e roda os testes deles. Precisa vir antes de
+    # intermediate_run: int_uf_coordinates faz ref ao seed de coordenadas.
+    "seed": ["build", "--select", "resource_type:seed"],
     # int_customers/int_employees/int_suppliers e dim_customers/dim_employees/
     # dim_suppliers tem post_hook (macro mask_post_hooks) que reaplica a
     # mascara na sequencia imediata da criacao de cada tabela

@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: int_uf_coordinates
+    description: >
+      Coordenada representativa (capital) de cada uma das 27 UFs, base da
+      análise de expansão da rede.
+    columns:
+      - name: state
+        description: "Sigla da UF."
+        data_tests:
+          - not_null
+          - unique
+          - accepted_values:
+              arguments:
+                values: [AC, AL, AM, AP, BA, CE, DF, ES, GO, MA, MG, MS, MT, PA, PB, PE, PI, PR, RJ, RN, RO, RR, RS, SC, SE, SP, TO]
+      - name: capital_city
+        description: "Capital da UF."
+        data_tests:
+          - not_null
+      - name: latitude
+        description: "Latitude da capital, em graus."
+        data_tests:
+          - not_null
+      - name: longitude
+        description: "Longitude da capital, em graus."
+        data_tests:
+          - not_null

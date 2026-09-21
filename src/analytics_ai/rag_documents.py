@@ -29,6 +29,17 @@ DEFAULT_ALLOWED_PATHS: tuple[str, ...] = (
     "docs/dab_configuration.md",
     "docs/ci_cd_pipeline.md",
     "docs/transform_after_extract.md",
+    "docs/relatorio_analise_projeto.md",
+    "docs/previsao_demanda_produto_loja.md",
+    "docs/dicionario_features_ml_produto_loja_mes.md",
+    "docs/xgboost_demand.md",
+    "docs/expansao_rede_distribuicao.md",
+    "docs/implementacao-rag-documental-databricks.md",
+    "docs/rag_evaluation.md",
+    "docs/rag_operacao.md",
+    "docs/rag_seguranca.md",
+    "docs/rag_interface_interna.md",
+    "docs/rag_app_producao.md",
 )
 
 _SECRET_PATTERNS = (
@@ -203,6 +214,39 @@ def load_documents(root: Path, allowed_paths: Sequence[str] = DEFAULT_ALLOWED_PA
     return documents
 
 
+_TABLE_SEPARATOR = re.compile(r"^\s*\|?\s*:?-{2,}")
+
+
+def _line_at(text: str, offset: int) -> tuple[int, str]:
+    line_start = text.rfind("\n", 0, offset) + 1
+    line_end = text.find("\n", line_start)
+    return line_start, text[line_start : len(text) if line_end < 0 else line_end]
+
+
+def _is_table_row(text: str, offset: int) -> bool:
+    if offset < 0 or offset >= len(text):
+        return False
+    return _line_at(text, offset)[1].lstrip().startswith("|")
+
+
+def _table_header_at(text: str, offset: int) -> str | None:
+    """Header and separator rows of the table containing `offset`, unless that row is the header itself."""
+    if not _is_table_row(text, offset):
+        return None
+    line_start, _ = _line_at(text, offset)
+    rows: list[str] = []
+    cursor = line_start
+    while cursor > 0:
+        previous_start, previous = _line_at(text, cursor - 1)
+        if not previous.lstrip().startswith("|"):
+            break
+        rows.insert(0, previous)
+        cursor = previous_start
+    if len(rows) < 2 or not _TABLE_SEPARATOR.match(rows[1]):
+        return None
+    return rows[0].strip() + "\n" + rows[1].strip()
+
+
 def _split_text_with_offsets(text: str, chunk_size: int, chunk_overlap: int) -> list[tuple[int, str]]:
     if chunk_size <= 0 or chunk_overlap < 0 or chunk_overlap >= chunk_size:
         raise ValueError("chunk_size must be positive and overlap must be smaller than chunk_size")
@@ -214,6 +258,9 @@ def _split_text_with_offsets(text: str, chunk_size: int, chunk_overlap: int) -> 
         end = min(start + chunk_size, len(text))
         if end < len(text):
             boundary = max(text.rfind("\n\n", start, end), text.rfind("\n", start, end), text.rfind(" ", start, end))
+            # Inside a Markdown table a mid-row cut leaves half a row on each side.
+            if _is_table_row(text, boundary) and text.rfind("\n", start, end) > start:
+                boundary = text.rfind("\n", start, end)
             if boundary > start:
                 end = boundary
         piece = text[start:end].strip()
@@ -223,6 +270,15 @@ def _split_text_with_offsets(text: str, chunk_size: int, chunk_overlap: int) -> 
         if end >= len(text):
             break
         next_start = max(end - chunk_overlap, start + 1)
+        # The overlap opens on a whole line when one starts inside the window
+        # (tables, bullets) and never in the middle of a word.
+        newline = text.find("\n", next_start, end + 1)
+        if newline != -1:
+            next_start = newline + 1
+        elif not text[next_start - 1].isspace():
+            space = text.find(" ", next_start, end)
+            if space != -1:
+                next_start = space + 1
         start = next_start
     return chunks
 
@@ -245,12 +301,15 @@ def build_chunks(documents: Iterable[Document], chunk_size: int = 800, chunk_ove
                     raise ValueError(
                         f"chunk_size leaves no room for body and overlap in section {section!r}"
                     )
-                pieces.extend(
-                    (section, prefix + body_chunk)
-                    for _, body_chunk in _split_text_with_offsets(
-                        body, available_body_size, chunk_overlap
-                    )
-                )
+                for body_start, body_chunk in _split_text_with_offsets(
+                    body, available_body_size, chunk_overlap
+                ):
+                    # A chunk that starts inside a table repeats the header so
+                    # the column names travel with the rows.
+                    header = _table_header_at(body, body_start)
+                    if header and not body_chunk.startswith(header):
+                        body_chunk = header + "\n" + body_chunk
+                    pieces.append((section, prefix + body_chunk))
         else:
             pieces = [
                 (_section_for(document.content, start), content)

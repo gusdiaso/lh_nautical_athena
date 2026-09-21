@@ -462,7 +462,9 @@ A análise completa, com gráficos, está em `notebooks/ml/07_modelo_xgboost.ipy
 
 **Resposta curta:** dentro dos três meses previstos, o CD que mais cresce é o **Armazém Camargo** (+1.338 unidades de setembro para novembro) e o PDV é a **Loja Oliveira** (+1.295). Mas o crescimento **percentual é o mesmo nas seis unidades — 89,8%** —, porque a repartição mensal usa um único perfil sazonal; dentro do horizonte, "quem mais cresce" é "quem tem mais volume". Comparando o trimestre previsto com o mesmo trimestre **realizado em 2025**, que retira a estação da conta, o CD que mais cresce passa a ser o **Armazém Novaes** (+9,6%) e o PDV continua sendo a **Loja Oliveira** (+31,5%).
 
-**Metodologia.** Fonte: `ml_forecast_demanda_mensal`, partição `glm_poisson` (o modelo final), corte de agosto/2026 — 18.162 linhas, uma por produto × local × mês, validadas antes de qualquer soma (um único corte, sem nulos, negativos ou duplicatas, três horizontes em toda série). CD e PDV vêm de `dim_locations.location_type` (`warehouse` / `store`); a tabela mensal não traz o tipo, então o cruzamento é por `sk_location`. Para cada unidade `u`, `D_u(k)` é a soma da demanda prevista de todos os produtos no mês `k`:
+#### 8.6.1 Metodologia
+
+Fonte: `ml_forecast_demanda_mensal`, partição `glm_poisson` (o modelo final), corte de agosto/2026 — 18.162 linhas, uma por produto × local × mês, validadas antes de qualquer soma (um único corte, sem nulos, negativos ou duplicatas, três horizontes em toda série). CD e PDV vêm de `dim_locations.location_type` (`warehouse` / `store`); a tabela mensal não traz o tipo, então o cruzamento é por `sk_location`. Para cada unidade `u`, `D_u(k)` é a soma da demanda prevista de todos os produtos no mês `k`:
 
 ```
 variação 1→2     = D(2) − D(1)        e em %:  (D(2) / D(1) − 1) × 100
@@ -475,7 +477,9 @@ O ranking oficial usa o crescimento em **unidades**: é o que foi pedido, e o pe
 
 **Período:** setembro, outubro e novembro de 2026 (mês 1, 2 e 3). Referência complementar: setembro a novembro de 2025.
 
-**Os locais e o vínculo PDV → CD.** Não existe nos dados nenhuma coluna ou tabela que diga qual armazém abastece qual loja (`stock_movements` só registra venda, compra e devolução, sem origem e destino). O vínculo abaixo é uma **hipótese de proximidade geográfica** — armazém da mesma UF; se não houver, da mesma região:
+#### 8.6.2 Os locais e o vínculo PDV → CD
+
+Não existe nos dados nenhuma coluna ou tabela que diga qual armazém abastece qual loja (`stock_movements` só registra venda, compra e devolução, sem origem e destino). O vínculo abaixo é uma **hipótese de proximidade geográfica** — armazém da mesma UF; se não houver, da mesma região:
 
 | Local | Tipo | UF | Região | CD associado | Critério |
 |---|---|---|---|---|---|
@@ -486,7 +490,7 @@ O ranking oficial usa o crescimento em **unidades**: é o que foi pedido, e o pe
 | Loja Mendonça | PDV | PI | Nordeste | Armazém Novaes | mesma UF |
 | Loja Oliveira | PDV | AL | Nordeste | Armazém Novaes | mesma região |
 
-**Centro de Distribuição — demanda prevista em cada um dos três meses (unidades):**
+#### 8.6.3 Centro de Distribuição — demanda prevista em cada um dos três meses (unidades)
 
 | CD | Set/2026 | Out/2026 | Nov/2026 | Var. 1→2 | Var. 2→3 | Cresc. 1→3 | Cresc. % | Rank |
 |---|---|---|---|---|---|---|---|---|
@@ -494,7 +498,7 @@ O ranking oficial usa o crescimento em **unidades**: é o que foi pedido, e o pe
 | Armazém Novaes | 1.439,9 | 2.216,5 | 2.732,5 | +776,6 (+53,9%) | +515,9 (+23,3%) | +1.292,5 | 89,8% | 2 |
 | Armazém Siqueira | 1.391,7 | 2.142,3 | 2.640,9 | +750,6 (+53,9%) | +498,7 (+23,3%) | +1.249,2 | 89,8% | 3 |
 
-**Ponto de Venda — demanda prevista em cada um dos três meses (unidades):**
+#### 8.6.4 Ponto de Venda — demanda prevista em cada um dos três meses (unidades)
 
 | PDV | CD associado | Set/2026 | Out/2026 | Nov/2026 | Var. 1→2 | Var. 2→3 | Cresc. 1→3 | Cresc. % | Rank |
 |---|---|---|---|---|---|---|---|---|---|
@@ -504,7 +508,9 @@ O ranking oficial usa o crescimento em **unidades**: é o que foi pedido, e o pe
 
 **Leitura:** o Armazém Camargo e a Loja Oliveira lideram, mas por margens pequenas — 88 unidades entre o primeiro e o terceiro CD, 21 entre a primeira e a terceira loja, num trimestre de mais de 6.000 unidades por local. E o percentual é idêntico em todas: **89,76%**. Isso não é coincidência, é construção. O §8.4 reparte o total de 3 meses pelos índices sazonais da tabela de features, e esses índices são os mesmos para todas as séries de um corte (índice sazonal geral, decisão da Etapa 2). Então, para qualquer unidade, `D(3)/D(1) = índice₃/índice₁ = 1,898`, e o crescimento em unidades é o volume previsto vezes uma constante. **O ranking acima é o ranking de volume previsto** — legítimo como resposta, mas não diz onde a demanda acelera mais. A subida de 53,9% e depois 23,3% é a alta temporada chegando, igual em todo lugar.
 
-**Crescimento frente ao mesmo trimestre de 2025** — a comparação em que a estação não manda:
+#### 8.6.5 Crescimento frente ao mesmo trimestre de 2025
+
+A comparação em que a estação não manda:
 
 | Unidade | Tipo | Realizado set–nov/2025 | Previsto set–nov/2026 | Crescimento | Cresc. % | Rank |
 |---|---|---|---|---|---|---|
@@ -517,13 +523,19 @@ O ranking oficial usa o crescimento em **unidades**: é o que foi pedido, e o pe
 
 Aqui os locais se separam: de +3,9% a +31,5%. Nenhuma unidade cai. O CD vencedor muda porque o Camargo já vendia muito em set–nov/2025, e o salto relativo é menor; as lojas crescem mais que os armazéns pelo mesmo motivo — venderam menos em 2025 e a régua (média do grupo nos últimos 12 meses, corrigida por tendência) atribui a todas um nível parecido para 2026. Frente a 2025, os rankings absoluto e percentual coincidem; dentro do horizonte, o ranking percentual é um empate entre as seis unidades. **Concentração entre unidades:** dentro do horizonte cada CD responde por cerca de um terço do crescimento dos CDs (34,5%, 33,3% e 32,2%) — de novo o retrato do volume; frente a 2025 a concentração aparece: o Novaes responde por 45,8% do crescimento dos três CDs e a Oliveira por 44,6% do crescimento das três lojas.
 
-**Produtos responsáveis pelo crescimento.** Frente a 2025, o crescimento é **difuso**: no Armazém Novaes os 10 produtos que mais contribuem respondem por 13% dos +560 (são precisos 41 para chegar à metade); na Loja Oliveira, top 10 = 5% dos +1.535 e 113 produtos fazem metade. Os maiores "contribuintes" são todos produtos que **não venderam nada em set–nov/2025** e recebem ~7 unidades de previsão — o nível médio do grupo. É a limitação do §10 aparecendo: o modelo quase não diferencia produtos, então quem vendeu zero "cresce" até a média. A leitura útil é por categoria: no Novaes o crescimento vem de GPS & Plotters (22%), Motores (20%), Sonares e Transdutores (19%), Baterias (17%) e Instrumentos de Navegação (15%), com Pintura Marítima (−58) e Velas (−23) em queda; na Oliveira, de Instrumentos de Navegação (13%), GPS & Plotters (11%), Âncoras (10%), Velas (10%) e Sonares (9%), com todas as 12 categorias subindo. Nenhuma categoria domina.
+#### 8.6.6 Produtos e categorias responsáveis pelo crescimento
+
+Frente a 2025, o crescimento é **difuso**: no Armazém Novaes os 10 produtos que mais contribuem respondem por 13% dos +560 (são precisos 41 para chegar à metade); na Loja Oliveira, top 10 = 5% dos +1.535 e 113 produtos fazem metade. Os maiores "contribuintes" são todos produtos que **não venderam nada em set–nov/2025** e recebem ~7 unidades de previsão — o nível médio do grupo. É a limitação do §10 aparecendo: o modelo quase não diferencia produtos, então quem vendeu zero "cresce" até a média. A leitura útil é por categoria: no Novaes o crescimento vem de GPS & Plotters (22%), Motores (20%), Sonares e Transdutores (19%), Baterias (17%) e Instrumentos de Navegação (15%), com Pintura Marítima (−58) e Velas (−23) em queda; na Oliveira, de Instrumentos de Navegação (13%), GPS & Plotters (11%), Âncoras (10%), Velas (10%) e Sonares (9%), com todas as 12 categorias subindo. Nenhuma categoria domina.
+
+#### 8.6.7 Robustez e gráficos
 
 **Robustez:** o GLM Tweedie (`power` 1,3), que empatou com o Poisson no teste, aponta os mesmos vencedores nas duas definições — Camargo +1.336 e Oliveira +1.294 dentro do horizonte; Novaes +9,5% e Oliveira +31,4% frente a 2025.
 
 **Gráficos** (no notebook 08): evolução realizado + previsto por CD e por PDV, jun/2025 a nov/2026; ranking do crescimento em unidades com o percentual ao lado de cada barra; crescimento % frente a 2025 por unidade; decomposição do crescimento por categoria nos dois vencedores.
 
-**Limitações desta análise:** (1) o vínculo PDV → CD é hipótese geográfica, não dado; (2) o crescimento percentual dentro do horizonte não discrimina por construção; (3) a previsão por local é quase uniforme, porque a régua fixa o nível por categoria × local e o modelo corrige pouco — diferenças pequenas entre unidades não devem ser lidas como sinal; (4) o realizado de 2025 tem a mesma cara de dado simulado que o resto do projeto (§10).
+#### 8.6.8 Limitações desta análise
+
+(1) o vínculo PDV → CD é hipótese geográfica, não dado; (2) o crescimento percentual dentro do horizonte não discrimina por construção; (3) a previsão por local é quase uniforme, porque a régua fixa o nível por categoria × local e o modelo corrige pouco — diferenças pequenas entre unidades não devem ser lidas como sinal; (4) o realizado de 2025 tem a mesma cara de dado simulado que o resto do projeto (§10).
 
 ---
 

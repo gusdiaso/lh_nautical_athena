@@ -54,6 +54,9 @@ def chunk_rows(chunks: Iterable[Chunk]) -> list[dict[str, str]]:
     return [chunk.as_dict() for chunk in chunks]
 
 
+CHANGE_HISTORY_RETENTION = "interval 90 days"
+
+
 def write_chunks_to_delta(
     spark: Any,
     chunks: Iterable[Chunk],
@@ -81,6 +84,15 @@ def write_chunks_to_delta(
     if enable_change_data_feed:
         writer = writer.option("delta.enableChangeDataFeed", "true")
     writer.saveAsTable(table_name)
+    # The Delta Sync index resumes from the change feed of its last sync. With
+    # the default 7-day retention a table that goes weeks between ingestions
+    # loses that history and the index can only be recreated; keep it longer.
+    # Writer options do not persist table properties, so set them explicitly.
+    spark.sql(
+        f"ALTER TABLE {table_name} SET TBLPROPERTIES ("
+        f"'delta.deletedFileRetentionDuration' = '{CHANGE_HISTORY_RETENTION}', "
+        f"'delta.logRetentionDuration' = '{CHANGE_HISTORY_RETENTION}')"
+    )
     return len(rows)
 
 

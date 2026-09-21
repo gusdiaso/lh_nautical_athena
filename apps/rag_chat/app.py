@@ -86,6 +86,36 @@ st.markdown(
       div[data-testid="stExpander"] {
         border: 1px solid #a6cde5; border-radius: .55rem; background: var(--rag-blue-soft);
       }
+      /* Streamlit paints <details>/<summary> with the theme's dark secondary
+         background on top of the wrapper, which hid the dark header text. */
+      div[data-testid="stExpander"] details,
+      div[data-testid="stExpander"] summary,
+      div[data-testid="stExpander"] summary:hover,
+      div[data-testid="stExpander"] summary:focus,
+      div[data-testid="stExpander"] summary:focus-visible,
+      div[data-testid="stExpander"] details[open] summary {
+        background: var(--rag-blue-soft) !important;
+        background-color: var(--rag-blue-soft) !important;
+      }
+      div[data-testid="stExpander"] summary svg {
+        fill: #102b43 !important; color: #102b43 !important;
+      }
+      /* Code inside a retrieved document keeps a light surface in dark mode too. */
+      div[data-testid="stExpander"] pre,
+      div[data-testid="stExpander"] pre code,
+      div[data-testid="stExpander"] code,
+      div[data-testid="stExpander"] [data-testid="stCode"],
+      div[data-testid="stExpander"] [data-testid="stCode"] * {
+        background: #eef6fc !important; background-color: #eef6fc !important;
+        color: #102b43 !important; -webkit-text-fill-color: #102b43 !important;
+      }
+      div[data-testid="stExpander"] pre {
+        border: 1px solid #b9d7ea; border-radius: .45rem;
+      }
+      div[data-testid="stExpander"] table { border-collapse: collapse; }
+      div[data-testid="stExpander"] th, div[data-testid="stExpander"] td {
+        border: 1px solid #b9d7ea; padding: .25rem .5rem; color: #102b43 !important;
+      }
       /* Keep all document-expander copy readable on the light-blue surface. */
       div[data-testid="stExpander"] summary,
       div[data-testid="stExpander"] summary *,
@@ -246,8 +276,17 @@ for interaction in st.session_state.interactions:
                 st.markdown("**Documentos recuperados**")
                 st.caption("A presença no contexto não comprova suporte a cada afirmação.")
                 for source in interaction.retrieved:
-                    with st.expander(f"{source['document']} · {source['section']}"):
-                        st.text(source["content"])
+                    breadcrumb = source.get("breadcrumb") or source["section"]
+                    with st.expander(f"{source.get('rank', '')}. {source['document']} — {breadcrumb}"):
+                        st.caption(f"Citar como: Fonte: {source['document']} - Secao: {source['section']}")
+                        body = source.get("body", source["content"])
+                        # Corpus text is approved and sanitized at ingestion, so Markdown
+                        # (tables, lists, code) can render; HTML stays escaped. A chunk
+                        # cut inside a code fence falls back to plain text.
+                        if body.count("```") % 2 == 0:
+                            st.markdown(body)
+                        else:
+                            st.text(body)
 
         feedback_col, interaction_col = st.columns([3, 2], vertical_alignment="center")
         with feedback_col:

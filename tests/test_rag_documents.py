@@ -224,6 +224,10 @@ class RagDocumentsTest(unittest.TestCase):
         spark.createDataFrame.return_value.write = writer
 
         count = write_chunks_to_delta(spark, [chunk], "catalog.schema.chunks")
+        alter = [c for c in spark.sql.call_args_list if "SET TBLPROPERTIES" in c.args[0]]
+        self.assertEqual(len(alter), 1)
+        self.assertIn("'delta.deletedFileRetentionDuration' = 'interval 90 days'", alter[0].args[0])
+        self.assertIn("catalog.schema.chunks", alter[0].args[0])
 
         self.assertEqual(count, 1)
         writer.saveAsTable.assert_called_once_with("catalog.schema.chunks")

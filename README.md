@@ -56,7 +56,7 @@ O dbt lê as tabelas Bronze via `{{ source('bronze', 'nome_tabela') }}` e aplica
 | **Intermediate** | Tabelas dbt com limpeza, validação e enriquecimento | Implementado |
 | **Gold / Marts** | Modelos dimensionais prontos para análise | Implementado |
 | **RAG Documental** | Busca em linguagem natural na documentação do projeto (Gen AI) | Implementado |
-| **Dashboards** | Visualizações e relatórios | Futuro |
+| **Dashboards** | Visualizações e relatórios | Implementado |
 | **Machine Learning** | Previsão de demanda por produto × loja para os próximos 3 meses (régua estatística + Regressão Linear, GLM Poisson/Tweedie e XGBoost comparados); crescimento por centro de distribuição e loja | Implementado |
 
 ---

@@ -15,6 +15,7 @@ sync:
     - profiles.yml
     - packages.yml
     - package-lock.yml
+    - seeds/**
     - src/dbt/**
     - src/*/*.py
     - evaluation/**

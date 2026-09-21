@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: agg_sales_by_customer_state_month
+    description: >
+      Volume, receita líquida e lucro estimado por mês × UF do cliente ×
+      localização de origem × canal, sem pedidos cancelados nem rascunhos.
+      Base da análise de expansão da rede (notebook 09).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - month_start_date
+              - customer_state
+              - sk_location
+              - channel
+    columns:
+      - name: month_start_date
+        description: "Primeiro dia do mês do pedido."
+        data_tests:
+          - not_null
+      - name: customer_state
+        description: "UF do endereço primário do cliente; SEM_UF quando não informada."
+        data_tests:
+          - not_null
+      - name: sk_location
+        description: "Localização que atendeu o pedido."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: sk_location
+      - name: channel
+        description: "Canal de venda."
+      - name: quantity_ordered
+        description: "Unidades pedidas."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: net_revenue
+        description: "Receita líquida (após desconto alocado)."
+        data_tests:
+          - not_null
+      - name: estimated_gross_profit
+        description: "Lucro bruto estimado pelo custo de cadastro."
+      - name: order_item_count
+        description: "Linhas de item de pedido agregadas."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1

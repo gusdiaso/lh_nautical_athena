@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: int_location_coordinates
+    description: >
+      Coordenadas (capital da UF) das localizações físicas reais. Suporte à
+      análise de expansão da rede. Falha se alguma unidade ficar sem
+      coordenada.
+    columns:
+      - name: sk_location
+        description: "Chave substituta da localização."
+        data_tests:
+          - not_null
+          - unique
+      - name: location_type
+        description: "Tipo da localização (store ou warehouse)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [store, warehouse]
+      - name: state
+        description: "UF da localização."
+        data_tests:
+          - not_null
+      - name: latitude
+        description: "Latitude da capital da UF da unidade."
+        data_tests:
+          - not_null
+      - name: longitude
+        description: "Longitude da capital da UF da unidade."
+        data_tests:
+          - not_null

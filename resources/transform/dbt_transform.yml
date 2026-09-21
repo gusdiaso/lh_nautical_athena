@@ -76,11 +76,26 @@ resources:
           timeout_seconds: 300
           max_retries: 1
 
+        - task_key: seed
+          environment_key: default
+          description: "Carrega e testa os seeds (coordenadas das UFs) que os modelos Silver referenciam"
+          depends_on:
+            - task_key: create_mask_functions
+          spark_python_task:
+            python_file: ../../src/dbt/run_dbt_step.py
+            parameters:
+              - --step
+              - seed
+              - --target
+              - ${var.dbt_target}
+          timeout_seconds: 300
+          max_retries: 1
+
         - task_key: intermediate_run
           environment_key: default
           description: "Cria as tabelas Silver; post_hook mascara int_customers/int_employees/int_suppliers na sequencia"
           depends_on:
-            - task_key: create_mask_functions
+            - task_key: seed
           spark_python_task:
             python_file: ../../src/dbt/run_dbt_step.py
             parameters:

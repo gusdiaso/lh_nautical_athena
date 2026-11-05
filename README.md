@@ -1,3 +1,5 @@
+🇧🇷 Português | 🇺🇸 [English](README.en.md)
+
 # LH Nautical
 
 ## Descrição do Projeto
